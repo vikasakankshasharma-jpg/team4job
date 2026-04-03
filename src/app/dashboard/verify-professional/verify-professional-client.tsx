@@ -112,7 +112,7 @@ export default function VerifyProfessionalClient() {
   });
 
   useEffect(() => {
-    if (!userLoading && user?.roles.includes('Professional')) {
+    if (!userLoading && user?.roles.includes('Professional') && user.professionalProfile) {
       router.push('/dashboard/profile');
     }
   }, [user, userLoading, router]);

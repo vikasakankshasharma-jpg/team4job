@@ -182,8 +182,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const token = await firebaseUser.getIdToken();
           await updateSessionTokenAction(token);
-        } catch (e) {
-          // Silent fail on cookie sync, not fatal
+        } catch (e: any) {
+          // Token revoked, expired, or user disabled — sign out and let onAuthStateChanged handle redirect
+          const isAuthError = e?.code?.startsWith('auth/') ||
+            e?.message?.includes('revoked') ||
+            e?.message?.includes('token') ||
+            e?.message?.includes('INVALID_ID_TOKEN');
+          if (isAuthError) {
+            console.warn('[useUser] Auth token error. Signing out...', e?.code);
+            await signOut(auth).catch(() => {});
+            return;
+          }
+          // Non-auth errors (e.g. network): silent fail on cookie sync, not fatal
         }
 
         // In E2E mode, avoid realtime listeners but still fetch the user profile once
@@ -237,8 +247,48 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(true);
           setHasAuthUser(true);
           let unsubscribeProfile = () => {};
+          let resolved = false;
+          
+          // Safety valve: if loading hasn't resolved after 8s (e.g. Firestore SDK internal error),
+          // unblock the UI so the user isn't stuck on an infinite spinner.
+          const loadingTimeout = setTimeout(() => {
+            setLoading(prev => {
+              if (prev) {
+                console.warn('[useUser] Loading timeout reached — forcing loading=false to unblock UI.');
+              }
+              return false;
+            });
+          }, 8000);
+
+          // Emulator fallback: if onSnapshot doesn't resolve within 4s (common with nullValue SDK bug),
+          // fall back to a one-time getDoc which is immune to the WebChannel crash.
+          const snapshotFallbackTimer = setTimeout(async () => {
+            if (resolved) return;
+            console.warn('[useUser] onSnapshot timeout — falling back to getDoc for emulator compatibility.');
+            try {
+              const { getDoc, doc: firestoreDoc } = await import('firebase/firestore');
+              const docSnap = await getDoc(firestoreDoc(db, "users", firebaseUser.uid));
+              if (resolved) return; // onSnapshot resolved while we were fetching
+              clearTimeout(loadingTimeout);
+              resolved = true;
+              if (docSnap.exists()) {
+                updateUserState(docSnap.data() as User);
+              }
+              setLoading(false);
+            } catch (e) {
+              if (resolved) return;
+              clearTimeout(loadingTimeout);
+              resolved = true;
+              setLoading(false);
+            }
+          }, 4000);
+
           try {
             unsubscribeProfile = onSnapshot(doc(db, "users", firebaseUser.uid), async (snapshot) => {
+              if (resolved) return;
+              resolved = true;
+              clearTimeout(loadingTimeout);
+              clearTimeout(snapshotFallbackTimer);
               if (snapshot.exists()) {
                 updateUserState(snapshot.data() as User);
                 setLoading(false);
@@ -265,6 +315,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setLoading(false);
               }
             }, (error) => {
+              clearTimeout(loadingTimeout);
+              clearTimeout(snapshotFallbackTimer);
               // Handle permission-denied vs other errors
               if (error.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -272,12 +324,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   operation: 'get'
                 }));
               }
-              setLoading(false);
+              if (!resolved) {
+                resolved = true;
+                setLoading(false);
+              }
             });
           } catch (e) {
+            clearTimeout(loadingTimeout);
+            clearTimeout(snapshotFallbackTimer);
+            resolved = true;
             setLoading(false);
           }
-          return unsubscribeProfile;
+          return () => {
+            clearTimeout(loadingTimeout);
+            clearTimeout(snapshotFallbackTimer);
+            unsubscribeProfile();
+          };
         }
       } else {
         // Clear token cookie
@@ -368,6 +430,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (redirectPath && !isLoggingOut.current) {
       smartPush(redirectPath);
+      // Hard fallback: if redirecting to /login and still on same page after 3s,
+      // force a full page navigate to break any potential router loop.
+      if (redirectPath === '/login') {
+        const timer = setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
   }, [redirectPath, smartPush, pathname, role, user?.email]);
 
@@ -442,11 +514,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. If loading, show loader
   // 2. If we determined a redirect is necessary, show loader
   const isPublic = isPublicPath(pathname);
-  const shouldShowLoader = (loading && !isPublic) || (redirectPath !== null);
+  
+  // High-level "blocking" loader only for initial auth check or if user is missing on protected path
+  // If we have a redirectPath, it means we definitely need to go somewhere else.
+  // We only block the whole screen if we are still doing the initial check.
+  const shouldBlockScreen = (loading && !isInitialAuthCheckDone.current && !isPublic) || (redirectPath !== null && !isMounted);
 
-  if (shouldShowLoader) {
+  if (shouldBlockScreen) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen" data-testid="initial-loader">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background" data-testid="initial-loader">
         <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
         {redirectPath && (
           <div className="text-sm text-muted-foreground animate-pulse">
@@ -457,8 +533,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // If we are on a protected path but don't have a user, show loader or error
-  if (!isPublic && !user) {
+  // If we are on a protected path but don't have a user, and initial check is done
+  if (!isPublic && !user && isInitialAuthCheckDone.current) {
+    // If we have a redirect path, we'll let the useEffect handle it, 
+    // but we show a loader here to prevent flashing protected content.
+    if (redirectPath) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <div className="text-sm text-muted-foreground">Redirecting to login...</div>
+        </div>
+      );
+    }
+    
     if (hasAuthUser) {
       // We have an auth session but profile failed to load
       return (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { aiMetricsService } from "@/ai/services/AIMetricsService";
 
 export const dynamic = 'force-dynamic';
 import { AIMetric, AILog } from "@/lib/types";
@@ -28,14 +27,13 @@ export default function AIHealthPage() {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [fetchedMetrics, fetchedLogs] = await Promise.all([
-                    aiMetricsService.getAggregatedMetrics(7),
-                    aiMetricsService.getRecentLogs(20)
-                ]);
-                setMetrics(fetchedMetrics);
-                setRecentLogs(fetchedLogs);
+                const res = await fetch("/api/admin/ai-metrics?days=7&logsLimit=20");
+                if (!res.ok) throw new Error("Failed to load metrics");
+                const data = await res.json();
+                setMetrics(data.metrics || []);
+                setRecentLogs(data.recentLogs || []);
             } catch (error) {
-                // Failed to load AI data
+                console.error("Failed to load AI data", error);
             } finally {
                 setLoading(false);
             }

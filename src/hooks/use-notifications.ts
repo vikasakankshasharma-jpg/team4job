@@ -13,7 +13,7 @@ export function useNotifications() {
     const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
 
     useEffect(() => {
-        if (!user || isE2EMode) {
+        if (!user || !user.id || isE2EMode) {
             setNotifications([]);
             setLoading(false);
             return;
@@ -46,11 +46,11 @@ export function useNotifications() {
         return () => unsubscribe();
     }, [user, isE2EMode]);
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0;
 
     const markAsRead = useCallback(async (notificationId: string) => {
         // Optimistic update
-        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
+        setNotifications(prev => Array.isArray(prev) ? prev.map(n => n.id === notificationId ? { ...n, read: true } : n) : []);
         try {
             await NotificationsService.markAsRead(notificationId);
         } catch (error) {

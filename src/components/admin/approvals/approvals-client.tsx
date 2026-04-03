@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, CheckCircle, XCircle, FileText, ExternalLink } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { collection, query, where, getDocs, doc, updateDoc, Timestamp, orderBy } from "firebase/firestore";
-import { getFirestore } from "firebase/firestore";
+import { db } from "@/infrastructure/firebase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
@@ -50,7 +50,6 @@ export function ApprovalsClient() {
     const [selectedProfessional, setSelectedProfessional] = useState<PendingProfessional | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const { toast } = useToast();
-    const db = getFirestore();
 
     const fetchPendingProfessionals = useCallback(async () => {
         setLoading(true);
@@ -72,7 +71,7 @@ export function ApprovalsClient() {
         } finally {
             setLoading(false);
         }
-    }, [db]);
+    }, []);
 
     useEffect(() => {
         if (isAdmin) {

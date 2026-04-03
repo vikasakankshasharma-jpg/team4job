@@ -84,7 +84,7 @@ export default defineConfig({
     use: {
         /* Base URL to use in actions like `await page.goto('/')`. */
         /* Using port 3000 for local dev server consistency */
-        baseURL: process.env.BASE_URL || 'http://localhost:3000',
+        baseURL: process.env.BASE_URL || 'http://127.0.0.1:3000',
 
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
         trace: 'on-first-retry',
@@ -112,8 +112,8 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev',
-        url: 'http://localhost:3000',
+        command: 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
+        url: 'http://127.0.0.1:3000',
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',

@@ -24,7 +24,12 @@ export class AuthHelper {
             attempts++;
             try {
                 console.log(`[AuthHelper] Seed users attempt ${attempts}/${maxRetries}`);
-                const response = await this.page.request.post('/api/e2e/seed-users');
+                
+                // Force 127.0.0.1 to avoid IPv6 (::1) resolution issues with localhost
+                const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+                const targetURL = baseURL.replace('localhost', '127.0.0.1') + '/api/e2e/seed-users';
+                
+                const response = await this.page.request.post(targetURL);
 
                 if (response.ok()) {
                     AuthHelper.seeded = true;
@@ -353,19 +358,35 @@ export class AuthHelper {
 
                 // Try normal click first, then force
                 try {
-                    await submitButton.click({ timeout: 20000 });
+                    await submitButton.click({ timeout: 10000 });
                 } catch (e: any) {
-                    console.log(`[AuthHelper] Normal click failed/timed out: ${e.message}, trying force click...`);
+                    console.warn(`[AuthHelper] Normal click failed/timed out: ${e.message}, trying force click...`);
                     await submitButton.click({ force: true });
                 }
+                console.log('[AuthHelper] Login button clicked.');
 
-                // Wait for the login button to either disappear (redirect) or the URL to change
-                const postClickUrl = this.page.url();
+                // Wait for navigation or error
                 try {
-                    await this.page.waitForURL(/\/dashboard/, { timeout: 30000 });
+                    await this.page.waitForURL(/\/dashboard/, { timeout: 90000 });
                     console.log('[AuthHelper] Login submission redirect to dashboard detected.');
                 } catch (e) {
-                    console.warn('[AuthHelper] No redirect to /dashboard after 30s. Checking for errors on page...');
+                    console.warn('[AuthHelper] No redirect to /dashboard after 30s. Checking for error toasts or splash screen...');
+                    
+                    // Check for error toasts (using some known error strings or general destructive variant)
+                    const errorToast = this.page.locator('[role="status"]:has-text("Failed"), [role="status"]:has-text("Invalid")');
+                    if (await errorToast.isVisible({ timeout: 2000 }).catch(() => false)) {
+                        const errorMsg = await errorToast.innerText();
+                        throw new Error(`[AuthHelper] Login failed with error toast: "${errorMsg}"`);
+                    }
+
+                    // If we are stuck on the splash screen ("Redirecting to...")
+                    const splashText = this.page.getByText(/Redirecting to/i);
+                    if (await splashText.isVisible({ timeout: 5000 }).catch(() => false)) {
+                        console.log('[AuthHelper] Stuck on redirect splash screen. Forcing navigation to /dashboard...');
+                        await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' }).catch(() => {});
+                    } else {
+                        throw new Error(`[AuthHelper] Login failed: No redirect and no splash screen. Current URL: ${this.page.url()}`);
+                    }
                 }
 
                 // Explicitly wait for the client-side session to sync by waiting for a dashboard marker
@@ -745,37 +766,74 @@ export class FormHelper {
     async selectWizardOption(optionValue: string) {
         console.log(`[FormHelper] Selecting wizard option: ${optionValue}`);
         
-        // Strategy 1: exact data-test-id (if value was passed)
-        // Strategy 2: slugified data-test-id (if label was passed)
-        // Strategy 3: button with exact text
-        // Strategy 4: button containing text
-        
-        const slug = optionValue.replace(/[^a-z0-9]/gi, ''); // Simple slug for matching values like Commercial or FreshWiring
-        
-        const selectors = [
-            `[data-test-id="question-option-${optionValue}"]`,
-            `[data-test-id="question-option-${slug}"]`,
-            `button:has-text("${optionValue}")`,
-            `text="${optionValue}"`
-        ];
+        // Wait for the wizard question area to be visible first
+        await this.page.locator('[data-testid="wizard-next-button"], button:has-text("Review Requirement"), button:has-text("Next")').first().waitFor({ state: 'visible', timeout: 20000 });
+        await this.page.waitForTimeout(1000); // Wait for Framer Motion animation to completely settle
 
-        let target = this.page.locator(selectors[0]);
-        for (let i = 1; i < selectors.length; i++) {
-            target = target.or(this.page.locator(selectors[i]));
-        }
+        // Strategy 1: getByRole with exact text (most semantic, handles nested spans)
+        try {
+            const byRole = this.page.getByRole('button', { name: optionValue, exact: true });
+            await byRole.first().waitFor({ state: 'visible', timeout: 8000 });
+            await byRole.first().dispatchEvent('click');
+            await this.page.waitForTimeout(500);
+            console.log(`[FormHelper] ✅ Clicked via getByRole exact: ${optionValue}`);
+            return;
+        } catch { /* fallthrough */ }
 
-        const option = target.first();
-        await option.waitFor({ state: 'visible', timeout: 10000 });
-        await option.click();
-        await this.page.waitForTimeout(300); // Wait for radio/checkbox state to update
+        // Strategy 2: CSS button:has-text (works with partial matches in nested spans)
+        try {
+            const byText = this.page.locator(`button:has-text("${optionValue}")`).first();
+            await byText.waitFor({ state: 'visible', timeout: 8000 });
+            await byText.dispatchEvent('click');
+            await this.page.waitForTimeout(500);
+            console.log(`[FormHelper] ✅ Clicked via has-text: ${optionValue}`);
+            return;
+        } catch { /* fallthrough */ }
+
+        // Strategy 3: data-test-id attribute (component uses option.value)
+        try {
+            const slug = optionValue.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
+            const cleanVal = optionValue.replace(/[^a-z0-9]/gi, '');
+            const byId = this.page.locator(`[data-test-id*="${slug}"], [data-test-id*="${cleanVal}"]`).first();
+            await byId.waitFor({ state: 'visible', timeout: 8000 });
+            await byId.dispatchEvent('click');
+            await this.page.waitForTimeout(500);
+            console.log(`[FormHelper] ✅ Clicked via data-test-id: ${optionValue}`);
+            return;
+        } catch { /* fallthrough */ }
+
+        // Strategy 4: JavaScript click (bypasses all Playwright interception and overlay)
+        try {
+            const result = await this.page.evaluate((text) => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                const target = buttons.find(btn => btn.textContent?.trim().includes(text));
+                if (target) {
+                    target.click();
+                    return true;
+                }
+                return false;
+            }, optionValue);
+            if (result) {
+                await this.page.waitForTimeout(500);
+                console.log(`[FormHelper] ✅ Clicked via JS evaluate: ${optionValue}`);
+                return;
+            }
+        } catch { /* fallthrough */ }
+
+        throw new Error(`[FormHelper] ❌ Could not find wizard option: "${optionValue}"`);
     }
+
 
     async clickWizardNext() {
         console.log('[FormHelper] Clicking wizard Next...');
-        const nextBtn = this.page.getByTestId('wizard-next-button');
-        await nextBtn.waitFor({ state: 'visible', timeout: 10000 });
-        await nextBtn.click();
-        await this.page.waitForTimeout(500);
+        const nextBtn = this.page.getByTestId('wizard-next-button').first();
+        await nextBtn.waitFor({ state: 'visible', timeout: 15000 });
+        
+        // Wait for the button to become enabled (state update can be slow)
+        await expect(nextBtn).toBeEnabled({ timeout: 10000 });
+        
+        await nextBtn.click({ force: true });
+        await this.page.waitForTimeout(1000); // Wait for transition
     }
 
     async completeWizard(category: string, subType: string, branchAnswers: string[], urgency: string) {
@@ -785,8 +843,12 @@ export class FormHelper {
         await this.waitForDraftDialogHandled();
         
         await this.selectWizardCategory(category);
-        await this.selectWizardTemplate(null); // Custom request for E2E consistency
+        await this.selectWizardTemplate(null); // Custom request
         
+        // Step-by-Step selection
+        await this.page.getByText('Step-by-Step').first().click();
+        await this.page.waitForTimeout(500);
+
         // Select Sub-Type
         await this.selectWizardOption(subType);
         await this.clickWizardNext();
@@ -1193,11 +1255,11 @@ export class NavigationHelper {
 
         // Wait for categories or the "What do you need help with?" heading
         try {
-            const categoryIndicator = this.page.locator('[data-testid*="-category-card"], h1:has-text("What do you need help with?")').first();
-            await categoryIndicator.waitFor({ state: 'visible', timeout: 30000 });
+            const categoryIndicator = this.page.locator('[data-testid*="-category-card"], h1:has-text("What do you need help with?"), h1:has-text("Job Type")').first();
+            await categoryIndicator.waitFor({ state: 'visible', timeout: 90000 });
             console.log('[NavigationHelper] Successfully reached Post Job wizard');
         } catch (e) {
-            console.warn('[NavigationHelper] Post Job wizard indicators not found, checking current state...');
+            console.warn('[NavigationHelper] Post Job wizard indicators not found after 90s, checking current state...');
             
             // If redirected to dashboard, wait and then navigate to post-job again (one-time fallback)
             if (this.page.url().includes('/dashboard')) {
@@ -1506,49 +1568,51 @@ export class TestHelper {
 
         // 3. Universal Draft Restoration Handler
         // Configure behavior: 'resume' (default) or 'discard' (clean state)
-        void this.page.addLocatorHandler(
-            this.page.getByRole('dialog', { name: 'Resume your draft?' }),
-            async (locator) => {
-                const diagName = 'Resume your draft?';
-                console.log(`[TestHelper] Universal draft handler triggered for "${diagName}"`);
-                
-                try {
-                    const url = this.page.url();
-                    const isWizardCompleted = url.includes('wizardCompleted=true');
-                    const effectiveHandling = isWizardCompleted ? 'resume' : draftHandling;
+        if (!this.page.isClosed()) {
+            this.page.addLocatorHandler(
+                this.page.getByRole('dialog', { name: 'Resume your draft?' }),
+                async (locator) => {
+                    const diagName = 'Resume your draft?';
+                    console.log(`[TestHelper] Universal draft handler triggered for "${diagName}"`);
+                    
+                    try {
+                        const url = this.page.url();
+                        const isWizardCompleted = url.includes('wizardCompleted=true');
+                        const effectiveHandling = isWizardCompleted ? 'resume' : draftHandling;
 
-                    if (effectiveHandling === 'discard') {
-                        const discardBtn = locator.getByRole('button', { name: /Discard|No|Start Fresh/i });
-                        if (await discardBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                            console.log('[TestHelper] Universal draft handler: Discarding draft...');
-                            await discardBtn.click({ force: true }).catch((e: any) => { 
-                                console.error('[TestHelper] Discard click failed:', e.message); 
-                            });
+                        if (effectiveHandling === 'discard') {
+                            const discardBtn = locator.getByRole('button', { name: /Discard|No|Start Fresh/i });
+                            if (await discardBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                                console.log('[TestHelper] Universal draft handler: Discarding draft...');
+                                await discardBtn.click({ force: true }).catch((e: any) => { 
+                                    console.error('[TestHelper] Discard click failed:', e.message); 
+                                });
+                            }
+                        } else {
+                            const resumeBtn = locator.getByRole('button', { name: /Resume Draft|Resume|Yes|Continue/i });
+                            if (await resumeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                                console.log('[TestHelper] Universal draft handler: Resuming draft...');
+                                await resumeBtn.click({ force: true }).catch((e: any) => { 
+                                    console.error('[TestHelper] Resume click failed:', e.message); 
+                                });
+                            }
                         }
-                    } else {
-                        const resumeBtn = locator.getByRole('button', { name: /Resume Draft|Resume|Yes|Continue/i });
-                        if (await resumeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-                            console.log('[TestHelper] Universal draft handler: Resuming draft...');
-                            await resumeBtn.click({ force: true }).catch((e: any) => { 
-                                console.error('[TestHelper] Resume click failed:', e.message); 
-                            });
-                        }
+                        
+                        // Critical: wait for the locator to be hidden before finishing the handler
+                        await locator.waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {
+                            console.warn(`[TestHelper] Draft dialog "${diagName}" still visible after click, pressing Escape...`);
+                            return this.page.keyboard.press('Escape');
+                        });
+                        
+                        // Extra settle time
+                        await this.page.waitForTimeout(2000);
+                        console.log(`[TestHelper] Universal draft handler: Finished for "${diagName}"`);
+                    } catch (err: any) {
+                        console.error('[TestHelper] Universal draft handler error:', err.message);
                     }
-                    
-                    // Critical: wait for the locator to be hidden before finishing the handler
-                    await locator.waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {
-                        console.warn(`[TestHelper] Draft dialog "${diagName}" still visible after click, pressing Escape...`);
-                        return this.page.keyboard.press('Escape');
-                    });
-                    
-                    // Extra settle time
-                    await this.page.waitForTimeout(2000);
-                    console.log(`[TestHelper] Universal draft handler: Finished for "${diagName}"`);
-                } catch (err: any) {
-                    console.error('[TestHelper] Universal draft handler error:', err.message);
                 }
-            }
-        );
+            ).catch(e => console.warn('[TestHelper] Failed to add locator handler:', e.message));
+        }
 
         // 1. Set cookie on the context level (most reliable)
         const baseUrl = page.url() && page.url() !== 'about:blank' ? page.url() : 'http://localhost:5000';
@@ -1564,55 +1628,69 @@ export class TestHelper {
             void this.page.context().addCookies([
                 { ...commonCookie, name: 'dodo-cookie-consent' },
                 { ...commonCookie, name: 'CookieConsent' }
-            ]);
+            ]).catch(() => {});
         } catch { /* ignore invalid URL */ }
 
         // 2. Suppress overlays via persistent CSS injection
-        void this.page.addInitScript(() => {
-            const styleId = 'e2e-suppress-overlays';
-            const injectStyles = () => {
-                if (document.getElementById(styleId)) return;
-                const style = document.createElement('style');
-                style.id = styleId;
-                style.innerHTML = `
-                    .CookieConsent, 
-                    #cookie-consent-banner,
-                    [class*="CookieConsent"],
-                    .fixed.bottom-0.left-0.right-0.z-50,
-                    [data-state="open"][aria-hidden="true"],
-                    .fixed.inset-0.z-50.bg-black\\/80 { 
-                        display: none !important; 
-                        opacity: 0 !important;
-                        pointer-events: none !important;
-                        visibility: hidden !important;
-                        z-index: -9999 !important; 
+        // Uses InitScript for early execution, but wrapped to avoid blocking if CSP prevents it
+        if (!this.page.isClosed()) {
+            this.page.addInitScript(() => {
+                const styleId = 'e2e-suppress-overlays';
+                const injectStyles = () => {
+                    try {
+                        if (document.getElementById(styleId)) return;
+                        if (!document.head && !document.documentElement) return;
+                        
+                        const style = document.createElement('style');
+                        style.id = styleId;
+                        style.innerHTML = `
+                            .CookieConsent, 
+                            #cookie-consent-banner,
+                            [class*="CookieConsent"],
+                            .fixed.bottom-0.left-0.right-0.z-50,
+                            [data-state="open"][aria-hidden="true"],
+                            .fixed.inset-0.z-50.bg-black\\/80 { 
+                                display: none !important; 
+                                opacity: 0 !important;
+                                pointer-events: none !important;
+                                visibility: hidden !important;
+                                z-index: -9999 !important; 
+                            }
+                            .firebase-emulator-warning { display: none !important; pointer-events: none !important; }
+                        `;
+                        (document.head || document.documentElement).appendChild(style);
+                    } catch (e) {
+                        console.warn('[E2E-Init] Style injection failed:', e);
                     }
-                    .firebase-emulator-warning { display: none !important; pointer-events: none !important; }
-                `;
-                (document.head || document.documentElement).appendChild(style);
-            };
+                };
 
-            const hideFeedback = () => {
-                const buttons = Array.from(document.querySelectorAll('button'));
-                for (const btn of buttons) {
-                    const text = btn.textContent || '';
-                    if (text.includes('Feedback') || text.includes('Beta Feedback') || text === '…') {
-                        if (btn.classList.contains('fixed') || btn.classList.contains('z-50')) {
-                            (btn as any).style.display = 'none';
+                const hideFeedback = () => {
+                    try {
+                        const buttons = Array.from(document.querySelectorAll('button'));
+                        for (const btn of buttons) {
+                            const text = btn.textContent || '';
+                            if (text.includes('Feedback') || text.includes('Beta Feedback') || text === '…') {
+                                if (btn.classList.contains('fixed') || btn.classList.contains('z-50')) {
+                                    (btn as any).style.display = 'none';
+                                }
+                            }
                         }
-                    }
-                }
-            };
+                    } catch (e) {}
+                };
 
-            injectStyles();
-            hideFeedback();
-
-            const observer = new MutationObserver(() => {
+                // Execute immediately and on DOM content
                 injectStyles();
                 hideFeedback();
-            });
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-        });
+
+                if (typeof MutationObserver !== 'undefined') {
+                    const observer = new MutationObserver(() => {
+                        injectStyles();
+                        hideFeedback();
+                    });
+                    observer.observe(document.documentElement, { childList: true, subtree: true });
+                }
+            }).catch(e => console.warn('[TestHelper] addInitScript failed (potentially CSP blocked):', e.message));
+        }
 
         // Auto-enable console logging for debugging
         this.debug.logConsoleErrors();

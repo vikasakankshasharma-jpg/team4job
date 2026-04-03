@@ -798,6 +798,11 @@ export default function ProfileClient() {
     const { setHelp } = useHelp();
     const router = useRouter();
     const t = useTranslations('profile');
+    const [isMounted, setIsMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const fetchUser = useCallback(async () => {
         if (!user) return;
@@ -834,7 +839,7 @@ export default function ProfileClient() {
                                 <li><span className="font-semibold">{t('payoutSettings')}:</span> {t('payoutSettingsHelp')}</li>
                             </>
                         )}
-                        <li><span className="font-semibold">{t('becomeProfessionalclient')}:</span> {t('becomeProfessionalclientHelp')}</li>
+                        <li><span className="font-semibold">{t('becomeProfessionalClient')}:</span> {t('becomeProfessionalClientHelp')}</li>
                     </ul>
                 </div>
             )
@@ -852,7 +857,7 @@ export default function ProfileClient() {
         );
     }
 
-    if (!user || !db) {
+    if (!user || !db || !isMounted) {
         return <div>{t('userNotFound')}</div>
     }
 
@@ -895,16 +900,29 @@ export default function ProfileClient() {
     }
 
     const handleBecomeclient = async () => {
-        if (setUser && setRole && user && db) {
+        if (!setUser || !setRole || !user || !db) return;
+        
+        try {
             const userRef = doc(db, 'users', user.id);
-            await updateDoc(userRef, { roles: arrayUnion('Client') });
-            const updatedUser = { ...user, roles: [...user.roles, 'Client'] as User['roles'] };
-            setUser(updatedUser);
+            const currentRoles = Array.isArray(user.roles) ? user.roles : [];
+            if (!currentRoles.includes('Client')) {
+                const newRoles = [...currentRoles, 'Client'];
+                await updateDoc(userRef, { roles: newRoles });
+                const updatedUser = { ...user, roles: newRoles as User['roles'] };
+                setUser(updatedUser);
+            }
             setRole('Client');
             toast({
                 title: t('clientRoleActivated'),
                 description: t('clientRoleActivatedDesc'),
                 variant: "default",
+            });
+        } catch (error) {
+            console.error("Error updating role:", error);
+            toast({
+                title: "Error",
+                description: "Failed to activate Client role.",
+                variant: "destructive",
             });
         }
     };

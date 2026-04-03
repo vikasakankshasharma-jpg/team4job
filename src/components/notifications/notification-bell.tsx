@@ -7,7 +7,11 @@ import { NotificationList } from './notification-list';
 import { useRouter } from 'next/navigation';
 
 export function NotificationBell() {
-    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+    const notifyCtx = useNotifications();
+    const notifications = notifyCtx?.notifications || [];
+    const unreadCount = notifyCtx?.unreadCount || 0;
+    const markAsRead = notifyCtx?.markAsRead || (async () => {});
+    const markAllAsRead = notifyCtx?.markAllAsRead || (async () => {});
     const [open, setOpen] = useState(false);
     const router = useRouter();
 

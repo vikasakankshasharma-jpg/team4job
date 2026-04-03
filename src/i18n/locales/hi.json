@@ -1,7 +1,10 @@
 {
     "common": {
-        "adminSettings": "एडमिन सेटिंग्स",
-        "adminSettingsDesc": "उपयोगकर्ता अनुभव और व्यावसायिक तर्क के हर पहलू को कॉन्फ़िगर कर सकते हैं।",
+        "na": "N/A",
+        "postJob": "Post Job",
+        "dashboard": "Dashboard",
+        "next": "आगे",
+        "continue": "Continue",
         "back": "पीछे",
         "cancel": "रद्द करें",
         "save": "सेव करें",
@@ -10,26 +13,12 @@
         "loading": "लोड हो रहा है...",
         "search": "खोजें...",
         "filter": "फ़िल्टर",
-        "status": "स्थिति",
-        "actions": "कार्रवाई",
-        "view": "देखें",
-        "delete": "हटाएं",
-        "success": "सफल",
-        "error": "त्रुटि",
-        "noData": "कोई डेटा उपलब्ध नहीं",
-        "confirm": "पुष्टि करें",
-        "close": "बंद करें",
-        "next": "आगे",
-        "skip": "छोड़ें",
-        "finish": "समाप्त करें",
-        "optional": "वैकल्पिक",
-        "na": "N/A",
-        "postJob": "Post Job",
-        "dashboard": "Dashboard",
-        "continue": "Continue",
         "filters": "Filters",
         "filterBy": "Filter By",
         "sort": "Sort",
+        "delete": "हटाएं",
+        "confirm": "पुष्टि करें",
+        "close": "बंद करें",
         "yes": "Yes",
         "no": "No",
         "ok": "OK",
@@ -40,7 +29,9 @@
         "email": "Email",
         "phone": "Phone",
         "address": "Address",
+        "actions": "कार्रवाई",
         "resetFilters": "Reset Filters",
+        "status": "स्थिति",
         "date": "Date",
         "amount": "Amount",
         "total": "Total",
@@ -50,1018 +41,33 @@
         "updated": "Updated",
         "unbid": "Unbid",
         "loadMore": "Load More",
+        "error": "त्रुटि",
         "uploadFailed": "Upload Failed",
         "uploadFailedDesc": "Could not upload one or more files. Please try again.",
         "checkForm": "Check Form",
         "saving": "Saving...",
         "draftAutoSaved": "Draft auto-saved",
         "saved": "Saved successfully.",
-        "checkFormDesc": "Please check the form description and required fields."
-    },
-    "dashboard": {
-        "welcome": "स्वागत है, {name}!",
-        "welcomeUser": "वापसी पर स्वागत है, {name}!",
-        "welcomeGeneric": "स्वागत",
-        "roleHiring": "ग्राहक मोड",
-        "roleService": "सेवा प्रदाता मोड",
-        "roleAdmin": "एडमिन",
-        "verifyTitle": "एक सत्यापित प्रोफेशनल बनें",
-        "verifyDesc": "विश्वास बनाने और अधिक नौकरियां पाने के लिए आधार सत्यापन पूरा करें।",
-        "verifyButton": "अभी सत्यापित करें",
-        "findProjectTitle": "अपना अगला प्रोजेक्ट खोजें",
-        "findProjectDesc": "सैकड़ों पेशेवर सेवा प्रोजेक्ट ब्राउज़ करें और अपनी बोली लगाएं।",
-        "browseJobs": "जॉब ब्राउज़ करें",
-        "manageProfileTitle": "अपनी प्रोफ़ाइल प्रबंधित करें",
-        "manageProfileDesc": "अधिक जॉब देने वालों को आकर्षित करने के लिए अपने कौशल और प्रतिष्ठा को अपडेट रखें।",
-        "goToProfile": "प्रोफ़ाइल पर जाएँ",
-        "recommender": {
-            "neuralMatch": "न्यूरल मैच",
-            "aiPoweredDesc": "अपने कौशल और स्थान के आधार पर AI-संचालित जॉब सुझाव प्राप्त करें।",
-            "smartInvitesDesc": "\"स्मार्ट इनवाइट\" अनलॉक करें और 3x तेज़ी से जॉब देखें।",
-            "upgradeToUnlock": "अनलॉक करने के लिए अपग्रेड करें",
-            "topPicks": "आपके लिए टॉप पिक्स",
-            "refresh": "रिफ्रेश",
-            "analyzingMarketplace": "मार्केटप्लेस का विश्लेषण हो रहा है...",
-            "noMatches": "अभी कोई मैच नहीं",
-            "noMatchesDesc": "अभी कोई सटीक मैच नहीं मिला। बाद में दोबारा जांचें!",
-            "scanJobs": "जॉब स्कैन करें",
-            "matchScore": "{score}% मैच",
-            "budgetTbd": "बजट तय होना बाकी"
-        },
-        "recentActivityTitle": "हाल की गतिविधि",
-        "recentActivityDesc": "आपके नवीनतम कार्य और अपडेट।",
-        "loading": "लोड हो रहा है...",
-        "noRecentActivity": "कोई हालिया गतिविधि नहीं",
-        "noRecentActivityDesc": "आपके हाल के काम और लेनदेन यहाँ दिखाई देंगे।",
-        "metrics": {
-            "avgBids": "औसत बोलियां/जॉब",
-            "avgBidsTooltip": "प्रति जॉब आपको मिलने वाली बोलियों की औसत संख्या (पिछले 90 दिन)",
-            "timeToFirstBid": "पहली बोली का समय",
-            "timeToFirstBidTooltip": "पहली बोली प्राप्त करने से पहले का औसत समय",
-            "pendingReviews": "लंबित समीक्षाएं",
-            "pendingReviewsActionTooltip": "पूरे हुए जॉब्स की समीक्षा करने के लिए क्लिक करें",
-            "pendingReviewsNoneTooltip": "सभी पूरे हुए जॉब्स की समीक्षा की जा चुका है",
-            "yourNetwork": "आपका नेटवर्क",
-            "yourNetworkTooltip": "पेशेवर जिन्हें आपने पसंदीदा बनाया है। उन्हें देखने के लिए क्लिक करें।"
-        },
-        "support": {
-            "title": "सपोर्ट से संपर्क करें",
-            "description": "चुनें कि आप हमारी टीम से कैसे संपर्क करना चाहेंगे।",
-            "phoneLabel": "फ़ोन सपोर्ट",
-            "phoneDesc": "सोम-शुक्र, सुबह 9 बजे से शाम 6 बजे तक उपलब्ध",
-            "emailLabel": "ईमेल सपोर्ट",
-            "emailDesc": "सामान्य प्रतिक्रिया समय: 24 घंटे",
-            "emailButton": "हमें ईमेल करें",
-            "tooltip": "सपोर्ट से संपर्क करें",
-            "srOnly": "सपोर्ट"
-        }
-    },
-    "professional": {
-        "dashboard": {
-            "welcome": "वापसी पर स्वागत है, {name}",
-            "openJobs": "ओपन जॉब्स",
-            "openJobsDesc": "बोली लगाने के लिए उपलब्ध",
-            "myBids": "मेरी बोलियाँ",
-            "myBidsDesc": "आपके द्वारा लगाई गई बोलियाँ",
-            "jobsWon": "जीते हुए जॉब्स",
-            "jobsWonDesc": "आपको दिए गए जॉब्स",
-            "findNextProject": "अपना अगला प्रोजेक्ट ढूँढें",
-            "findNextProjectDesc": "सैकड़ों तकनीकी इंस्टॉलेशन जॉब्स ब्राउज़ करें और अपनी बोली लगाएं।",
-            "browseJobs": "जॉब ब्राउज़ करें",
-            "manageProfile": "अपना प्रोफ़ाइल प्रबंधित करें",
-            "manageProfileDesc": "अधिक जॉब गिवर्स को आकर्षित करने के लिए अपने कौशल और प्रतिष्ठा को अप-टू-डेट रखें।",
-            "goToProfile": "प्रोफ़ाइल पर जाएँ",
-            "totalEarnings": "कुल कमाई",
-            "totalEarningsDesc": "लाइफटाइम भुगतान संसाधित",
-            "projectedEarnings": "अनुमानित कमाई",
-            "projectedEarningsDesc": "वर्तमान में सुरक्षित जमा में बंद फंड",
-            "guide": {
-                "title": "पेशेवर डैशबोर्ड गाइड",
-                "welcome": "आपके डैशबोर्ड में आपका स्वागत है! यह प्लेटफ़ॉर्म पर आपके काम को प्रबंधित करने का आपका केंद्रीय केंद्र है।",
-                "openJobsLabel": "ओपन जॉब्स:",
-                "openJobsDesc": "यह बोली लगाने के लिए वर्तमान में उपलब्ध जॉब्स की कुल संख्या दिखाता है। अपना अगला अवसर खोजने के लिए इस पर क्लिक करें।",
-                "myBidsLabel": "मेरी बोलियाँ:",
-                "myBidsDesc": "आपके द्वारा बोली लगाए गए सभी कार्यों और उनकी वर्तमान स्थिति (Bidded, Awarded, आदि) को ट्रैक करता है। अपना बोली इतिहास देखने के लिए क्लिक करें।",
-                "jobsWonLabel": "जीते हुए जॉब्स:",
-                "jobsWonDesc": "उन कार्यों की संख्या दिखाता है जिन्हें आपने जीता है और जो वर्तमान में सक्रिय या प्रगति पर हैं।",
-                "projectedEarningsLabel": "अनुमानित कमाई:",
-                "projectedEarningsDesc": "उन कार्यों का कुल मूल्य जो वर्तमान में \"Funded\" (Locked) स्थिति में हैं और जिन पर आप काम कर रहे हैं।",
-                "verificationLabel": "सत्यापन:",
-                "verificationDesc": "एक विश्वसनीय पेशेवर बनने और जॉब्स जीतने की संभावना बढ़ाने के लिए अपना आधार सत्यापन पूरा करें।",
-                "findProjectLabel": "अपना अगला प्रोजेक्ट ढूँढें:",
-                "findProjectDesc": "जॉब ब्राउज़िंग पेज पर सीधे जाने के लिए एक त्वरित लिंक।",
-                "bottomText": "बाईं ओर नेविगेशन का उपयोग करके अन्य अनुभागों तक पहुँचें जैसे कि आपकी प्रोफ़ाइल, जहाँ आप अपनी प्रतिष्ठा और कौशल को ट्रैक कर सकते हैं।"
-            }
-        }
-    },
-    "client": {
-        "dashboard": {
-            "welcome": "स्वागत है, {name}!",
-            "dashboardDesc": "अपनी जॉब्स प्रबंधित करें और एस्क्रो सुरक्षा सहित खर्चों को ट्रैक करें।",
-            "activeJobs": "सक्रिय जॉब्स",
-            "activeJobsDesc": "आपके द्वारा पोस्ट की गई जॉब्स जो अभी तक पूरी नहीं हुई हैं",
-            "fundsInEscrow": "सुरक्षित जमा में फंड",
-            "fundsInEscrowDesc": "सक्रिय कार्यों के लिए आपके द्वारा वर्तमान में सुरक्षित लॉक में जमा की गई कुल राशि।",
-            "completedJobs": "पूरे हुए जॉब्स",
-            "completedJobsDesc": "अपने सभी सफलतापूर्वक पूरे किए गए प्रोजेक्ट्स का इतिहास देखें।",
-            "openDisputes": "खुले विवाद",
-            "openDisputesDesc": "विवाद जिन्हें समाधान की आवश्यकता है",
-            "needसेवा प्रदाता": "एक पेशेवर की आवश्यकता है?",
-            "needसेवा प्रदाताDesc": "एक जॉब पोस्ट करें और सत्यापित तकनीकी पेशेवरों से बोलियाँ प्राप्त करें।",
-            "manageJobs": "अपनी जॉब्स प्रबंधित करें",
-            "manageJobsDesc": "बोलियों की समीक्षा करें, प्रोजेक्ट आवंटित करें और अपनी सक्रिय जॉब्स को एक ही स्थान पर प्रबंधित करें।",
-            "goToMyJobs": "मेरी जॉब्स पर जाएँ",
-            "postNewJob": "नई जॉब पोस्ट करें",
-            "guide": {
-                "title": "जॉब गिवर डैशबोर्ड गाइड",
-                "welcome": "आपके डैशबोर्ड में आपका स्वागत है! यह पेशेवरों को काम पर रखने और प्रबंधित करने का आपका नियंत्रण केंद्र है।",
-                "activeJobsLabel": "सक्रिय जॉब्स:",
-                "activeJobsDesc": "यह आपके द्वारा पोस्ट की गई जॉब्स की संख्या दिखाता है जो वर्तमान में बोली लगाने के लिए खुली हैं या प्रगति पर हैं। उन्हें प्रबंधित करने के लिए क्लिक करें।",
-                "fundsEscrowLabel": "सुरक्षित जमा में फंड:",
-                "fundsInEscrowDesc": "सक्रिय कार्यों के लिए सुरक्षित लॉक में आपके द्वारा वर्तमान में जमा की गई कुल राशि।",
-                "totalBidsLabel": "कुल प्राप्त बोलियाँ:",
-                "totalBidsDesc": "अपने सभी जॉब पोस्टिंग पर प्राप्त बोलियों की कुल संख्या देखें।",
-                "completedJobsLabel": "पूरे हुए जॉब्स:",
-                "completedJobsDesc": "अपने सभी सफलतापूर्वक पूरे किए गए प्रोजेक्ट्स का इतिहास देखें। अपने संग्रहीत कार्यों को देखने के लिए क्लिक करें।",
-                "needसेवा प्रदाताLabel": "पेशेवर की आवश्यकता है?:",
-                "needसेवा प्रदाताDesc": "नई जॉब पोस्ट करने और पेशेवरों से बोलियाँ प्राप्त करने का एक शॉर्टकट।",
-                "bottomText": "बाईं ओर नेविगेशन का उपयोग करके अन्य अनुभागों तक पहुँचें, जैसे कि आपकी सक्रिय पोस्टिंग पर बोलियों की समीक्षा करने के लिए \"मेरी जॉब्स\"।"
-            }
-        }
-    },
-    "support": {
-        "dashboard": {
-            "welcome": "सपोर्ट डैशबोर्ड",
-            "openDisputes": "खुले विवाद",
-            "openDisputesDesc": "नए मामले जिन पर ध्यान देने की आवश्यकता है",
-            "underReview": "समीक्षाधीन",
-            "underReviewDesc": "विवाद जिनकी आप वर्तमान में जांच कर रहे हैं",
-            "disputeCenter": "विवाद केंद्र",
-            "disputeCenterDesc": "प्लेटफ़ॉर्म पर सभी उपयोगकर्ता-सबमिट किए गए विवादों की समीक्षा करें, प्रबंधित करें और उनका समाधान करें।",
-            "goToDisputes": "विवादों पर जाएँ",
-            "guide": {
-                "title": "सपोर्ट डैशबोर्ड गाइड",
-                "welcome": "सपोर्ट डैशबोर्ड में आपका स्वागत है। आपका प्राथमिक ध्यान उपयोगकर्ता विवादों को प्रबंधित करने और उनका समाधान करने पर है।",
-                "openDisputes": "खुले विवाद:",
-                "openDisputesDesc": "ये नए मामले हैं जिन पर आपके तत्काल ध्यान देने की आवश्यकता है।",
-                "underReview": "समीक्षाधीन:",
-                "underReviewDesc": "ये विवाद हैं जिनकी आप सक्रिय रूप से जांच कर रहे हैं।",
-                "performance": "प्रदर्शन:",
-                "performanceDesc": "यह कार्ड आपके व्यक्तिगत विवाद समाधान मेट्रिक्स दिखाता है, जिससे आपको अपनी प्रगति ट्रैक करने में मदद मिलती।",
-                "bottomText": "विवाद केंद्र पर जाने और मामलों को हल करना शुरू करने के लिए स्टेट कार्ड पर क्लिक करें।"
-            }
-        }
-    },
-    "admin": {
-        "dashboard": {
-            "welcome": "Admin Console",
-            "totalUsers": "Total Registered Users",
-            "totalJobs": "Transaction Volume (Jobs)",
-            "activeDisputes": "Active Disputes",
-            "valueReleased": "Total Funds Released",
-            "recentSignups": "Recent Signups",
-            "unknownUser": "Unidentified User",
-            "guide": {
-                "title": "Admin Console Overview",
-                "welcome": "Welcome to the Platform Administration Console. Monitor real-time platform metrics and operational health.",
-                "totalUsers": "Cumulative count of all users registered on the platform.",
-                "totalJobs": "The total number of job listings processed by the system.",
-                "activeDisputes": "Current unresolved disputes requiring administrative review.",
-                "valueReleased": "Total monetary value successfully disbursed to professionals.",
-                "financialSummary": "Consolidated view of platform fees and transaction flow.",
-                "topPerformers": "सेवा प्रदाताs with the highest reputation and successful completion rates.",
-                "userGrowth": "Platform adoption trends over the previous 6 months."
-            },
-            "title": "एडमिन डैशबोर्ड"
-        },
-        "financials": {
-            "title": "Platform Financial Summary",
-            "totalVolume": "Cumulative Transaction Volume",
-            "revenue": "Platform Net Revenue",
-            "released": "Successful Funds Disbursed",
-            "held": "Funds Currently in Escrow"
-        },
-        "title": "Admin Dashboard",
-        "description": "Platform overview and operational management.",
-        "subscriptionPlansLabel": "Subscription Plans",
-        "couponsLabel": "Coupons",
-        "viewUsers": "View Users",
-        "manageUsers": "Manage all platform users",
-        "allJobsLabel": "All Jobs",
-        "monitorJobs": "Monitor all job postings",
-        "disputesLabel": "Disputes",
-        "resolveDisputes": "Resolve user disputes",
-        "reportsLabel": "Reports",
-        "viewAnalytics": "View analytics & reports",
-        "allSystemsOperational": "All Systems Operational",
-        "systemIssuesDetected": "System Issues Detected",
-        "quickActions": "Quick Actions",
-        "commonTasks": "Common administrative tasks",
-        "activeJobs": "Active Jobs",
-        "currentlyOperational": "Currently operational",
-        "openDisputes": "Active Disputes",
-        "requireAttention": "Requiring attention",
-        "totalUsers": "Total Users",
-        "registeredPlatform": "Registered on platform",
-        "newUsersToday": "New Users Today",
-        "sinceMidnight": "Since midnight",
-        "jobsPostedToday": "Jobs Posted Today",
-        "last24Hours": "In the last 24 hours",
-        "jobsThisWeek": "Jobs This Week",
-        "users": {
-            "title": "उपयोगकर्ता प्रबंधन",
-            "description": "View and manage all registered users on the platform ({count} shown).",
-            "badges": {
-                "suspended": "Suspended",
-                "deactivated": "Deactivated",
-                "active": "Active",
-                "verified": "Verified"
-            },
-            "table": {
-                "user": "User / ID",
-                "status": "Status",
-                "memberSince": "Member Since",
-                "tier": "Tier",
-                "actions": "Actions"
-            },
-            "actions": {
-                "viewProfile": "View Profile",
-                "markVerified": "Mark as Verified",
-                "deactivate": "Deactivate",
-                "suspend": "Suspend (7 Days)",
-                "reactivate": "Re-activate",
-                "delete": "Delete Permanently"
-            },
-            "guide": {
-                "title": "User Management Guide",
-                "intro": "Use this page to monitor and manage user accounts.",
-                "filteringTitle": "Filtering:",
-                "filtering": "Use the filter bar to find users by role, status, or verification.",
-                "exportTitle": "Export:",
-                "export": "Download use data in CSV or JSON format.",
-                "statusTitle": "Status:",
-                "actionsTitle": "Actions:",
-                "actions": "Use the action menu to verify, suspend, or delete users.",
-                "viewProfileTitle": "View Profile:",
-                "viewProfile": "Click a user's name to view their full activity and history.",
-                "activeTitle": "Active:",
-                "active": "Users with full access to the platform.",
-                "suspendedTitle": "Suspended:",
-                "suspended": "Temporary restriction (usually due to policy violations).",
-                "deactivatedTitle": "Deactivated:",
-                "deactivated": "User has closed their account or been banned."
-            },
-            "messages": {
-                "userSuspended": "User Suspended",
-                "userSuspendedDesc": "{name} has been suspended for {days} days.",
-                "userReactivated": "User Reactivated",
-                "userReactivatedDesc": "{name}'s account is now active.",
-                "userDeactivated": "User Deactivated",
-                "userDeactivatedDesc": "{name}'s account has been deactivated.",
-                "userUpdated": "User Updated",
-                "userUpdatedDesc": "User profile has been updated successfully.",
-                "userDeleted": "User Deleted",
-                "userDeletedDesc": "{name} has been permanently deleted.",
-                "error": "Error",
-                "errorDesc": "Failed to update user status."
-            },
-            "tabs": {
-                "all": "All ({count})",
-                "professionals": "सेवा प्रदाताs ({count})",
-                "clients": "Clients ({count})",
-                "pending": "Pending Verification ({count})"
-            },
-            "filters": {
-                "search": "Search Users",
-                "searchPlaceholder": "Name, email, or ID...",
-                "role": "Role",
-                "allRoles": "All Roles",
-                "professional": "सेवा प्रदाता",
-                "client": "Client",
-                "admin": "Admin",
-                "support": "Support Team",
-                "status": "Status",
-                "active": "Active",
-                "suspended": "Suspended",
-                "deactivated": "Deactivated"
-            },
-            "stats": {
-                "totalUsers": "कुल उपयोगकर्ता",
-                "active": "{count} सक्रिय",
-                "professionals": "सत्यापित सेवा प्रदाता",
-                "verified": "{count} सत्यापित",
-                "clients": "ग्राहक",
-                "clientsTotal": "कुल ग्राहक",
-                "newToday": "आज नए",
-                "joined": "{count} आज शामिल हुए"
-            },
-            "a11y": {
-                "actionsFor": "Actions for {name}"
-            }
-        },
-        "verifyसेवा प्रदाता": {
-            "title": "Become a Verified सेवा प्रदाता",
-            "description": {
-                "enterAadhar": "Verify your identity using Aadhar to create an professional profile.",
-                "enterOtp": "An OTP has been sent to your Aadhar-linked mobile number. Enter it below.",
-                "selectSkills": "Verification complete! Now, select your skills to finish setting up your professional profile.",
-                "enterBusinessProof": "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."
-            },
-            "steps": {
-                "aadhar": {
-                    "label": "Aadhar Number",
-                    "placeholder": "Enter your 12-digit Aadhar number",
-                    "helperTextApi": "An OTP will be sent to your linked mobile number.",
-                    "helperTextManual": "This will be manually verified by our team.",
-                    "buttonApi": "Send OTP",
-                    "buttonNext": "Next",
-                    "validation": "Aadhar number must be 12 digits."
-                },
-                "otp": {
-                    "label": "One-Time Password (OTP)",
-                    "placeholder": "Enter the 6-digit OTP",
-                    "description": "Enter the OTP sent to your mobile.",
-                    "button": "Verify",
-                    "validation": "OTP must be 6 digits.",
-                    "manualTitle": "Confirm Submission",
-                    "manualDesc": "Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.",
-                    "manualButton": "Confirm & Continue",
-                    "manualToastTitle": "Submitted",
-                    "manualToastDesc": "Proceeding to skills selection."
-                },
-                "skills": {
-                    "title": "Select Your Skills",
-                    "subtitle": "Choose all that apply. This helps in matching you with the right jobs.",
-                    "button": "Next: Business Proof",
-                    "validation": "Please select at least one skill."
-                },
-                "business": {
-                    "gstLabel": "GST Number (Optional)",
-                    "gstPlaceholder": "Enter your 15-digit GSTIN",
-                    "photoLabel": "Shop/Business Photo URL (Optional)",
-                    "photoPlaceholder": "Enter a URL to your shop photo",
-                    "photoHelper": "Proof of physical shop enhances trust with ग्राहकs.",
-                    "buttonFinish": "Finish & Get Pro",
-                    "buttonSkip": "Skip & Start as Freelancer"
-                }
-            },
-            "alerts": {
-                "otpSent": "OTP Sent",
-                "verificationSuccess": "Verification Successful",
-                "verificationSuccessDesc": "Please select your skills to complete the process.",
-                "verificationFailed": "Verification Failed",
-                "skillsSaved": "Skills Saved!",
-                "skillsSavedDesc": "One last step: add business proof to get 'Pro' status (optional).",
-                "gstVerified": "GST Verified!",
-                "gstCheckError": "Could not verify GSTIN. Please check or try again.",
-                "profileActivated": "सेवा प्रदाता Profile Activated!",
-                "profileActivatedDesc": "Congrats! You are now a verified सेवा प्रदाता.",
-                "profileSubmitted": "Profile Submitted!",
-                "profileSubmittedDesc": "Your professional profile is pending manual verification. You will be notified once approved.",
-                "detailsRecorded": "Details Recorded",
-                "detailsRecordedDesc": "Please confirm your details.",
-                "error": "Error",
-                "failedToInitiate": "Failed to initiate verification",
-                "unexpectedError": "An unexpected error occurred. Please try again.",
-                "updateError": "Failed to create professional profile. Please try again."
-            },
-            "help": {
-                "title": "Become a Verified सेवा प्रदाता",
-                "contentIntro": "This secure process verifies your identity and adds the \"सेवा प्रदाता\" role to your profile.",
-                "itemAadhar": "Aadhar OTP:",
-                "itemAadharDesc": "First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile.",
-                "itemSkills": "Select Skills:",
-                "itemSkillsDesc": "After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.",
-                "contentOutro": "Once completed, you'll be able to switch to your सेवा प्रदाता role and start bidding on jobs."
-            }
-        },
-        "allJobs": {
-            "title": "All Jobs",
-            "description": "{count} jobs shown • {bidding} bidding, {direct} direct",
-            "stats": {
-                "total": "Total Jobs",
-                "totalDesc": "All jobs posted",
-                "active": "Active Jobs",
-                "activeDesc": "Currently open/in-progress",
-                "completed": "Completed",
-                "completedDesc": "Successfully finished",
-                "disputed": "Disputed",
-                "disputedDesc": "Require attention"
-            },
-            "tabs": {
-                "all": "All",
-                "active": "Active",
-                "completed": "Completed",
-                "disputed": "Disputed"
-            },
-            "filters": {
-                "jobIdLabel": "Job Title",
-                "jobIdPlaceholder": "Filter by Job Title...",
-                "statusLabel": "Status",
-                "allStatuses": "All Statuses",
-                "typeLabel": "Job Type",
-                "allTypes": "All Types"
-            },
-            "table": {
-                "title": "Job Title",
-                "status": "Status",
-                "giver": "ग्राहक",
-                "bids": "Bids",
-                "type": "Job Type",
-                "posted": "Posted"
-            },
-            "common": {
-                "na": "N/A"
-            },
-            "buttons": {
-                "export": "Export to CSV",
-                "reset": "Reset Filters",
-                "loadMore": "Load More Jobs",
-                "loadingMore": "Loading more..."
-            },
-            "empty": {
-                "noJobs": "No jobs found",
-                "tryAdjusting": "Try adjusting your filters or search criteria",
-                "loading": "Loading jobs...",
-                "wait": "Please wait while we fetch the job list"
-            },
-            "help": {
-                "title": "All Jobs",
-                "intro": "This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.",
-                "filters": "Filters:",
-                "filtersDesc": "Use the filter bar to narrow down jobs by status, type, or search by title.",
-                "sort": "Sorting:",
-                "sortDesc": "Click on column headers to sort the table.",
-                "export": "Export:",
-                "exportDesc": "Download the current view as a CSV file for external analysis.",
-                "details": "Job Details:",
-                "detailsDesc": "Click on any row to view the full details of that job."
-            }
-        },
-        "auditLogs": {
-            "title": "Admin Audit Log",
-            "description": "{count} actions shown • Chronological record of all admin actions",
-            "stats": {
-                "total": "Total Actions",
-                "totalDesc": "Last 100 actions",
-                "today": "Today",
-                "todayDesc": "Actions performed today",
-                "week": "This Week",
-                "weekDesc": "Last 7 days"
-            },
-            "table": {
-                "timestamp": "Timestamp",
-                "admin": "Admin",
-                "action": "Action",
-                "target": "Target",
-                "details": "Details"
-            },
-            "filters": {
-                "searchLabel": "Search",
-                "searchPlaceholder": "Search by admin, action, or target...",
-                "actionTypeLabel": "Action Type",
-                "allActions": "All Actions"
-            },
-            "empty": {
-                "title": "No audit logs found",
-                "description": "No admin actions match your current filters"
-            },
-            "actions": {
-                "USER_SUSPENDED": "User Suspended",
-                "USER_ACTIVATED": "User Activated",
-                "USER_DELETED": "User Deleted",
-                "USER_VERIFIED": "User Verified",
-                "JOB_DELETED": "Job Deleted",
-                "JOB_FLAGGED": "Job Flagged",
-                "DISPUTE_RESOLVED": "Dispute Resolved",
-                "REFUND_PROCESSED": "Refund Processed",
-                "SETTINGS_CHANGED": "Settings Changed",
-                "TEAM_MEMBER_ADDED": "Team Member Added",
-                "TEAM_MEMBER_REMOVED": "Team Member Removed",
-                "SUBSCRIPTION_GRANTED": "Subscription Granted",
-                "COUPON_CREATED": "Coupon Created",
-                "BLACKLIST_UPDATED": "Blacklist Updated"
-            },
-            "helper": {
-                "viewTarget": "View {target}",
-                "noDetails": "No additional details",
-                "booleanYes": "Yes",
-                "booleanNo": "No"
-            }
-        },
-        "pendingSignups": {
-            "title": "Pending Signups CRM",
-            "description": "Manage and follow up with incomplete signups",
-            "refresh": "Refresh",
-            "stats": {
-                "total": "Total Pending",
-                "new": "New Leads",
-                "contacted": "Contacted",
-                "followUp": "Follow Up",
-                "highPriority": "High Priority",
-                "today": "Follow Up Today",
-                "overdue": "Overdue",
-                "denied": "Denied"
-            },
-            "tabs": {
-                "all": "All Pending",
-                "today": "Today's Follow-ups",
-                "overdue": "Overdue",
-                "highPriority": "High Priority"
-            },
-            "filters": {
-                "search": "Search",
-                "searchPlaceholder": "Search by mobile, email, or name...",
-                "status": "Status",
-                "allStatuses": "All Statuses",
-                "priority": "Priority",
-                "allPriorities": "All Priorities",
-                "role": "Role",
-                "allRoles": "All Roles",
-                "professional": "सेवा प्रदाता",
-                "client": "ग्राहक"
-            },
-            "table": {
-                "contact": "Contact",
-                "status": "Status",
-                "priority": "Priority",
-                "role": "Role",
-                "followUp": "Follow-Up",
-                "lastActive": "Last Active",
-                "attempts": "Attempts",
-                "actions": "Actions"
-            },
-            "actions": {
-                "call": "Call",
-                "sms": "SMS",
-                "email": "Email",
-                "schedule": "Schedule Follow-Up",
-                "markDenied": "Mark as Denied",
-                "viewTimeline": "View Activity Timeline",
-                "setPriority": "Set Priority"
-            },
-            "dialogs": {
-                "schedule": {
-                    "title": "Schedule Follow-Up",
-                    "description": "Schedule a follow-up call with {name}",
-                    "date": "Follow-Up Date",
-                    "pickDate": "Pick a date",
-                    "time": "Time",
-                    "priority": "Priority",
-                    "nextAction": "Next Action",
-                    "nextActionPlaceholder": "e.g., Follow up call, Send pricing info",
-                    "notes": "Notes",
-                    "notesPlaceholder": "Add any notes about this follow-up...",
-                    "cancel": "Cancel",
-                    "submit": "Schedule Follow-Up"
-                },
-                "deny": {
-                    "title": "Mark as Denied",
-                    "description": "Record why {name} declined to sign up",
-                    "reason": "Denial Reason",
-                    "customReason": "Specify Reason",
-                    "customReasonPlaceholder": "Please specify the reason...",
-                    "notes": "Additional Notes",
-                    "notesPlaceholder": "Add any additional context about why they declined...",
-                    "cancel": "Cancel",
-                    "submit": "Mark as Denied",
-                    "reasons": {
-                        "not_interested": "Not Interested",
-                        "too_expensive": "Too Expensive",
-                        "found_alternative": "Found Alternative Solution",
-                        "technical_issues": "Technical Issues",
-                        "trust_concerns": "Trust/Security Concerns",
-                        "other": "Other Reason"
-                    }
-                },
-                "timeline": {
-                    "title": "Activity Timeline",
-                    "description": "Complete contact history for {name}",
-                    "empty": "No activity recorded yet",
-                    "by": "by {name}",
-                    "next": "Next: {action}",
-                    "followUp": "Follow-up: {date}"
-                }
-            },
-            "badges": {
-                "status": {
-                    "new": "New Lead",
-                    "contacted": "Contacted",
-                    "follow_up": "Follow-Up Scheduled",
-                    "busy": "Busy - Reschedule",
-                    "denied": "Denied",
-                    "converted": "Converted"
-                },
-                "priority": {
-                    "high": "High",
-                    "medium": "Medium",
-                    "low": "Low"
-                }
-            }
-        },
-        "systemHealth": {
-            "title": "System Health & Observability",
-            "description": "Real-time pulse of the platform.",
-            "cards": {
-                "stuckJobs": "Stuck Jobs",
-                "stuckJobsDesc": "Inactive for > 7 days",
-                "recentErrors": "Recent Errors",
-                "recentErrorsDesc": "Last 10 events captured",
-                "businessEvents": "Business Events",
-                "businessEventsDesc": "Recent transactions/actions",
-                "systemStatus": "System Status",
-                "systemStatusDesc": "No outages detected",
-                "operational": "Operational",
-                "noOutages": "No outages detected"
-            },
-            "sections": {
-                "recentErrors": "Recent System Errors",
-                "recentBusinessEvents": "Recent Business Events",
-                "stuckJobs": "Stuck Jobs",
-                "stuckJobsDesc": "Jobs active but not updated in 7+ days. Requires attention."
-            },
-            "table": {
-                "jobTitle": "Job Title",
-                "status": "Status",
-                "lastUpdated": "Last Updated",
-                "client": "ग्राहक",
-                "action": "Action",
-                "inspect": "Inspect",
-                "allHealthy": "All active jobs are healthy."
-            },
-            "empty": {
-                "noErrors": "No recent errors.",
-                "noEvents": "No events found."
-            },
-            "loading": "Loading system health..."
-        },
-        "subscriptionPlans": {
-            "title": "Subscription Plans",
-            "description": "Manage platform subscription tiers and pricing.",
-            "tabs": {
-                "active": "Active Plans",
-                "archived": "Archived",
-                "create": "Create Plan"
-            },
-            "table": {
-                "name": "Plan Name",
-                "price": "Price",
-                "interval": "Interval",
-                "status": "Status",
-                "actions": "Actions"
-            },
-            "form": {
-                "name": "Name",
-                "description": "Description",
-                "price": "Price (₹)",
-                "interval": "Billing Interval",
-                "features": "Features (comma separated)",
-                "submit": "Save Plan",
-                "cancel": "Cancel"
-            },
-            "actions": {
-                "edit": "Edit",
-                "archive": "Archive",
-                "delete": "Delete",
-                "activate": "Activate"
-            },
-            "messages": {
-                "saved": "Plan saved successfully.",
-                "archived": "Plan moved to archives.",
-                "deleted": "Plan permanently deleted.",
-                "activated": "Plan is now active.",
-                "error": "Failed to update plan."
-            }
-        },
-        "coupons": {
-            "title": "Promotional Coupons",
-            "description": "Create and manage discount codes for platform services.",
-            "refresh": "Refresh",
-            "create": "Create New Coupon",
-            "table": {
-                "code": "Coupon Code",
-                "discount": "Discount",
-                "expiry": "Expiry Date",
-                "status": "Status",
-                "usage": "Usage Count"
-            },
-            "empty": "No coupons found.",
-            "emptyCreate": "No coupons found. Create your first one to get started.",
-            "form": {
-                "code": "Coupon Code",
-                "type": "Discount Type",
-                "value": "Discount Value",
-                "minSpend": "Minimum Spend (₹)",
-                "maxDiscount": "Max Discount (₹)",
-                "expiry": "Expiry Date",
-                "usageLimit": "Total Usage Limit",
-                "submit": "Create Coupon",
-                "cancel": "Cancel"
-            },
-            "types": {
-                "percentage": "Percentage (%)",
-                "fixed": "Fixed Amount (₹)"
-            },
-            "messages": {
-                "created": "Coupon created successfully.",
-                "deleted": "Coupon deleted.",
-                "error": "Failed to process coupon.",
-                "isActive": "Active",
-                "isActiveDesc": "Users can only redeem active coupons.",
-                "isInactive": "Inactive"
-            }
-        },
-        "blacklist": {
-            "title": "Current Blacklist",
-            "description": "A list of all currently blacklisted users and pincodes.",
-            "empty": "The blacklist is currently empty.",
-            "add": {
-                "title": "Add to Blacklist",
-                "description": "Add a user ID or a pincode to the blacklist to restrict their access or visibility.",
-                "label": "Value",
-                "placeholder": "Enter User ID or Pincode",
-                "type": "Entry Type",
-                "reason": "Reason for Blacklisting",
-                "submit": "Blacklist",
-                "success": "Added to Blacklist",
-                "successDesc": "Successfully blacklisted {{type}}: {{value}}.",
-                "failed": "Failed to add blacklist entry."
-            },
-            "table": {
-                "type": "Type",
-                "value": "Value",
-                "addedAt": "Added On",
-                "addedBy": "Added By",
-                "reason": "Reason",
-                "actions": "Actions"
-            },
-            "types": {
-                "user": "User ID",
-                "pincode": "Pincode"
-            },
-            "actions": {
-                "reason": "View Reason",
-                "reasonTitle": "Blacklist Reason",
-                "reasonPlaceholder": "Explain why this entry is being added to the blacklist...",
-                "remove": "Remove",
-                "removeTitle": "Remove from Blacklist",
-                "removeDescription": "This will restore access/visibility for this entry. Are you sure?",
-                "removeConfirm": "Confirm Removal",
-                "removeCancel": "Cancel",
-                "removeTooltip": "Remove from blacklist",
-                "confirmRemove": "Are you sure you want to remove \"{{value}}\" from the blacklist?",
-                "success": "Removed from Blacklist",
-                "removedDesc": "\"{{value}}\" has been removed from the blacklist.",
-                "failed": "Failed to remove entry."
-            }
-        },
-        "signupAnalytics": {
-            "title": "Signup Analytics",
-            "description": "Conversion funnel and outreach effectiveness metrics",
-            "accessDenied": "Access denied. Admin only.",
-            "loadingError": "Failed to load analytics data",
-            "error": "Error",
-            "cards": {
-                "totalStarted": "Total Started",
-                "attempts": "Signup attempts",
-                "conversionRate": "Conversion Rate",
-                "converted": "converted",
-                "biggestDropOff": "Biggest Drop-Off",
-                "step": "Step",
-                "dropRate": "drop rate",
-                "outreachImpact": "Outreach Impact",
-                "improvement": "Improvement",
-                "decrease": "Decrease"
-            },
-            "funnel": {
-                "title": "Signup Funnel",
-                "description": "User drop-off at each step of the signup process",
-                "stages": {
-                    "started": "Started",
-                    "step1": "Step 1",
-                    "step2": "Step 2",
-                    "step3": "Step 3",
-                    "converted": "Converted"
-                }
-            },
-            "outreach": {
-                "title": "Outreach Effectiveness",
-                "description": "Conversion rate comparison: contacted vs non-contacted users",
-                "contacted": "Contacted Users",
-                "nonContacted": "Non-Contacted Users",
-                "labels": {
-                    "contacted": "Contacted",
-                    "notContacted": "Not Contacted",
-                    "conversionRate": "Conversion Rate",
-                    "total": "Total"
-                },
-                "stats": {
-                    "total": "Total: {{count}}",
-                    "converted": "Converted: {{count}}"
-                }
-            },
-            "roles": {
-                "title": "Role Distribution",
-                "description": "Breakdown of pending signups by role",
-                "professional": "सेवा प्रदाताs",
-                "client": "ग्राहकs",
-                "unknown": "Unknown"
-            }
-        },
-        "alerts": {
-            "postedThisWeek": "Posted this week",
-            "completedThisWeek": "Completed This Week",
-            "jobsFinished": "Jobs finished this week",
-            "liveSafetyAlerts": "Live Safety Alerts",
-            "unread": "{count} unread",
-            "alertsDescription": "Real-time alerts for disputes, refunds, and flagged activity.",
-            "allAlerts": "All Alerts",
-            "unreadOnly": "Unread Only",
-            "critical": "Critical",
-            "warning": "Warning",
-            "info": "Info",
-            "markAllRead": "Mark All Read",
-            "noAlerts": "No alerts at this time.",
-            "noFilterAlerts": "No {filter} alerts found.",
-            "read": "Read",
-            "justNow": "Just now",
-            "jobId": "Job #{id}",
-            "amount": "₹{amount}",
-            "release": "Release",
-            "refund": "Refund",
-            "split": "Split 50/50",
-            "markRead": "Mark Read",
-            "success": "Success",
-            "alertsMarkedRead": "{count} alerts marked as read."
-        },
-        "team": {
-            "title": "Team Management",
-            "description": "This page is where you, as a primary admin, can manage your administrative team.",
-            "guide": {
-                "addMember": "Add Team Member:",
-                "addMemberDesc": "Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.",
-                "rolesPermissions": "Roles & Permissions:",
-                "admin": "Admin:",
-                "adminDesc": "Full platform access - can manage users, jobs, transactions, settings, team members, and resolve disputes.",
-                "support": "Support Team:",
-                "supportDesc": "Limited access - can view users, jobs, and transactions (read-only), manage disputes, and provide customer support.",
-                "securityNote": "Security Note:",
-                "securityNoteDesc": "Support Team members cannot access platform settings, financial configurations, or team management. They focus on dispute resolution and customer service.",
-                "manageAccounts": "Manage Accounts:",
-                "manageAccountsDesc": "View team member details by clicking their name. Account deletion must be handled in the Firebase Console for security reasons."
-            },
-            "stats": {
-                "totalMembers": "Total Members",
-                "allMembers": "All team members",
-                "admins": "Admins",
-                "fullAccess": "Full platform access",
-                "supportTeam": "Support Team",
-                "customerSupport": "Customer support"
-            },
-            "currentMembers": "Current Team Members",
-            "membersShown": "{count} members shown • Administrative and support staff",
-            "searchPlaceholder": "Search by name or email...",
-            "noMembersFound": "No team members found",
-            "noMembersMatch": "No members match your current filters",
-            "table": {
-                "name": "Name",
-                "email": "Email",
-                "role": "Role",
-                "dateAdded": "Date Added"
-            },
-            "roles": {
-                "all": "All Roles",
-                "admin": "Admin",
-                "support": "Support Team"
-            }
-        }
-    },
-    "reports": {
-        "title": "रिपोर्ट और एनालिटिक्स",
-        "description": "An overview of key metrics and trends (last 90 days).",
-        "updated": "Updated {{time}}",
-        "refresh": "Refresh Data",
-        "financial": {
-            "title": "Financial Summary",
-            "description": "A real-time overview of financial activities on the platform.",
-            "volume": "Total Volume",
-            "revenue": "Platform Revenue",
-            "released": "Funds Released",
-            "held": "Funds Held",
-            "refunds": "Refunds Processed"
-        },
-        "kpi": {
-            "totalUsers": "Total Users",
-            "usersDesc": "{{professionals}} सेवा प्रदाताs, {{givers}} ग्राहकs",
-            "totalJobs": "Total Jobs",
-            "jobsDesc": "All jobs created on the platform",
-            "fillRate": "Job Fill Rate",
-            "fillRateDesc": "Of jobs posted are completed"
-        },
-        "export": {
-            "title": "Data Export",
-            "description": "Download a full CSV backup of your platform's core data collections.",
-            "users": "Export All Users",
-            "jobs": "Export All Jobs",
-            "transactions": "Export All Transactions",
-            "disputes": "Export All Disputes",
-            "noData": "No Data",
-            "noDataDesc": "There is no data to export for {{type}}.",
-            "success": "Export Successful",
-            "successDesc": "{{count}} records exported for {{type}}.",
-            "failed": "Export Failed",
-            "failedDesc": "An error occurred during the export."
-        },
-        "topPerformers": {
-            "title": "Top Performers Report",
-            "description": "सेवा प्रदाताs ranked by performance for {{month}}.",
-            "runAutomation": "Run Monthly Reward Automation",
-            "automation": {
-                "complete": "Automation Complete!",
-                "failed": "Automation Failed",
-                "error": "Automation Error",
-                "errorDesc": "Could not grant rewards. Please try again."
-            },
-            "rank": "Rank",
-            "professional": "सेवा प्रदाता",
-            "points": "Monthly Points",
-            "rating": "Rating",
-            "tier": "Tier",
-            "empty": "Not enough data to generate performance report."
-        },
-        "leaderboard": {
-            "title": "All-Time Reputation Leaderboard",
-            "description": "Top professionals by total reputation points, with geographic filters.",
-            "download": "Download Report",
-            "filterState": "filter by State",
-            "filterCity": "Filter by City",
-            "filterPincode": "Filter by Pincode",
-            "allStates": "All States",
-            "allCities": "All Cities",
-            "allPincodes": "All Pincodes",
-            "totalPoints": "Total Points",
-            "empty": "No professionals found for the selected filters.",
-            "exportFailed": "Export Failed",
-            "exportFailedDesc": "No data to export for the current filter."
-        },
-        "disputes": {
-            "title": "Dispute Resolution Report",
-            "description": "An overview of support ticket performance.",
-            "resolutionRate": "Resolution Rate",
-            "avgDays": "Avg. Days to Resolve",
-            "byCategory": "Disputes by Category",
-            "count": "Count",
-            "status": "Resolution Status"
-        }
-    },
-    "analytics": {
-        "title": "एनालिटिक्स",
-        "description": "अपने प्लेटफ़ॉर्म प्रदर्शन और खर्च की निगरानी करें।",
-        "refresh": "रिफ्रेश",
-        "refreshing": "रिफ्रेश हो रहा है...",
-        "refreshingDesc": "एनालिटिक्स डेटा अपडेट किया जा रहा है...",
-        "export": "CSV एक्सपोर्ट करें",
-        "exportComplete": "एक्सपोर्ट पूरा हुआ",
-        "exportCompleteDesc": "आपकी रिपोर्ट डाउनलोड हो गई है।",
-        "loadError": "एनालिटिक्स डेटा लोड करने में विफल।",
-        "noData": "कोई डेटा उपलब्ध नहीं",
-        "noDataDesc": "इस अवधि के लिए दिखाने के लिए कोई डेटा नहीं है।",
-        "postFirstJob": "अपनी पहली जॉब पोस्ट करें",
-        "totalJobs": "कुल जॉब्स",
-        "completedJobs": "पूरा हुआ",
-        "totalSpend": "कुल खर्च",
-        "avgRating": "औसत रेटिंग",
-        "activeNow": "{count} अभी सक्रिय",
-        "completionRate": "{rate}% पूरा होने की दर",
-        "lifetimeProjectValue": "लाइफटाइम प्रोजेक्ट मूल्य",
-        "basedOnFeedback": "फीडबैक के आधार पर",
-        "loading": "लोड हो रहा है...",
-        "topProfessionals": "शीर्ष प्रोफेशनल",
-        "workMostOften": "प्रोफेशनल जिनके साथ आप सबसे अधिक काम करते हैं",
-        "performanceMostHired": "आपके सबसे अधिक हायर किए गए प्रोफेशनल का प्रदर्शन",
-        "noProfessionalData": "अभी तक कोई प्रोफेशनल डेटा नहीं है",
-        "tableProfessional": "प्रोफेशनल",
-        "tableJobs": "जॉब्स",
-        "tableTotalPaid": "कुल भुगतान",
-        "tableAvgRating": "औसत रेटिंग",
-        "aiInsights": "AI अंतर्दृष्टि",
-        "noInsights": "अभी तक कोई अंतर्दृष्टि उपलब्ध नहीं है। व्यक्तिगत अनुशंसाएं प्राप्त करने के लिए और अधिक जॉब्स पोस्ट करें।",
-        "aiPoweredInsights": "AI-संचालित अंतर्दृष्टि",
-        "actionableRecommendations": "आपके डेटा के आधार पर उपयोगी अनुशंसाएं",
-        "spendingTrends": "खर्च के रुझान",
-        "monthlySpendingDescription": "पिछले 12 महीनों में मासिक प्रोजेक्ट खर्च",
-        "spent": "खर्च किया गया",
-        "timeToHire": "हायरिंग का समय",
-        "avgDaysToHireDescription": "समय के साथ हायर करने के औसत दिन",
-        "avgDaysPostingToHiringDescription": "पोस्टिंग से हायरिंग तक के औसत दिन",
-        "insights": {
-            "spendingIncreasing": "खर्च बढ़ रहा है",
-            "spendingIncreasingDesc": "पिछले महीने की तुलना में आपका खर्च काफी बढ़ गया है।",
-            "budgetOptimized": "बजट अनुकूलित",
-            "budgetOptimizedDesc": "बहुत बढ़िया! आपका खर्च पिछले रुझानों से कम है।",
-            "highHiringVolume": "उच्च हायरिंग वॉल्यूम",
-            "highHiringVolumeDesc": "आपके पास वर्तमान में कई सक्रिय जॉब्स हैं।"
-        }
+        "checkFormDesc": "Please check the form description and required fields.",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "archived": "Archived",
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "all": "All",
+        "open": "Open",
+        "closed": "Closed",
+        "description": "Description",
+        "category": "Category",
+        "budget": "Budget",
+        "location": "Location",
+        "skills": "Skills",
+        "verified": "Verified",
+        "unverified": "Unverified",
+        "suspended": "Suspended",
+        "type": "Type",
+        "toggleMenu": "Toggle Menu"
     },
     "landing": {
         "tagline": "पेशेवर सेवा प्रदाता मार्केटप्लेस",
@@ -1096,6 +102,7 @@
         "footerRights": "Team4Job। सर्वाधिकार सुरक्षित।",
         "footerTerms": "सेवा की शर्तें",
         "footerPrivacy": "प्राइवेसी पॉलिसी",
+        "footerRefund": "Refund Policy",
         "trustProof": {
             "heading": "भरोसे और सुरक्षा पर निर्मित",
             "subheading": "हमने जोखिम को दूर करने के लिए अपने प्लेटफ़ॉर्म को तैयार किया है, ताकि आप काम को सही ढंग से पूरा करने पर ध्यान केंद्रित कर सकें।",
@@ -1144,6 +151,7 @@
         "otpLabel": "6-अंकीय OTP दर्ज करें",
         "panLabel": "पैन नंबर",
         "verify": "सत्यापित करें",
+        "sendOtp": "Send OTP",
         "verifyAadhar": "आधार सत्यापित करें",
         "verifyOtp": "OTP सत्यापित करें",
         "verifyPan": "पैन सत्यापित करें",
@@ -1151,11 +159,13 @@
         "retakePhoto": "दोबारा फोटो लें",
         "deviceAccessDenied": "डिवाइस एक्सेस अस्वीकार",
         "deviceAccessDeniedDesc": "फोटो लेने के लिए कृपया अपने ब्राउज़र सेटिंग्स में कैमरा अनुमति सक्षम करें।",
-        "stepRoleSelection": "चरण 1: अपनी भूमिका चुनें",
-        "roleLabel": "मैं चाहता हूँ...",
-        "rolePlaceholder": "अपनी प्राथमिक भूमिका चुनें",
-        "roleClient": "एक पेशेवर को नियुक्त करें",
+        "roleclient": "Hire a Professional",
         "roleProfessional": "एक पेशेवर के रूप में काम खोजें",
+        "clientDescription": "I want to hire professionals for my projects.",
+        "professionalDescription": "I am a professional looking for work.",
+        "roleLabel": "मैं चाहता हूँ...",
+        "roleDescription": "What brings you to Team4Job?",
+        "rolePlaceholder": "अपनी प्राथमिक भूमिका चुनें",
         "stepDetails": "चरण 2: बुनियादी विवरण",
         "stepPhoto": "चरण 3: प्रोफ़ाइल फोटो",
         "stepVerification": "चरण 4: KYC सत्यापन",
@@ -1199,6 +209,7 @@
         "verifyBothToContinue": "जारी रखने के लिए मोबाइल और ईमेल सत्यापित करें",
         "createAccount": "अकाउंट बनाएँ",
         "contactVerificationTitle": "अपनी संपर्क जानकारी सत्यापित करें",
+        "contactVerificationSubtitle": "Verify your credentials to secure your account.",
         "verifyMobileTitle": "मोबाइल नंबर सत्यापित करें",
         "verifyEmailTitle": "ईमेल सत्यापित करें",
         "enterCodeSentTo": "{target} पर भेजा गया 6-अंकीय कोड दर्ज करें",
@@ -1208,7 +219,17 @@
         "invalidOtp": "अमान्य सत्यापन कोड। कृपया फिर से प्रयास करें।",
         "otpSent": "कोड सफलतापूर्वक भेजा गया",
         "mobileVerified": "मोबाइल सत्यापित!",
-        "emailVerified": "ईमेल सत्यापित!"
+        "emailVerified": "ईमेल सत्यापित!",
+        "role": "Role",
+        "contact": "Contact",
+        "photo": "Photo",
+        "skills": "Skills",
+        "details": "Details",
+        "detailsDesc": "Complete your profile to join the Team4Job community.",
+        "enterMobileOtp": "Enter the OTP sent to your mobile",
+        "enterEmailOtp": "Enter the OTP sent to your email",
+        "change": "Change",
+        "resend": "Resend"
     },
     "nav": {
         "dashboard": "डैशबोर्ड",
@@ -1260,6 +281,68 @@
         "incompleteRating": "कृपया रेटिंग प्रदान करें।",
         "incompleteCategory": "कृपया एक श्रेणी चुनें।",
         "incompleteMessage": "कृपया अपने फीडबैक का वर्णन करें।"
+    },
+    "dashboard": {
+        "welcome": "स्वागत है, {name}!",
+        "welcomeUser": "वापसी पर स्वागत है, {name}!",
+        "welcomeGeneric": "स्वागत",
+        "roleHiring": "ग्राहक मोड",
+        "roleService": "सेवा प्रदाता मोड",
+        "roleAdmin": "एडमिन",
+        "verifyTitle": "एक सत्यापित प्रोफेशनल बनें",
+        "verifyDesc": "विश्वास बनाने और अधिक नौकरियां पाने के लिए आधार सत्यापन पूरा करें।",
+        "verifyButton": "अभी सत्यापित करें",
+        "findProjectTitle": "अपना अगला प्रोजेक्ट खोजें",
+        "findProjectDesc": "सैकड़ों पेशेवर सेवा प्रोजेक्ट ब्राउज़ करें और अपनी बोली लगाएं।",
+        "browseJobs": "जॉब ब्राउज़ करें",
+        "manageProfileTitle": "अपनी प्रोफ़ाइल प्रबंधित करें",
+        "manageProfileDesc": "अधिक जॉब देने वालों को आकर्षित करने के लिए अपने कौशल और प्रतिष्ठा को अपडेट रखें।",
+        "goToProfile": "प्रोफ़ाइल पर जाएँ",
+        "verifyProfessional": "Become a Verified Professional",
+        "verifyProfessionalDesc": "Complete Aadhar verification to build trust and get more jobs.",
+        "verifyNow": "Verify Now",
+        "manageProfile": "Manage Your Profile",
+        "recommender": {
+            "neuralMatch": "न्यूरल मैच",
+            "aiPoweredDesc": "अपने कौशल और स्थान के आधार पर AI-संचालित जॉब सुझाव प्राप्त करें।",
+            "smartInvitesDesc": "\"स्मार्ट इनवाइट\" अनलॉक करें और 3x तेज़ी से जॉब देखें।",
+            "upgradeToUnlock": "अनलॉक करने के लिए अपग्रेड करें",
+            "topPicks": "आपके लिए टॉप पिक्स",
+            "refresh": "रिफ्रेश",
+            "analyzingMarketplace": "मार्केटप्लेस का विश्लेषण हो रहा है...",
+            "noMatches": "अभी कोई मैच नहीं",
+            "noMatchesDesc": "अभी कोई सटीक मैच नहीं मिला। बाद में दोबारा जांचें!",
+            "scanJobs": "जॉब स्कैन करें",
+            "matchScore": "{score}% मैच",
+            "budgetTbd": "बजट तय होना बाकी"
+        },
+        "recentActivityTitle": "हाल की गतिविधि",
+        "recentActivityDesc": "आपके नवीनतम कार्य और अपडेट।",
+        "loading": "लोड हो रहा है...",
+        "noRecentActivity": "कोई हालिया गतिविधि नहीं",
+        "noRecentActivityDesc": "आपके हाल के काम और लेनदेन यहाँ दिखाई देंगे।",
+        "metrics": {
+            "avgBids": "औसत बोलियां/जॉब",
+            "avgBidsTooltip": "प्रति जॉब आपको मिलने वाली बोलियों की औसत संख्या (पिछले 90 दिन)",
+            "timeToFirstBid": "पहली बोली का समय",
+            "timeToFirstBidTooltip": "पहली बोली प्राप्त करने से पहले का औसत समय",
+            "pendingReviews": "लंबित समीक्षाएं",
+            "pendingReviewsActionTooltip": "पूरे हुए जॉब्स की समीक्षा करने के लिए क्लिक करें",
+            "pendingReviewsNoneTooltip": "सभी पूरे हुए जॉब्स की समीक्षा की जा चुका है",
+            "yourNetwork": "आपका नेटवर्क",
+            "yourNetworkTooltip": "पेशेवर जिन्हें आपने पसंदीदा बनाया है। उन्हें देखने के लिए क्लिक करें।"
+        },
+        "support": {
+            "title": "सपोर्ट से संपर्क करें",
+            "description": "चुनें कि आप हमारी टीम से कैसे संपर्क करना चाहेंगे।",
+            "phoneLabel": "फ़ोन सपोर्ट",
+            "phoneDesc": "सोम-शुक्र, सुबह 9 बजे से शाम 6 बजे तक उपलब्ध",
+            "emailLabel": "ईमेल सपोर्ट",
+            "emailDesc": "सामान्य प्रतिक्रिया समय: 24 घंटे",
+            "emailButton": "हमें ईमेल करें",
+            "tooltip": "सपोर्ट से संपर्क करें",
+            "srOnly": "सपोर्ट"
+        }
     },
     "notifications": {
         "title": "नोटिफिकेशन",
@@ -1418,8 +501,15 @@
     },
     "job": {
         "title": "जॉब शीर्षक",
+        "bids": "Bids",
         "bidsTab": "बोलियाँ",
         "waitAward": "पुरस्कार का इंतज़ार",
+        "viewDetails": "View Details",
+        "jobTypeDirect": "Direct Award",
+        "jobTypeBidding": "Bidding",
+        "invalidInput": "Invalid Input",
+        "invalidInputDesc": "Please enter a valid amount and deadline.",
+        "promoteFailed": "Failed to promote job.",
         "titlePlaceholder": "जैसे, 2 BHK अपार्टमेंट के लिए तकनीकी इंस्टॉलेशन",
         "titleDesc": "विशिष्ट रहें! एक स्पष्ट शीर्षक सही पेशेवरों को आकर्षित करने में मदद करता।",
         "description": "जॉब विवरण",
@@ -1731,7 +821,25 @@
             "variationProposed": "परिवर्तन प्रस्तावित",
             "variationProposedDesc": "अनुमोदन के लिए ग्राहक को भेजा गया।",
             "variationRequested": "परिवर्तन अनुरोधित",
-            "variationRequestedDesc": "कोटेशन के लिए सेवा प्रदाता को भेजा गया।"
+            "variationRequestedDesc": "कोटेशन के लिए सेवा प्रदाता को भेजा गया।",
+            "enterQuoteAmount": "Enter quote amount (₹):",
+            "quoteSubmitted": "Quote Submitted",
+            "quoteSubmittedDesc": "Client notified.",
+            "confirmVariationPayment": "Confirm payment of ₹{amount} for \"{description}\"?",
+            "variationPaid": "Variation Paid",
+            "variationDeclined": "Variation Declined",
+            "variationDeclineConfirm": "Decline this variation order?",
+            "jobUpdated": "Job details updated.",
+            "updateFailed": "Update failed",
+            "paymentSuccess": "Payment Successful",
+            "paymentVerifying": "Verifying status...",
+            "gatewayNotLoaded": "Payment Gateway not loaded.",
+            "rescheduleProcessed": "Reschedule request processed.",
+            "rescheduleFailed": "Failed to process reschedule.",
+            "enterAmountAndDesc": "Please enter amount and description.",
+            "exampleDesc": "e.g. Extra wire needed",
+            "paymentFailed": "Payment Failed",
+            "initFailed": "Failed to initiate payment."
         },
         "jobNotFound": "जॉब नहीं मिली।"
     },
@@ -1797,6 +905,55 @@
         "start": "Start:",
         "estDuration": "Est. Duration:",
         "hours": "Hours"
+    },
+    "analytics": {
+        "title": "एनालिटिक्स",
+        "description": "अपने प्लेटफ़ॉर्म प्रदर्शन और खर्च की निगरानी करें।",
+        "refresh": "रिफ्रेश",
+        "refreshing": "रिफ्रेश हो रहा है...",
+        "refreshingDesc": "एनालिटिक्स डेटा अपडेट किया जा रहा है...",
+        "export": "CSV एक्सपोर्ट करें",
+        "exportComplete": "एक्सपोर्ट पूरा हुआ",
+        "exportCompleteDesc": "आपकी रिपोर्ट डाउनलोड हो गई है।",
+        "loadError": "एनालिटिक्स डेटा लोड करने में विफल।",
+        "noData": "कोई डेटा उपलब्ध नहीं",
+        "noDataDesc": "इस अवधि के लिए दिखाने के लिए कोई डेटा नहीं है।",
+        "postFirstJob": "अपनी पहली जॉब पोस्ट करें",
+        "totalJobs": "कुल जॉब्स",
+        "completedJobs": "पूरा हुआ",
+        "totalSpend": "कुल खर्च",
+        "avgRating": "औसत रेटिंग",
+        "activeNow": "{count} अभी सक्रिय",
+        "completionRate": "{rate}% पूरा होने की दर",
+        "lifetimeProjectValue": "लाइफटाइम प्रोजेक्ट मूल्य",
+        "basedOnFeedback": "फीडबैक के आधार पर",
+        "loading": "लोड हो रहा है...",
+        "topProfessionals": "शीर्ष प्रोफेशनल",
+        "workMostOften": "प्रोफेशनल जिनके साथ आप सबसे अधिक काम करते हैं",
+        "performanceMostHired": "आपके सबसे अधिक हायर किए गए प्रोफेशनल का प्रदर्शन",
+        "noProfessionalData": "अभी तक कोई प्रोफेशनल डेटा नहीं है",
+        "tableProfessional": "प्रोफेशनल",
+        "tableJobs": "जॉब्स",
+        "tableTotalPaid": "कुल भुगतान",
+        "tableAvgRating": "औसत रेटिंग",
+        "aiInsights": "AI अंतर्दृष्टि",
+        "noInsights": "अभी तक कोई अंतर्दृष्टि उपलब्ध नहीं है। व्यक्तिगत अनुशंसाएं प्राप्त करने के लिए और अधिक जॉब्स पोस्ट करें।",
+        "aiPoweredInsights": "AI-संचालित अंतर्दृष्टि",
+        "actionableRecommendations": "आपके डेटा के आधार पर उपयोगी अनुशंसाएं",
+        "spendingTrends": "खर्च के रुझान",
+        "monthlySpendingDescription": "पिछले 12 महीनों में मासिक प्रोजेक्ट खर्च",
+        "spent": "खर्च किया गया",
+        "timeToHire": "हायरिंग का समय",
+        "avgDaysToHireDescription": "समय के साथ हायर करने के औसत दिन",
+        "avgDaysPostingToHiringDescription": "पोस्टिंग से हायरिंग तक के औसत दिन",
+        "insights": {
+            "spendingIncreasing": "खर्च बढ़ रहा है",
+            "spendingIncreasingDesc": "पिछले महीने की तुलना में आपका खर्च काफी बढ़ गया है।",
+            "budgetOptimized": "बजट अनुकूलित",
+            "budgetOptimizedDesc": "बहुत बढ़िया! आपका खर्च पिछले रुझानों से कम है।",
+            "highHiringVolume": "उच्च हायरिंग वॉल्यूम",
+            "highHiringVolumeDesc": "आपके पास वर्तमान में कई सक्रिय जॉब्स हैं।"
+        }
     },
     "conflict": {
         "title": "We noticed a difference",
@@ -1892,7 +1049,7 @@
         "skillPlaceholder": "Filter by skill...",
         "allTiers": "All Tiers",
         "allSkills": "All Skills",
-        "noसेवा प्रदाताsFound": "No professionals found matching your criteria.",
+        "noProfessionalsFound": "No professionals found matching your criteria.",
         "inactive": "Inactive",
         "inactiveTooltip": "This professional hasn't been online for {days} days.",
         "tier": "{tier} Tier",
@@ -1921,8 +1078,8 @@
             "actionDesc": "Use the action buttons to add professionals to your personal \"Favorite\" list for future Direct Awards, or \"Block\" them to prevent them from bidding on your jobs."
         }
     },
-    "myसेवा प्रदाताs": {
-        "title": "My सेवा प्रदाताs",
+    "myProfessionals": {
+        "title": "My Professionals",
         "description": "Manage your network of previously hired, favorite, and blocked professionals.",
         "platformRating": "Platform Rating",
         "yourRelationship": "Your Relationship",
@@ -1947,7 +1104,7 @@
             "blocked": "Your blocked list is empty."
         },
         "guide": {
-            "title": "My सेवा प्रदाताs",
+            "title": "My Professionals",
             "content": "This is your personal CRM for managing professionals you've worked with on the platform.",
             "hiredLabel": "Previously Hired:",
             "hiredDesc": "A list of all professionals who have completed jobs for you. This is your primary network.",
@@ -2116,8 +1273,8 @@
         "verificationFailed": "Verification Failed",
         "verificationFailedDesc": "Please type DELETE to confirm.",
         "editProfileBtn": "Edit Profile",
-        "professionalReputation": "सेवा प्रदाता साख",
-        "professionalReputationDesc": "प्लेटफ़ॉर्म पर आपका प्रदर्शन और ट्रस्ट स्कोर।",
+        "ProfessionalReputation": "सेवा प्रदाता साख",
+        "ProfessionalReputationDesc": "प्लेटफ़ॉर्म पर आपका प्रदर्शन और ट्रस्ट स्कोर।",
         "tier": "Tier",
         "reputationPoints": "साख अंक",
         "howReputationWorks": "How Reputation Works",
@@ -2138,7 +1295,7 @@
         "mySkillsDesc": "Manage the skills shown on your profile.",
         "expandOpportunities": "Expand Your Opportunities",
         "expandOpportunitiesDesc": "Want to find work on the platform? Become a verified professional to start bidding on jobs.",
-        "becomeसेवा प्रदाता": "Become an सेवा प्रदाता",
+        "becomeProfessional": "Become a Professional",
         "readyToHire": "Ready to Hire?",
         "readyToHireDesc": "Activate your ग्राहक profile to post jobs and find the perfect professional for your projects.",
         "startHiring": "Start Hiring as a ग्राहक",
@@ -2159,13 +1316,13 @@
         "yourDetailsHelp": "View your name, user ID, email, and location info. Click \"Edit Profile\" to update your name, pincodes, or GSTIN.",
         "roleSwitching": "Role Switching",
         "roleSwitchingHelp": "If you have both \"ग्राहक\" and \"सेवा प्रदाता\" roles, you can switch between them in the user menu (top right).",
-        "professionalReputationHelpTitle": "सेवा प्रदाता साख",
-        "professionalReputationHelp": "यह अनुभाग आपके प्रदर्शन को ट्रैक करता है। अंक अर्जित करने और उच्च स्तरों (कांस्य, रजत, स्वर्ण, प्लेटिनम) तक पहुँचने के लिए कार्यों को पूरा करें और अच्छी रेटिंग प्राप्त करें।",
+        "ProfessionalReputationHelpTitle": "सेवा प्रदाता साख",
+        "ProfessionalReputationHelp": "यह अनुभाग आपके प्रदर्शन को ट्रैक करता है। अंक अर्जित करने और उच्च स्तरों (कांस्य, रजत, स्वर्ण, प्लेटिनम) तक पहुँचने के लिए कार्यों को पूरा करें और अच्छी रेटिंग प्राप्त करें।",
         "skills": "Skills",
         "skillsHelp": "Click the pencil icon to add or remove skills from your profile. This helps ग्राहकs find you.",
         "payoutSettingsHelp": "Add your bank account details here to receive payments for completed jobs.",
-        "becomeसेवा प्रदाताClient": "Become an सेवा प्रदाता/ग्राहक",
-        "becomeसेवा प्रदाताClientHelp": "If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.",
+        "becomeProfessionalClient": "Become a Professional/Client",
+        "becomeProfessionalClientHelp": "If you only have one role, you'll see a prompt to activate the other, expanding your opportunities on the platform.",
         "loadingProfile": "Loading Profile...",
         "userNotFound": "User not found.",
         "skillsUpdated": "Skills Updated",
@@ -2230,6 +1387,903 @@
             "bottomText": "विवाद केंद्र पर नेविगेट करने और मामलों को हल करना शुरू करने के लिए स्टेट कार्ड पर क्लिक करें।"
         }
     },
+    "admin": {
+        "dashboard": {
+            "welcome": "Admin Console",
+            "totalUsers": "Total Registered Users",
+            "totalJobs": "Transaction Volume (Jobs)",
+            "activeDisputes": "Active Disputes",
+            "valueReleased": "Total Funds Released",
+            "recentSignups": "Recent Signups",
+            "unknownUser": "Unidentified User",
+            "guide": {
+                "title": "Admin Console Overview",
+                "welcome": "Welcome to the Platform Administration Console. Monitor real-time platform metrics and operational health.",
+                "totalUsers": "Cumulative count of all users registered on the platform.",
+                "totalJobs": "The total number of job listings processed by the system.",
+                "activeDisputes": "Current unresolved disputes requiring administrative review.",
+                "valueReleased": "Total monetary value successfully disbursed to professionals.",
+                "financialSummary": "Consolidated view of platform fees and transaction flow.",
+                "topPerformers": "सेवा प्रदाताs with the highest reputation and successful completion rates.",
+                "userGrowth": "Platform adoption trends over the previous 6 months."
+            }
+        },
+        "financials": {
+            "title": "Platform Financial Summary",
+            "totalVolume": "Cumulative Transaction Volume",
+            "revenue": "Platform Net Revenue",
+            "released": "Successful Funds Disbursed",
+            "held": "Funds Currently in Escrow"
+        },
+        "title": "Admin Dashboard",
+        "description": "Platform overview and operational management.",
+        "subscriptionPlansLabel": "Subscription Plans",
+        "couponsLabel": "Coupons",
+        "viewUsers": "View Users",
+        "manageUsers": "Manage all platform users",
+        "allJobsLabel": "All Jobs",
+        "monitorJobs": "Monitor all job postings",
+        "disputesLabel": "Disputes",
+        "resolveDisputes": "Resolve user disputes",
+        "reportsLabel": "Reports",
+        "viewAnalytics": "View analytics & reports",
+        "allSystemsOperational": "All Systems Operational",
+        "systemIssuesDetected": "System Issues Detected",
+        "quickActions": "Quick Actions",
+        "commonTasks": "Common administrative tasks",
+        "activeJobs": "Active Jobs",
+        "currentlyOperational": "Currently operational",
+        "openDisputes": "Active Disputes",
+        "requireAttention": "Requiring attention",
+        "totalUsers": "Total Users",
+        "registeredPlatform": "Registered on platform",
+        "newUsersToday": "New Users Today",
+        "sinceMidnight": "Since midnight",
+        "jobsPostedToday": "Jobs Posted Today",
+        "last24Hours": "In the last 24 hours",
+        "jobsThisWeek": "Jobs This Week",
+        "users": {
+            "title": "उपयोगकर्ता प्रबंधन",
+            "description": "View and manage all registered users on the platform ({count} shown).",
+            "badges": {
+                "suspended": "Suspended",
+                "deactivated": "Deactivated",
+                "active": "Active",
+                "verified": "Verified"
+            },
+            "table": {
+                "user": "User / ID",
+                "status": "Status",
+                "memberSince": "Member Since",
+                "tier": "Tier",
+                "actions": "Actions"
+            },
+            "actions": {
+                "viewProfile": "View Profile",
+                "markVerified": "Mark as Verified",
+                "deactivate": "Deactivate",
+                "suspend": "Suspend (7 Days)",
+                "reactivate": "Re-activate",
+                "delete": "Delete Permanently"
+            },
+            "guide": {
+                "title": "User Management Guide",
+                "intro": "Use this page to monitor and manage user accounts.",
+                "filteringTitle": "Filtering:",
+                "filtering": "Use the filter bar to find users by role, status, or verification.",
+                "exportTitle": "Export:",
+                "export": "Download use data in CSV or JSON format.",
+                "statusTitle": "Status:",
+                "actionsTitle": "Actions:",
+                "actions": "Use the action menu to verify, suspend, or delete users.",
+                "viewProfileTitle": "View Profile:",
+                "viewProfile": "Click a user's name to view their full activity and history.",
+                "activeTitle": "Active:",
+                "active": "Users with full access to the platform.",
+                "suspendedTitle": "Suspended:",
+                "suspended": "Temporary restriction (usually due to policy violations).",
+                "deactivatedTitle": "Deactivated:",
+                "deactivated": "User has closed their account or been banned."
+            },
+            "messages": {
+                "userSuspended": "User Suspended",
+                "userSuspendedDesc": "{name} has been suspended for {days} days.",
+                "userReactivated": "User Reactivated",
+                "userReactivatedDesc": "{name}'s account is now active.",
+                "userDeactivated": "User Deactivated",
+                "userDeactivatedDesc": "{name}'s account has been deactivated.",
+                "userUpdated": "User Updated",
+                "userUpdatedDesc": "User profile has been updated successfully.",
+                "userDeleted": "User Deleted",
+                "userDeletedDesc": "{name} has been permanently deleted.",
+                "error": "Error",
+                "errorDesc": "Failed to update user status."
+            },
+            "tabs": {
+                "all": "All ({count})",
+                "professionals": "सेवा प्रदाताs ({count})",
+                "clients": "Clients ({count})",
+                "pending": "Pending Verification ({count})"
+            },
+            "filters": {
+                "search": "Search Users",
+                "searchPlaceholder": "Name, email, or ID...",
+                "role": "Role",
+                "allRoles": "All Roles",
+                "professional": "सेवा प्रदाता",
+                "client": "Client",
+                "admin": "Admin",
+                "support": "Support Team",
+                "status": "Status",
+                "active": "Active",
+                "suspended": "Suspended",
+                "deactivated": "Deactivated"
+            },
+            "stats": {
+                "totalUsers": "कुल उपयोगकर्ता",
+                "active": "{count} सक्रिय",
+                "professionals": "सत्यापित सेवा प्रदाता",
+                "verified": "{count} सत्यापित",
+                "clients": "ग्राहक",
+                "clientsTotal": "कुल ग्राहक",
+                "newToday": "आज नए",
+                "joined": "{count} आज शामिल हुए"
+            },
+            "a11y": {
+                "actionsFor": "Actions for {name}"
+            }
+        },
+        "verifyProfessional": {
+            "title": "Become a Verified Professional",
+            "description": {
+                "enterAadhar": "Verify your identity using Aadhar to create an professional profile.",
+                "enterOtp": "An OTP has been sent to your Aadhar-linked mobile number. Enter it below.",
+                "selectSkills": "Verification complete! Now, select your skills to finish setting up your professional profile.",
+                "enterBusinessProof": "Optional: Add business details for 'Pro' status. Freelancers can also reach Pro status later by maintaining high ratings."
+            },
+            "steps": {
+                "aadhar": {
+                    "label": "Aadhar Number",
+                    "placeholder": "Enter your 12-digit Aadhar number",
+                    "helperTextApi": "An OTP will be sent to your linked mobile number.",
+                    "helperTextManual": "This will be manually verified by our team.",
+                    "buttonApi": "Send OTP",
+                    "buttonNext": "Next",
+                    "validation": "Aadhar number must be 12 digits."
+                },
+                "otp": {
+                    "label": "One-Time Password (OTP)",
+                    "placeholder": "Enter the 6-digit OTP",
+                    "description": "Enter the OTP sent to your mobile.",
+                    "button": "Verify",
+                    "validation": "OTP must be 6 digits.",
+                    "manualTitle": "Confirm Submission",
+                    "manualDesc": "Since automated verification is currently disabled for maintenance, your details will be submitted for manual review by our admin team.",
+                    "manualButton": "Confirm & Continue",
+                    "manualToastTitle": "Submitted",
+                    "manualToastDesc": "Proceeding to skills selection."
+                },
+                "skills": {
+                    "title": "Select Your Skills",
+                    "subtitle": "Choose all that apply. This helps in matching you with the right jobs.",
+                    "button": "Next: Business Proof",
+                    "validation": "Please select at least one skill."
+                },
+                "business": {
+                    "gstLabel": "GST Number (Optional)",
+                    "gstPlaceholder": "Enter your 15-digit GSTIN",
+                    "photoLabel": "Shop/Business Photo URL (Optional)",
+                    "photoPlaceholder": "Enter a URL to your shop photo",
+                    "photoHelper": "Proof of physical shop enhances trust with Clients.",
+                    "buttonFinish": "Finish & Get Pro",
+                    "buttonSkip": "Skip & Start as Freelancer"
+                }
+            },
+            "alerts": {
+                "otpSent": "OTP Sent",
+                "verificationSuccess": "Verification Successful",
+                "verificationSuccessDesc": "Please select your skills to complete the process.",
+                "verificationFailed": "Verification Failed",
+                "skillsSaved": "Skills Saved!",
+                "skillsSavedDesc": "One last step: add business proof to get 'Pro' status (optional).",
+                "gstVerified": "GST Verified!",
+                "gstCheckError": "Could not verify GSTIN. Please check or try again.",
+                "profileActivated": "Professional Profile Activated!",
+                "profileActivatedDesc": "Congrats! You are now a verified Professional.",
+                "profileSubmitted": "Profile Submitted!",
+                "profileSubmittedDesc": "Your professional profile is pending manual verification. You will be notified once approved.",
+                "detailsRecorded": "Details Recorded",
+                "detailsRecordedDesc": "Please confirm your details.",
+                "error": "Error",
+                "failedToInitiate": "Failed to initiate verification",
+                "unexpectedError": "An unexpected error occurred. Please try again.",
+                "updateError": "Failed to create professional profile. Please try again."
+            },
+            "help": {
+                "title": "Become a Verified Professional",
+                "contentIntro": "This secure process verifies your identity and adds the \"Professional\" role to your profile.",
+                "itemAadhar": "Aadhar OTP:",
+                "itemAadharDesc": "First, enter your 12-digit Aadhar number. You'll receive an OTP on your linked mobile.",
+                "itemSkills": "Select Skills:",
+                "itemSkillsDesc": "After successful verification, choose the skills you specialize in. This is crucial for getting matched with the right jobs.",
+                "contentOutro": "Once completed, you'll be able to switch to your Professional role and start bidding on jobs."
+            }
+        },
+        "allJobs": {
+            "title": "All Jobs",
+            "description": "{count} jobs shown • {bidding} bidding, {direct} direct",
+            "stats": {
+                "total": "Total Jobs",
+                "totalDesc": "All jobs posted",
+                "active": "Active Jobs",
+                "activeDesc": "Currently open/in-progress",
+                "completed": "Completed",
+                "completedDesc": "Successfully finished",
+                "disputed": "Disputed",
+                "disputedDesc": "Require attention"
+            },
+            "tabs": {
+                "all": "All",
+                "active": "Active",
+                "completed": "Completed",
+                "disputed": "Disputed"
+            },
+            "filters": {
+                "jobIdLabel": "Job Title",
+                "jobIdPlaceholder": "Filter by Job Title...",
+                "statusLabel": "Status",
+                "allStatuses": "All Statuses",
+                "typeLabel": "Job Type",
+                "allTypes": "All Types"
+            },
+            "table": {
+                "title": "Job Title",
+                "status": "Status",
+                "giver": "ग्राहक",
+                "bids": "Bids",
+                "type": "Job Type",
+                "posted": "Posted"
+            },
+            "common": {
+                "na": "N/A"
+            },
+            "buttons": {
+                "export": "Export to CSV",
+                "reset": "Reset Filters",
+                "loadMore": "Load More Jobs",
+                "loadingMore": "Loading more..."
+            },
+            "empty": {
+                "noJobs": "No jobs found",
+                "tryAdjusting": "Try adjusting your filters or search criteria",
+                "loading": "Loading jobs...",
+                "wait": "Please wait while we fetch the job list"
+            },
+            "help": {
+                "title": "All Jobs",
+                "intro": "This is the master view of every job ever created on the platform. As an admin, you can monitor all activity from here.",
+                "filters": "Filters:",
+                "filtersDesc": "Use the filter bar to narrow down jobs by status, type, or search by title.",
+                "sort": "Sorting:",
+                "sortDesc": "Click on column headers to sort the table.",
+                "export": "Export:",
+                "exportDesc": "Download the current view as a CSV file for external analysis.",
+                "details": "Job Details:",
+                "detailsDesc": "Click on any row to view the full details of that job."
+            }
+        },
+        "auditLogs": {
+            "title": "Admin Audit Log",
+            "description": "{count} actions shown • Chronological record of all admin actions",
+            "stats": {
+                "total": "Total Actions",
+                "totalDesc": "Last 100 actions",
+                "today": "Today",
+                "todayDesc": "Actions performed today",
+                "week": "This Week",
+                "weekDesc": "Last 7 days"
+            },
+            "table": {
+                "timestamp": "Timestamp",
+                "admin": "Admin",
+                "action": "Action",
+                "target": "Target",
+                "details": "Details"
+            },
+            "filters": {
+                "searchLabel": "Search",
+                "searchPlaceholder": "Search by admin, action, or target...",
+                "actionTypeLabel": "Action Type",
+                "allActions": "All Actions"
+            },
+            "empty": {
+                "title": "No audit logs found",
+                "description": "No admin actions match your current filters"
+            },
+            "actions": {
+                "USER_SUSPENDED": "User Suspended",
+                "USER_ACTIVATED": "User Activated",
+                "USER_DELETED": "User Deleted",
+                "USER_VERIFIED": "User Verified",
+                "JOB_DELETED": "Job Deleted",
+                "JOB_FLAGGED": "Job Flagged",
+                "DISPUTE_RESOLVED": "Dispute Resolved",
+                "REFUND_PROCESSED": "Refund Processed",
+                "SETTINGS_CHANGED": "Settings Changed",
+                "TEAM_MEMBER_ADDED": "Team Member Added",
+                "TEAM_MEMBER_REMOVED": "Team Member Removed",
+                "SUBSCRIPTION_GRANTED": "Subscription Granted",
+                "COUPON_CREATED": "Coupon Created",
+                "BLACKLIST_UPDATED": "Blacklist Updated"
+            },
+            "helper": {
+                "viewTarget": "View {target}",
+                "noDetails": "No additional details",
+                "booleanYes": "Yes",
+                "booleanNo": "No"
+            }
+        },
+        "pendingSignups": {
+            "title": "Pending Signups CRM",
+            "description": "Manage and follow up with incomplete signups",
+            "refresh": "Refresh",
+            "stats": {
+                "total": "Total Pending",
+                "new": "New Leads",
+                "contacted": "Contacted",
+                "followUp": "Follow Up",
+                "highPriority": "High Priority",
+                "today": "Follow Up Today",
+                "overdue": "Overdue",
+                "denied": "Denied"
+            },
+            "tabs": {
+                "all": "All Pending",
+                "today": "Today's Follow-ups",
+                "overdue": "Overdue",
+                "highPriority": "High Priority"
+            },
+            "filters": {
+                "search": "Search",
+                "searchPlaceholder": "Search by mobile, email, or name...",
+                "status": "Status",
+                "allStatuses": "All Statuses",
+                "priority": "Priority",
+                "allPriorities": "All Priorities",
+                "role": "Role",
+                "allRoles": "All Roles",
+                "professional": "सेवा प्रदाता",
+                "client": "ग्राहक"
+            },
+            "table": {
+                "contact": "Contact",
+                "status": "Status",
+                "priority": "Priority",
+                "role": "Role",
+                "followUp": "Follow-Up",
+                "lastActive": "Last Active",
+                "attempts": "Attempts",
+                "actions": "Actions"
+            },
+            "actions": {
+                "call": "Call",
+                "sms": "SMS",
+                "email": "Email",
+                "schedule": "Schedule Follow-Up",
+                "markDenied": "Mark as Denied",
+                "viewTimeline": "View Activity Timeline",
+                "setPriority": "Set Priority"
+            },
+            "dialogs": {
+                "schedule": {
+                    "title": "Schedule Follow-Up",
+                    "description": "Schedule a follow-up call with {name}",
+                    "date": "Follow-Up Date",
+                    "pickDate": "Pick a date",
+                    "time": "Time",
+                    "priority": "Priority",
+                    "nextAction": "Next Action",
+                    "nextActionPlaceholder": "e.g., Follow up call, Send pricing info",
+                    "notes": "Notes",
+                    "notesPlaceholder": "Add any notes about this follow-up...",
+                    "cancel": "Cancel",
+                    "submit": "Schedule Follow-Up"
+                },
+                "deny": {
+                    "title": "Mark as Denied",
+                    "description": "Record why {name} declined to sign up",
+                    "reason": "Denial Reason",
+                    "customReason": "Specify Reason",
+                    "customReasonPlaceholder": "Please specify the reason...",
+                    "notes": "Additional Notes",
+                    "notesPlaceholder": "Add any additional context about why they declined...",
+                    "cancel": "Cancel",
+                    "submit": "Mark as Denied",
+                    "reasons": {
+                        "not_interested": "Not Interested",
+                        "too_expensive": "Too Expensive",
+                        "found_alternative": "Found Alternative Solution",
+                        "technical_issues": "Technical Issues",
+                        "trust_concerns": "Trust/Security Concerns",
+                        "other": "Other Reason"
+                    }
+                },
+                "timeline": {
+                    "title": "Activity Timeline",
+                    "description": "Complete contact history for {name}",
+                    "empty": "No activity recorded yet",
+                    "by": "by {name}",
+                    "next": "Next: {action}",
+                    "followUp": "Follow-up: {date}"
+                }
+            },
+            "badges": {
+                "status": {
+                    "new": "New Lead",
+                    "contacted": "Contacted",
+                    "follow_up": "Follow-Up Scheduled",
+                    "busy": "Busy - Reschedule",
+                    "denied": "Denied",
+                    "converted": "Converted"
+                },
+                "priority": {
+                    "high": "High",
+                    "medium": "Medium",
+                    "low": "Low"
+                }
+            }
+        },
+        "systemHealth": {
+            "title": "System Health & Observability",
+            "description": "Real-time pulse of the platform.",
+            "cards": {
+                "stuckJobs": "Stuck Jobs",
+                "stuckJobsDesc": "Inactive for > 7 days",
+                "recentErrors": "Recent Errors",
+                "recentErrorsDesc": "Last 10 events captured",
+                "businessEvents": "Business Events",
+                "businessEventsDesc": "Recent transactions/actions",
+                "systemStatus": "System Status",
+                "systemStatusDesc": "No outages detected",
+                "operational": "Operational",
+                "noOutages": "No outages detected"
+            },
+            "sections": {
+                "recentErrors": "Recent System Errors",
+                "recentBusinessEvents": "Recent Business Events",
+                "stuckJobs": "Stuck Jobs",
+                "stuckJobsDesc": "Jobs active but not updated in 7+ days. Requires attention."
+            },
+            "table": {
+                "jobTitle": "Job Title",
+                "status": "Status",
+                "lastUpdated": "Last Updated",
+                "client": "ग्राहक",
+                "action": "Action",
+                "inspect": "Inspect",
+                "allHealthy": "All active jobs are healthy."
+            },
+            "empty": {
+                "noErrors": "No recent errors.",
+                "noEvents": "No events found."
+            },
+            "loading": "Loading system health..."
+        },
+        "reports": {
+            "title": "Platform Reports",
+            "description": "An overview of key metrics and trends (last 90 days).",
+            "updated": "Updated {{time}}",
+            "refresh": "Refresh Data",
+            "financial": {
+                "title": "Financial Summary",
+                "description": "A real-time overview of financial activities on the platform.",
+                "volume": "Total Volume",
+                "revenue": "Platform Revenue",
+                "released": "Funds Released",
+                "held": "Funds Held",
+                "refunds": "Refunds Processed"
+            },
+            "kpi": {
+                "totalUsers": "Total Users",
+                "usersDesc": "{{professionals}} Professionals, {{givers}} Clients",
+                "totalJobs": "Total Jobs",
+                "jobsDesc": "All jobs created on the platform",
+                "fillRate": "Job Fill Rate",
+                "fillRateDesc": "Of jobs posted are completed"
+            },
+            "export": {
+                "title": "Data Export",
+                "description": "Download a full CSV backup of your platform's core data collections.",
+                "users": "Export All Users",
+                "jobs": "Export All Jobs",
+                "transactions": "Export All Transactions",
+                "disputes": "Export All Disputes",
+                "noData": "No Data",
+                "noDataDesc": "There is no data to export for {{type}}.",
+                "success": "Export Successful",
+                "successDesc": "{{count}} records exported for {{type}}.",
+                "failed": "Export Failed",
+                "failedDesc": "An error occurred during the export."
+            },
+            "topPerformers": {
+                "title": "Top Performers Report",
+                "description": "Professionals ranked by performance for {{month}}.",
+                "runAutomation": "Run Monthly Reward Automation",
+                "automation": {
+                    "complete": "Automation Complete!",
+                    "failed": "Automation Failed",
+                    "error": "Automation Error",
+                    "errorDesc": "Could not grant rewards. Please try again."
+                },
+                "rank": "Rank",
+                "professional": "Professional",
+                "points": "Monthly Points",
+                "rating": "Rating",
+                "tier": "Tier",
+                "empty": "Not enough data to generate performance report."
+            },
+            "leaderboard": {
+                "title": "All-Time Reputation Leaderboard",
+                "description": "Top professionals by total reputation points, with geographic filters.",
+                "download": "Download Report",
+                "filterState": "filter by State",
+                "filterCity": "Filter by City",
+                "filterPincode": "Filter by Pincode",
+                "allStates": "All States",
+                "allCities": "All Cities",
+                "allPincodes": "All Pincodes",
+                "totalPoints": "Total Points",
+                "empty": "No professionals found for the selected filters.",
+                "exportFailed": "Export Failed",
+                "exportFailedDesc": "No data to export for the current filter."
+            },
+            "disputes": {
+                "title": "Dispute Resolution Report",
+                "description": "An overview of support ticket performance.",
+                "resolutionRate": "Resolution Rate",
+                "avgDays": "Avg. Days to Resolve",
+                "byCategory": "Disputes by Category",
+                "count": "Count",
+                "status": "Resolution Status"
+            }
+        },
+        "subscriptionPlans": {
+            "title": "Subscription Plans",
+            "description": "Manage platform subscription tiers and pricing.",
+            "tabs": {
+                "active": "Active Plans",
+                "archived": "Archived",
+                "create": "Create Plan"
+            },
+            "table": {
+                "name": "Plan Name",
+                "price": "Price",
+                "interval": "Interval",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "form": {
+                "name": "Name",
+                "description": "Description",
+                "price": "Price (₹)",
+                "interval": "Billing Interval",
+                "features": "Features (comma separated)",
+                "submit": "Save Plan",
+                "cancel": "Cancel"
+            },
+            "actions": {
+                "edit": "Edit",
+                "archive": "Archive",
+                "delete": "Delete",
+                "activate": "Activate"
+            },
+            "messages": {
+                "saved": "Plan saved successfully.",
+                "archived": "Plan moved to archives.",
+                "deleted": "Plan permanently deleted.",
+                "activated": "Plan is now active.",
+                "error": "Failed to update plan."
+            }
+        },
+        "coupons": {
+            "title": "Promotional Coupons",
+            "description": "Create and manage discount codes for platform services.",
+            "refresh": "Refresh",
+            "create": "Create New Coupon",
+            "table": {
+                "code": "Coupon Code",
+                "discount": "Discount",
+                "expiry": "Expiry Date",
+                "status": "Status",
+                "usage": "Usage Count"
+            },
+            "empty": "No coupons found.",
+            "emptyCreate": "No coupons found. Create your first one to get started.",
+            "form": {
+                "code": "Coupon Code",
+                "type": "Discount Type",
+                "value": "Discount Value",
+                "minSpend": "Minimum Spend (₹)",
+                "maxDiscount": "Max Discount (₹)",
+                "expiry": "Expiry Date",
+                "usageLimit": "Total Usage Limit",
+                "submit": "Create Coupon",
+                "cancel": "Cancel"
+            },
+            "types": {
+                "percentage": "Percentage (%)",
+                "fixed": "Fixed Amount (₹)"
+            },
+            "messages": {
+                "created": "Coupon created successfully.",
+                "deleted": "Coupon deleted.",
+                "error": "Failed to process coupon.",
+                "isActive": "Active",
+                "isActiveDesc": "Users can only redeem active coupons.",
+                "isInactive": "Inactive"
+            }
+        },
+        "blacklist": {
+            "title": "Current Blacklist",
+            "description": "A list of all currently blacklisted users and pincodes.",
+            "empty": "The blacklist is currently empty.",
+            "add": {
+                "title": "Add to Blacklist",
+                "description": "Add a user ID or a pincode to the blacklist to restrict their access or visibility.",
+                "label": "Value",
+                "placeholder": "Enter User ID or Pincode",
+                "type": "Entry Type",
+                "reason": "Reason for Blacklisting",
+                "submit": "Blacklist",
+                "success": "Added to Blacklist",
+                "successDesc": "Successfully blacklisted {{type}}: {{value}}.",
+                "failed": "Failed to add blacklist entry."
+            },
+            "table": {
+                "type": "Type",
+                "value": "Value",
+                "addedAt": "Added On",
+                "addedBy": "Added By",
+                "reason": "Reason",
+                "actions": "Actions"
+            },
+            "types": {
+                "user": "User ID",
+                "pincode": "Pincode"
+            },
+            "actions": {
+                "reason": "View Reason",
+                "reasonTitle": "Blacklist Reason",
+                "reasonPlaceholder": "Explain why this entry is being added to the blacklist...",
+                "remove": "Remove",
+                "removeTitle": "Remove from Blacklist",
+                "removeDescription": "This will restore access/visibility for this entry. Are you sure?",
+                "removeConfirm": "Confirm Removal",
+                "removeCancel": "Cancel",
+                "removeTooltip": "Remove from blacklist",
+                "confirmRemove": "Are you sure you want to remove \"{{value}}\" from the blacklist?",
+                "success": "Removed from Blacklist",
+                "removedDesc": "\"{{value}}\" has been removed from the blacklist.",
+                "failed": "Failed to remove entry."
+            }
+        },
+        "signupAnalytics": {
+            "title": "Signup Analytics",
+            "description": "Conversion funnel and outreach effectiveness metrics",
+            "accessDenied": "Access denied. Admin only.",
+            "loadingError": "Failed to load analytics data",
+            "error": "Error",
+            "cards": {
+                "totalStarted": "Total Started",
+                "attempts": "Signup attempts",
+                "conversionRate": "Conversion Rate",
+                "converted": "converted",
+                "biggestDropOff": "Biggest Drop-Off",
+                "step": "Step",
+                "dropRate": "drop rate",
+                "outreachImpact": "Outreach Impact",
+                "improvement": "Improvement",
+                "decrease": "Decrease"
+            },
+            "funnel": {
+                "title": "Signup Funnel",
+                "description": "User drop-off at each step of the signup process",
+                "stages": {
+                    "started": "Started",
+                    "step1": "Step 1",
+                    "step2": "Step 2",
+                    "step3": "Step 3",
+                    "converted": "Converted"
+                }
+            },
+            "outreach": {
+                "title": "Outreach Effectiveness",
+                "description": "Conversion rate comparison: contacted vs non-contacted users",
+                "contacted": "Contacted Users",
+                "nonContacted": "Non-Contacted Users",
+                "labels": {
+                    "contacted": "Contacted",
+                    "notContacted": "Not Contacted",
+                    "conversionRate": "Conversion Rate",
+                    "total": "Total"
+                },
+                "stats": {
+                    "total": "Total: {{count}}",
+                    "converted": "Converted: {{count}}"
+                }
+            },
+            "roles": {
+                "title": "Role Distribution",
+                "description": "Breakdown of pending signups by role",
+                "professional": "सेवा प्रदाताs",
+                "client": "ग्राहकs",
+                "unknown": "Unknown"
+            }
+        },
+        "alerts": {
+            "postedThisWeek": "Posted this week",
+            "completedThisWeek": "Completed This Week",
+            "jobsFinished": "Jobs finished this week",
+            "liveSafetyAlerts": "Live Safety Alerts",
+            "unread": "{count} unread",
+            "alertsDescription": "Real-time alerts for disputes, refunds, and flagged activity.",
+            "allAlerts": "All Alerts",
+            "unreadOnly": "Unread Only",
+            "critical": "Critical",
+            "warning": "Warning",
+            "info": "Info",
+            "markAllRead": "Mark All Read",
+            "noAlerts": "No alerts at this time.",
+            "noFilterAlerts": "No {filter} alerts found.",
+            "read": "Read",
+            "justNow": "Just now",
+            "jobId": "Job #{id}",
+            "amount": "₹{amount}",
+            "release": "Release",
+            "refund": "Refund",
+            "split": "Split 50/50",
+            "markRead": "Mark Read",
+            "success": "Success",
+            "alertsMarkedRead": "{count} alerts marked as read."
+        },
+        "team": {
+            "title": "Team Management",
+            "description": "This page is where you, as a primary admin, can manage your administrative team.",
+            "guide": {
+                "addMember": "Add Team Member:",
+                "addMemberDesc": "Use the form to create a new Admin or Support Team user. They will be sent an email to log in with the temporary password you set.",
+                "rolesPermissions": "Roles & Permissions:",
+                "admin": "Admin:",
+                "adminDesc": "Full platform access - can manage users, jobs, transactions, settings, team members, and resolve disputes.",
+                "support": "Support Team:",
+                "supportDesc": "Limited access - can view users, jobs, and transactions (read-only), manage disputes, and provide customer support.",
+                "securityNote": "Security Note:",
+                "securityNoteDesc": "Support Team members cannot access platform settings, financial configurations, or team management. They focus on dispute resolution and customer service.",
+                "manageAccounts": "Manage Accounts:",
+                "manageAccountsDesc": "View team member details by clicking their name. Account deletion must be handled in the Firebase Console for security reasons."
+            },
+            "stats": {
+                "totalMembers": "Total Members",
+                "allMembers": "All team members",
+                "admins": "Admins",
+                "fullAccess": "Full platform access",
+                "supportTeam": "Support Team",
+                "customerSupport": "Customer support"
+            },
+            "currentMembers": "Current Team Members",
+            "membersShown": "{count} members shown • Administrative and support staff",
+            "searchPlaceholder": "Search by name or email...",
+            "noMembersFound": "No team members found",
+            "noMembersMatch": "No members match your current filters",
+            "table": {
+                "name": "Name",
+                "email": "Email",
+                "role": "Role",
+                "dateAdded": "Date Added"
+            },
+            "roles": {
+                "all": "All Roles",
+                "admin": "Admin",
+                "support": "Support Team"
+            }
+        }
+    },
+    "professional": {
+        "dashboard": {
+            "welcome": "वापसी पर स्वागत है, {name}",
+            "openJobs": "ओपन जॉब्स",
+            "openJobsDesc": "बोली लगाने के लिए उपलब्ध",
+            "myBids": "मेरी बोलियाँ",
+            "myBidsDesc": "आपके द्वारा लगाई गई बोलियाँ",
+            "jobsWon": "जीते हुए जॉब्स",
+            "jobsWonDesc": "आपको दिए गए जॉब्स",
+            "findNextProject": "अपना अगला प्रोजेक्ट ढूँढें",
+            "findNextProjectDesc": "सैकड़ों तकनीकी इंस्टॉलेशन जॉब्स ब्राउज़ करें और अपनी बोली लगाएं।",
+            "browseJobs": "जॉब ब्राउज़ करें",
+            "manageProfile": "अपना प्रोफ़ाइल प्रबंधित करें",
+            "manageProfileDesc": "अधिक जॉब गिवर्स को आकर्षित करने के लिए अपने कौशल और प्रतिष्ठा को अप-टू-डेट रखें।",
+            "goToProfile": "प्रोफ़ाइल पर जाएँ",
+            "totalEarnings": "कुल कमाई",
+            "totalEarningsDesc": "लाइफटाइम भुगतान संसाधित",
+            "projectedEarnings": "अनुमानित कमाई",
+            "projectedEarningsDesc": "वर्तमान में सुरक्षित जमा में बंद फंड",
+            "guide": {
+                "title": "पेशेवर डैशबोर्ड गाइड",
+                "welcome": "आपके डैशबोर्ड में आपका स्वागत है! यह प्लेटफ़ॉर्म पर आपके काम को प्रबंधित करने का आपका केंद्रीय केंद्र है।",
+                "openJobsLabel": "ओपन जॉब्स:",
+                "openJobsDesc": "यह बोली लगाने के लिए वर्तमान में उपलब्ध जॉब्स की कुल संख्या दिखाता है। अपना अगला अवसर खोजने के लिए इस पर क्लिक करें।",
+                "myBidsLabel": "मेरी बोलियाँ:",
+                "myBidsDesc": "आपके द्वारा बोली लगाए गए सभी कार्यों और उनकी वर्तमान स्थिति (Bidded, Awarded, आदि) को ट्रैक करता है। अपना बोली इतिहास देखने के लिए क्लिक करें।",
+                "jobsWonLabel": "जीते हुए जॉब्स:",
+                "jobsWonDesc": "उन कार्यों की संख्या दिखाता है जिन्हें आपने जीता है और जो वर्तमान में सक्रिय या प्रगति पर हैं।",
+                "projectedEarningsLabel": "अनुमानित कमाई:",
+                "projectedEarningsDesc": "उन कार्यों का कुल मूल्य जो वर्तमान में \"Funded\" (Locked) स्थिति में हैं और जिन पर आप काम कर रहे हैं।",
+                "verificationLabel": "सत्यापन:",
+                "verificationDesc": "एक विश्वसनीय पेशेवर बनने और जॉब्स जीतने की संभावना बढ़ाने के लिए अपना आधार सत्यापन पूरा करें।",
+                "findProjectLabel": "अपना अगला प्रोजेक्ट ढूँढें:",
+                "findProjectDesc": "जॉब ब्राउज़िंग पेज पर सीधे जाने के लिए एक त्वरित लिंक।",
+                "bottomText": "बाईं ओर नेविगेशन का उपयोग करके अन्य अनुभागों तक पहुँचें जैसे कि आपकी प्रोफ़ाइल, जहाँ आप अपनी प्रतिष्ठा और कौशल को ट्रैक कर सकते हैं।"
+            }
+        }
+    },
+    "client": {
+        "dashboard": {
+            "welcome": "स्वागत है, {name}!",
+            "dashboardDesc": "अपनी जॉब्स प्रबंधित करें और एस्क्रो सुरक्षा सहित खर्चों को ट्रैक करें।",
+            "activeJobs": "सक्रिय जॉब्स",
+            "activeJobsDesc": "आपके द्वारा पोस्ट की गई जॉब्स जो अभी तक पूरी नहीं हुई हैं",
+            "fundsInEscrow": "सुरक्षित जमा में फंड",
+            "fundsInEscrowDesc": "सक्रिय कार्यों के लिए आपके द्वारा वर्तमान में सुरक्षित लॉक में जमा की गई कुल राशि।",
+            "completedJobs": "पूरे हुए जॉब्स",
+            "completedJobsDesc": "अपने सभी सफलतापूर्वक पूरे किए गए प्रोजेक्ट्स का इतिहास देखें।",
+            "openDisputes": "खुले विवाद",
+            "openDisputesDesc": "विवाद जिन्हें समाधान की आवश्यकता है",
+            "needProfessional": "Need an Professional?",
+            "needProfessionalDesc": "Post a job and get bids from verified technical professionals.",
+            "manageJobs": "अपनी जॉब्स प्रबंधित करें",
+            "manageJobsDesc": "बोलियों की समीक्षा करें, प्रोजेक्ट आवंटित करें और अपनी सक्रिय जॉब्स को एक ही स्थान पर प्रबंधित करें।",
+            "goToMyJobs": "मेरी जॉब्स पर जाएँ",
+            "postNewJob": "नई जॉब पोस्ट करें",
+            "guide": {
+                "title": "जॉब गिवर डैशबोर्ड गाइड",
+                "welcome": "आपके डैशबोर्ड में आपका स्वागत है! यह पेशेवरों को काम पर रखने और प्रबंधित करने का आपका नियंत्रण केंद्र है।",
+                "activeJobsLabel": "सक्रिय जॉब्स:",
+                "activeJobsDesc": "यह आपके द्वारा पोस्ट की गई जॉब्स की संख्या दिखाता है जो वर्तमान में बोली लगाने के लिए खुली हैं या प्रगति पर हैं। उन्हें प्रबंधित करने के लिए क्लिक करें।",
+                "fundsEscrowLabel": "सुरक्षित जमा में फंड:",
+                "fundsInEscrowDesc": "सक्रिय कार्यों के लिए सुरक्षित लॉक में आपके द्वारा वर्तमान में जमा की गई कुल राशि।",
+                "totalBidsLabel": "कुल प्राप्त बोलियाँ:",
+                "totalBidsDesc": "अपने सभी जॉब पोस्टिंग पर प्राप्त बोलियों की कुल संख्या देखें।",
+                "completedJobsLabel": "पूरे हुए जॉब्स:",
+                "completedJobsDesc": "अपने सभी सफलतापूर्वक पूरे किए गए प्रोजेक्ट्स का इतिहास देखें। अपने संग्रहीत कार्यों को देखने के लिए क्लिक करें।",
+                "needProfessionalLabel": "Need an Professional?:",
+                "needProfessionalDesc": "A shortcut to post a new job and start receiving bids from professionals.",
+                "bottomText": "बाईं ओर नेविगेशन का उपयोग करके अन्य अनुभागों तक पहुँचें, जैसे कि आपकी सक्रिय पोस्टिंग पर बोलियों की समीक्षा करने के लिए \"मेरी जॉब्स\"।"
+            }
+        }
+    },
+    "support": {
+        "dashboard": {
+            "welcome": "सपोर्ट डैशबोर्ड",
+            "openDisputes": "खुले विवाद",
+            "openDisputesDesc": "नए मामले जिन पर ध्यान देने की आवश्यकता है",
+            "underReview": "समीक्षाधीन",
+            "underReviewDesc": "विवाद जिनकी आप वर्तमान में जांच कर रहे हैं",
+            "disputeCenter": "विवाद केंद्र",
+            "disputeCenterDesc": "प्लेटफ़ॉर्म पर सभी उपयोगकर्ता-सबमिट किए गए विवादों की समीक्षा करें, प्रबंधित करें और उनका समाधान करें।",
+            "goToDisputes": "विवादों पर जाएँ",
+            "guide": {
+                "title": "सपोर्ट डैशबोर्ड गाइड",
+                "welcome": "सपोर्ट डैशबोर्ड में आपका स्वागत है। आपका प्राथमिक ध्यान उपयोगकर्ता विवादों को प्रबंधित करने और उनका समाधान करने पर है।",
+                "openDisputes": "खुले विवाद:",
+                "openDisputesDesc": "ये नए मामले हैं जिन पर आपके तत्काल ध्यान देने की आवश्यकता है।",
+                "underReview": "समीक्षाधीन:",
+                "underReviewDesc": "ये विवाद हैं जिनकी आप सक्रिय रूप से जांच कर रहे हैं।",
+                "performance": "प्रदर्शन:",
+                "performanceDesc": "यह कार्ड आपके व्यक्तिगत विवाद समाधान मेट्रिक्स दिखाता है, जिससे आपको अपनी प्रगति ट्रैक करने में मदद मिलती।",
+                "bottomText": "विवाद केंद्र पर जाने और मामलों को हल करना शुरू करने के लिए स्टेट कार्ड पर क्लिक करें।"
+            }
+        }
+    },
     "technical": {
         "startJob": "अपनी तकनीकी जॉब का वर्णन करें",
         "helperText": "1-2 पंक्तियाँ लिखें, जो भी आपको सही लगे",
@@ -2248,7 +2302,7 @@
         "optionIndoor": "केवल इनडोर",
         "optionOutdoor": "केवल आउटडोर",
         "optionBoth": "इनडोर और आउटडोर दोनों",
-        "optionसेवा प्रदाताSuggest": "पेशेवर को सुझाव देने दें",
+        "optionProfessionalSuggest": "Let Professional Suggest",
         "aiCompiling": "जॉब विवरण तैयार किया जा रहा है…",
         "jobPreview": "जॉब पूर्वावलोकन",
         "looksGood": "ठीक है, जॉब पोस्ट करें",
@@ -2321,6 +2375,120 @@
         "home_theater": "होम थिएटर सेटअप",
         "smart_display": "स्मार्ट डिस्प्ले इंस्टॉल",
         "audio_video": "ऑडियो/वीडियो समाधान"
+    },
+    "settings": {
+        "title": "Settings",
+        "appearance": "Appearance",
+        "appearanceDesc": "Customize the look and feel of the application.",
+        "theme": "Theme",
+        "selectTheme": "Select a theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System",
+        "notifications": "Notifications",
+        "notificationsDesc": "Manage how you receive notifications from the platform.",
+        "pushNotifications": "Push Notifications",
+        "pushNotificationsDesc": "Receive real-time alerts on your device.",
+        "newBids": "New Bids",
+        "newBidsDesc": "Get notified when a Professional bids on your job.",
+        "jobAwarded": "Job Awarded",
+        "jobAwardedDesc": "Get notified when you are awarded a job.",
+        "disputeUpdates": "Dispute Updates",
+        "disputeUpdatesDesc": "Stay informed about your support tickets.",
+        "moreControlsSoon": "More granular notification controls will be available soon.",
+        "accountManagement": "Account Management",
+        "accountManagementDesc": "Manage your account settings and data.",
+        "changePassword": "Change Password",
+        "changePasswordDesc": "Update your account password.",
+        "deleteAccount": "Delete Account",
+        "deleteAccountDesc": "Permanently delete your account and associated data.",
+        "deleteConfirmPrompt": "This action cannot be undone. To confirm, please type Delete in the box below.",
+        "deleteConfirmPlaceholder": "Type 'Delete' to confirm",
+        "accountDeletionRequested": "Account Deletion Requested",
+        "accountDeletionRequestedDesc": "Your account is scheduled for deletion.",
+        "continue": "Continue"
+    },
+    "auditLogs": {
+        "title": "Admin Audit Log",
+        "description": "Tracking administrative activity for security and accountability. Showing {count} entries.",
+        "stats": {
+            "total": "Total Actions",
+            "totalDesc": "All administrative actions recorded",
+            "today": "Actions Today",
+            "todayDesc": "Actions recorded in the last 24 hours",
+            "week": "Actions This Week",
+            "weekDesc": "Actions recorded in the last 7 days"
+        },
+        "table": {
+            "timestamp": "Timestamp",
+            "admin": "Admin",
+            "action": "Action",
+            "target": "Target",
+            "details": "Details"
+        },
+        "empty": {
+            "title": "No logs found",
+            "description": "No administrative actions match your current filters."
+        },
+        "filters": {
+            "searchLabel": "Search Logs",
+            "searchPlaceholder": "Search by admin, action, or target...",
+            "actionTypeLabel": "Action Type",
+            "allActions": "All Actions"
+        },
+        "helper": {
+            "viewTarget": "View {target}",
+            "noDetails": "No additional details"
+        },
+        "actions": {
+            "USER_SUSPENDED": "User Suspended",
+            "USER_ACTIVATED": "User Activated",
+            "USER_DELETED": "User Deleted",
+            "USER_VERIFIED": "User Verified",
+            "JOB_DELETED": "Job Deleted",
+            "JOB_FLAGGED": "Job Flagged",
+            "DISPUTE_RESOLVED": "Dispute Resolved",
+            "REFUND_PROCESSED": "Refund Processed",
+            "SETTINGS_CHANGED": "Settings Changed",
+            "TEAM_MEMBER_ADDED": "Team Member Added",
+            "TEAM_MEMBER_REMOVED": "Team Member Removed",
+            "SUBSCRIPTION_GRANTED": "Subscription Granted",
+            "COUPON_CREATED": "Coupon Created",
+            "BLACKLIST_UPDATED": "Blacklist Updated"
+        }
+    },
+    "Professional": {
+        "dashboard": {
+            "guide": {
+                "title": "Professional Dashboard Guide",
+                "welcome": "Welcome to your dashboard! This is your central hub for managing your work on the platform.",
+                "openJobsLabel": "Open Jobs:",
+                "openJobsDesc": "This shows the total number of jobs currently available for bidding. Click it to find your next opportunity.",
+                "myBidsLabel": "My Bids:",
+                "myBidsDesc": "Tracks all jobs you've bid on and their current status (Bidded, Awarded, etc.).",
+                "jobsWonLabel": "Jobs Won:",
+                "jobsWonDesc": "Displays the number of jobs you've won that are currently active or in progress.",
+                "projectedEarningsLabel": "Projected Earnings:",
+                "projectedEarningsDesc": "Total value of your currently 'Funded' jobs that are in progress.",
+                "verificationLabel": "Verification:",
+                "verificationDesc": "Complete your Aadhar verification to become a trusted Professional and increase your chances of winning jobs.",
+                "findProjectLabel": "Find Your Next Project:",
+                "findProjectDesc": "Quick link to go directly to the job browsing page.",
+                "bottomText": "Use the sidebar navigation to access other sections like your profile, where you can track your reputation and skills."
+            },
+            "openJobs": "Open Jobs",
+            "openJobsDesc": "Current jobs available for bidding",
+            "myBids": "My Bids",
+            "myBidsDesc": "Bids you have placed",
+            "jobsWon": "Jobs Won",
+            "jobsWonDesc": "Active awarded jobs",
+            "totalEarnings": "Total Earnings",
+            "totalEarningsDesc": "Lifetime payouts processed",
+            "projectedEarnings": "Projected Earnings",
+            "projectedEarningsDesc": "Funds currently held in escrow",
+            "findNextProject": "Find Your Next Project",
+            "findNextProjectDesc": "Browse professional service jobs and place your bid.",
+            "browseJobs": "Browse Jobs"
+        }
     }
 }
-
