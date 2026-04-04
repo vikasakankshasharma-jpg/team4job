@@ -39,7 +39,7 @@ test.describe('Visual Regression Tests', () => {
         });
     });
 
-    test('Professional dashboard should match baseline', async ({ page }) => {
+    test('Installer dashboard should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
         await helper.auth.loginAsProfessional();
         await helper.nav.injectCookieHide();
@@ -48,7 +48,7 @@ test.describe('Visual Regression Tests', () => {
         // Wait for charts to render
         await page.waitForTimeout(2000);
 
-        await expect(page).toHaveScreenshot('Professional-dashboard.png', {
+        await expect(page).toHaveScreenshot('installer-dashboard.png', {
             fullPage: true,
             maxDiffPixels: 200, // Charts may have slight variations
         });

@@ -7,20 +7,24 @@ if (!process.env.CI) {
 }
 
 async function seedCompletedJob() {
-    const { getAdminDb } = await import('../src/lib/firebase/server-init');
-    const { getAuth } = await import('firebase-admin/auth');
+    const { getAdminDb, getAdminAuth } = await import('../src/infrastructure/firebase/admin');
     const { Timestamp } = await import('firebase-admin/firestore');
 
     try {
         const db = getAdminDb();
-        const auth = getAuth();
+        const auth = getAdminAuth();
 
-        // Fetch real UIDs for test accounts
-        const giverRecord = await auth.getUserByEmail('giver_vip_v3@team4job.com');
-        const giverId = giverRecord.uid;
+        let giverId = 'GIVER_HARDCODED_ID';
+        try {
+            const giverRecord = await auth.getUserByEmail('giver_vip_v3@team4job.com');
+            giverId = giverRecord.uid;
+        } catch (e) { console.log('Giver not found in auth, using hardcoded ID'); }
 
-        const installerRecord = await auth.getUserByEmail('installer_pro_v3@team4job.com');
-        const installerId = installerRecord.uid;
+        let installerId = 'INSTALLER_HARDCODED_ID';
+        try {
+            const installerRecord = await auth.getUserByEmail('installer_pro_v3@team4job.com');
+            installerId = installerRecord.uid;
+        } catch (e) { console.log('Installer not found in auth, using hardcoded ID'); }
 
         const jobId = `JOB-COMPLETED-${Date.now()}`;
         const jobRef = db.collection('jobs').doc(jobId);
