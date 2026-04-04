@@ -2400,6 +2400,8 @@
         "accountManagementDesc": "మీ ఖాతా సెట్టింగ్‌లు మరియు డేటాను నిర్వహించండి.",
         "changePassword": "పాస్‌వర్డ్ మార్చండి",
         "changePasswordDesc": "మీ ఖాతా పాస్‌వర్డ్‌ను నవీకరించండి.",
+        "exportData": "Export My Data",
+        "exportDataDesc": "Download all your personal data in JSON format.",
         "deleteAccount": "ఖాతాను తొలగించండి",
         "deleteAccountDesc": "మీ ఖాతాను మరియు అనుబంధిత డేటాను శాశ్వతంగా తొలగించండి.",
         "deleteConfirmPrompt": "ఈ చర్య రద్దు చేయబడదు. నిర్ధారించడానికి, దయచేసి దిగువ పెట్టెలో Delete అని టైప్ చేయండి.",

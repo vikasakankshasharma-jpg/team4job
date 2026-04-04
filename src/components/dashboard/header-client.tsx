@@ -16,6 +16,7 @@ import {
     UserCog,
     IndianRupee,
     Crown,
+    LogOut,
 } from "lucide-react";
 import * as React from "react";
 import {
@@ -46,7 +47,7 @@ import { useTranslations } from "next-intl";
 
 export function HeaderClient() {
     const pathname = usePathname();
-    const { user, role } = useUser();
+    const { user, role, logout } = useUser();
     const { searchQuery, setSearchQuery } = useSearch();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const t = useTranslations('nav');
@@ -98,6 +99,11 @@ export function HeaderClient() {
 
     const navItems = getNavItems();
     const breadcrumbSegments = pathname.split('/').filter(Boolean);
+
+    const handleLogout = () => {
+        setIsSheetOpen(false);
+        logout();
+    };
 
     const renderBreadcrumbs = () => {
         // This logic can become complex. For now, a simplified version.
@@ -220,6 +226,14 @@ export function HeaderClient() {
                                 <span className="text-muted-foreground">Theme</span>
                             </div>
                         </div>
+                        <button
+                            type="button"
+                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                            onClick={handleLogout}
+                        >
+                            <LogOut className="h-5 w-5" />
+                            {t('logout')}
+                        </button>
                     </nav>
                 </SheetContent>
             </Sheet>

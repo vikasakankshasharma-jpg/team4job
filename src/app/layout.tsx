@@ -9,7 +9,7 @@ import { UserProvider } from "@/hooks/use-user";
 import { Providers } from "@/components/providers";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import Script from 'next/script';
-import { GA_TRACKING_ID } from '@/lib/analytics';
+import { GA_TRACKING_ID, ANALYTICS_DISABLED } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
@@ -67,6 +67,7 @@ export default async function RootLayout({
 }>) {
   // Using static locale - language switching handled client-side
   const locale = 'en';
+  const analyticsEnabled = !!GA_TRACKING_ID && !ANALYTICS_DISABLED;
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -74,11 +75,15 @@ export default async function RootLayout({
         {/* PWA Manifest */}
         <link rel="manifest" href="/manifest.webmanifest" />
         {/* Preconnect to external services for faster loading */}
-        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        {analyticsEnabled && (
+          <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        )}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        {analyticsEnabled && (
+          <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        )}
         <link rel="dns-prefetch" href="https://sdk.cashfree.com" />
       </head>
       <body
@@ -114,7 +119,7 @@ export default async function RootLayout({
         </ThemeProvider>
         {/* ... (rest of the file) */}
         {/* Google Analytics - deferred for better performance */}
-        {GA_TRACKING_ID && (
+        {analyticsEnabled && (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}

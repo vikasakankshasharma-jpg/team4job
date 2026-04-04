@@ -83,6 +83,18 @@ const addressSchema = z.object({
   fullAddress: z.string().min(10, { message: "address.locationReq" }),
 });
 
+const optionalPositiveNumber = z.preprocess((val) => {
+  if (val === undefined || val === null || val === "") return undefined;
+  const n = typeof val === "string" ? Number(val) : val;
+  if (typeof n !== "number" || Number.isNaN(n) || n === 0) return undefined;
+  return n;
+}, z.number().min(1, "validation.budgetPos"));
+
+const priceEstimateSchema = z.object({
+  min: z.coerce.number().min(1, "validation.budgetPos"),
+  max: optionalPositiveNumber.optional(),
+});
+
 const jobSchema = z.object({
   jobTitle: z
     .string()
@@ -95,10 +107,7 @@ const jobSchema = z.object({
   travelTip: z.coerce.number().optional(),
   isGstInvoiceRequired: z.boolean().default(false),
   address: addressSchema,
-  priceEstimate: z.object({
-    min: z.coerce.number().min(1, "validation.budgetPos"),
-    max: z.coerce.number().min(1, "validation.budgetPos"),
-  }).optional(),
+  priceEstimate: priceEstimateSchema.optional(),
   deadline: z.string().refine((val) => {
     if (!val) return true; // Allow empty if direct awarding
     const today = new Date();
@@ -132,8 +141,9 @@ const jobSchema = z.object({
   message: "validation.startDateBeforeDeadline",
   path: ["jobStartDate"],
 }).refine(data => {
-  if (data.priceEstimate && data.priceEstimate.max > 0) {
-    return data.priceEstimate.min <= data.priceEstimate.max;
+  const max = data.priceEstimate?.max;
+  if (typeof max === "number" && max > 0) {
+    return data.priceEstimate!.min <= max;
   }
   return true;
 }, {
@@ -327,13 +337,20 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const isWizardCompleted = wizardCompletedParam === 'true';
   const isEditMode = !!editJobId;
 
+  const normalizeDraftBudget = (pe?: { min: number; max?: number }) => {
+    if (!pe) return undefined;
+    const min = pe.min || 0;
+    const max = typeof pe.max === "number" && pe.max > 0 ? pe.max : min;
+    return { min, max };
+  };
+
   // Auto-save hook
   const getDraftData = () => ({
     title: form.getValues('jobTitle'),
     description: form.getValues('jobDescription'),
     jobCategory: form.getValues('jobCategory'),
     skills: form.getValues('skills')?.split(',').map(s => s.trim()),
-    budget: form.getValues('priceEstimate'),
+    budget: normalizeDraftBudget(form.getValues('priceEstimate')),
     location: form.getValues('address.cityPincode'),
     address: form.getValues('address'),
     fullAddress: form.getValues('address.fullAddress'),
@@ -779,7 +796,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       attachments: attachmentUrls,
       priceEstimate: values.priceEstimate ? {
         min: values.priceEstimate.min,
-        max: values.directAwardProfessionalId ? values.priceEstimate.min : values.priceEstimate.max,
+        max: values.directAwardProfessionalId ? values.priceEstimate.min : (values.priceEstimate.max ?? values.priceEstimate.min),
       } : undefined,
       directAwardProfessionalId: values.directAwardProfessionalId || undefined,
       preferredTimeSlot: values.preferredTimeSlot,
@@ -1430,7 +1447,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           description: form.getValues('jobDescription'),
           jobCategory: form.getValues('jobCategory'),
           skills: form.getValues('skills')?.split(',').map(s => s.trim()),
-          budget: form.getValues('priceEstimate'),
+          budget: normalizeDraftBudget(form.getValues('priceEstimate')),
           travelTip: form.getValues('travelTip'),
           isGstInvoiceRequired: form.getValues('isGstInvoiceRequired'),
         }}

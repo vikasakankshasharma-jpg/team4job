@@ -33,7 +33,7 @@ test.describe('Universal Master Audit', () => {
             const skillsInput = page.locator('input[name="skills"], input[placeholder*="Skills"]').first();
             await skillsInput.fill('CCTV, Smart Home, Audit-Testing');
             await page.getByRole('button', { name: /Save|Update/i }).first().click();
-            await helper.form.waitForToast(/Updated/i).catch(() => {});
+            await helper.form.waitForToast('Updated').catch(() => {});
         }
         
         console.log('✅ Act 1 Complete: Profile updated.');

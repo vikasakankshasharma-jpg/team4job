@@ -2400,6 +2400,8 @@
         "accountManagementDesc": "तुमची खाते सेटिंग्ज आणि डेटा व्यवस्थापित करा.",
         "changePassword": "पासवर्ड बदला",
         "changePasswordDesc": "तुमचा खाते पासवर्ड अद्यतनित करा.",
+        "exportData": "Export My Data",
+        "exportDataDesc": "Download all your personal data in JSON format.",
         "deleteAccount": "खाते हटवा",
         "deleteAccountDesc": "तुमचे खाते आणि सर्व संबंधित डेटा कायमचा हटवा.",
         "deleteConfirmPrompt": "ही कृती पूर्ववत केली जाऊ शकत नाही. पुष्टी करण्यासाठी, कृपया खालील बॉक्समध्ये Delete टाइप करा.",

@@ -6,6 +6,13 @@
 
 
 export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || '';
+export const ANALYTICS_DISABLED =
+    process.env.NEXT_PUBLIC_DISABLE_ANALYTICS === 'true' ||
+    process.env.NEXT_PUBLIC_IS_CI === 'true' ||
+    process.env.NEXT_PUBLIC_E2E === 'true' ||
+    process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' ||
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+    process.env.CI === 'true';
 
 export type FunnelEventName =
     | 'cta_click'
@@ -23,6 +30,7 @@ export interface FunnelProperties {
 
 // Track page views
 export const pageview = (url: string) => {
+    if (!GA_TRACKING_ID || ANALYTICS_DISABLED) return;
     if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('config', GA_TRACKING_ID, {
             page_path: url,
@@ -43,6 +51,7 @@ export const event = ({
     label: string;
     value?: number;
 }) => {
+    if (!GA_TRACKING_ID || ANALYTICS_DISABLED) return;
     if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', action, {
             event_category: category,
@@ -55,8 +64,7 @@ export const event = ({
 
 // Track Funnel Actions
 export const trackFunnelEvent = (eventName: FunnelEventName, properties?: FunnelProperties) => {
-
-
+    if (!GA_TRACKING_ID || ANALYTICS_DISABLED) return;
     if (typeof window !== 'undefined' && window.gtag) {
         window.gtag('event', eventName, {
             event_category: 'Funnel',

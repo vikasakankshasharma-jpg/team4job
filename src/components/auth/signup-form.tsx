@@ -330,7 +330,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       }
     } catch (error: any) {
       console.error('[SignUp] Email OTP Error:', error);
-      toast({ title: "Error", description: error.message || "Failed to send code.", variant: "destructive" });
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       console.log('[SignUp] Email OTP finally - setting loading false');
       setIsLoading(false);
@@ -620,10 +620,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           description: tAuth('verifyPan'),
         });
       } else {
-        setError(result.data?.message || tError(result.error || 'serverError') || "Verification failed");
+        setError(result.data?.message || getErrorMessage(result.error || 'serverError'));
       }
     } catch (e: any) {
-      setError(tError(e.message) || "An unexpected error occurred. Please try again.");
+      setError(getErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -661,10 +661,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
         });
         setCurrentStep("photo");
       } else {
-        setError(result.data?.message || tError(result.error || 'serverError') || "PAN verification failed");
+        setError(result.data?.message || getErrorMessage(result.error || 'serverError'));
       }
     } catch (e: any) {
-      setError(tError(e.message) || "PAN verification failed.");
+      setError(getErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -1710,8 +1710,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
               <div className="leading-none">
                 <FormLabel className="text-sm font-medium">
                   {tAuth.rich('iAgreeToLabel', {
-                    terms: (chunks) => <Link href="/terms-of-service" target="_blank" className="underline text-primary font-bold">{tAuth('termsOfService')}</Link>,
-                    privacy: (chunks) => <Link href="/privacy-policy" target="_blank" className="underline text-primary font-bold">{tAuth('privacyPolicy')}</Link>
+                    terms: (chunks) => <Link prefetch={false} href="/terms-of-service" target="_blank" className="underline text-primary font-bold">{tAuth('termsOfService')}</Link>,
+                    privacy: (chunks) => <Link prefetch={false} href="/privacy-policy" target="_blank" className="underline text-primary font-bold">{tAuth('privacyPolicy')}</Link>
                   })}
                 </FormLabel>
                 <FormMessage />

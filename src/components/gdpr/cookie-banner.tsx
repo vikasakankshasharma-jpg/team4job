@@ -55,7 +55,7 @@ export default function CookieBanner() {
                 <span className="text-xs opacity-90">
                     We use cookies to enhance your experience, analyze site traffic, and assist in our marketing efforts.
                     By clicking &quot;Accept All&quot;, you consent to our use of cookies.
-                    <Link href="/privacy-policy" className="underline ml-1 hover:text-primary">
+                    <Link prefetch={false} href="/privacy-policy" className="underline ml-1 hover:text-primary">
                         Read our Privacy Policy
                     </Link>
                 </span>

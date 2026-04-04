@@ -2397,6 +2397,8 @@
         "accountManagementDesc": "ನಿಮ್ಮ ಖಾತೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಮತ್ತು ಡೇಟಾವನ್ನು ನಿರ್ವಹಿಸಿ.",
         "changePassword": "ಪಾಸ್‌ವರ್ಡ್ ಬದಲಾಯಿಸಿ",
         "changePasswordDesc": "ನಿಮ್ಮ ಖಾತೆ ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು ನವೀಕರಿಸಿ.",
+        "exportData": "Export My Data",
+        "exportDataDesc": "Download all your personal data in JSON format.",
         "deleteAccount": "ಖಾತೆಯನ್ನು ಅಳಿಸಿ",
         "deleteAccountDesc": "ನಿಮ್ಮ ಖಾತೆ ಮತ್ತು ಸಂಬಂಧಿತ ಡೇಟಾವನ್ನು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಿ.",
         "deleteConfirmPrompt": "ಈ ಕ್ರಿಯೆಯನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗುವುದಿಲ್ಲ. ದೃಢೀಕರಿಸಲು, ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಬಾಕ್ಸ್‌ನಲ್ಲಿ Delete ಎಂದು ಟೈಪ್ ಮಾಡಿ.",

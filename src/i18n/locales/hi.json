@@ -2400,6 +2400,8 @@
         "accountManagementDesc": "Manage your account settings and data.",
         "changePassword": "Change Password",
         "changePasswordDesc": "Update your account password.",
+        "exportData": "Export My Data",
+        "exportDataDesc": "Download all your personal data in JSON format.",
         "deleteAccount": "Delete Account",
         "deleteAccountDesc": "Permanently delete your account and associated data.",
         "deleteConfirmPrompt": "This action cannot be undone. To confirm, please type Delete in the box below.",

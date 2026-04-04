@@ -1,9 +1,11 @@
 "use client";
 
 import { useReportWebVitals } from "next/web-vitals";
+import { ANALYTICS_DISABLED, GA_TRACKING_ID } from "@/lib/analytics";
 
 export function WebVitalsReporter() {
     useReportWebVitals((metric) => {
+        if (ANALYTICS_DISABLED || !GA_TRACKING_ID) return;
         const { id, name, label, value } = metric;
 
         // Log to console in development removed for zero-noise

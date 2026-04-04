@@ -2400,6 +2400,8 @@
         "accountManagementDesc": "உங்கள் கணக்கு அமைப்புகள் மற்றும் தரவை நிர்வகிக்கவும்.",
         "changePassword": "கடவுச்சொல்லை மாற்றவும்",
         "changePasswordDesc": "உங்கள் கணக்கு கடவுச்சொல்லைப் புதுப்பிக்கவும்.",
+        "exportData": "Export My Data",
+        "exportDataDesc": "Download all your personal data in JSON format.",
         "deleteAccount": "கணக்கை நீக்கு",
         "deleteAccountDesc": "உங்கள் கணக்கு மற்றும் தொடர்புடைய அனைத்து தரவையும் நிரந்தரமாக நீக்கவும்.",
         "deleteConfirmPrompt": "இந்தச் செயலைத் தவிர்க்க முடியாது. உறுதிப்படுத்த கீழே உள்ள பெட்டியில் Delete என டைப் செய்யவும்.",

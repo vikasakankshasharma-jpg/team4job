@@ -49,9 +49,9 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-muted-foreground gap-4">
             <p>&copy; {new Date().getFullYear()} {t('footerRights')}</p>
             <div className="flex gap-6 text-sm">
-                <Link href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
-                <Link href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
-                <Link href="/refund-policy" className="hover:underline hover:text-foreground">{t('footerRefund')}</Link>
+                <Link prefetch={false} href="/terms-of-service" className="hover:underline hover:text-foreground">{t('footerTerms')}</Link>
+                <Link prefetch={false} href="/privacy-policy" className="hover:underline hover:text-foreground">{t('footerPrivacy')}</Link>
+                <Link prefetch={false} href="/refund-policy" className="hover:underline hover:text-foreground">{t('footerRefund')}</Link>
             </div>
         </div>
     </footer>

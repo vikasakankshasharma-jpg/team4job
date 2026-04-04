@@ -43,6 +43,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
   const [marker, setMarker] = useState<google.maps.LatLngLiteral | null>(propCenter || null);
   const [center, setCenter] = useState(propCenter || defaultCenter);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // Detect Mobile View
   useEffect(() => {
@@ -89,6 +90,12 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
     if (e.latLng && isMapLoaded && window.google) {
       const newMarkerPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       setMarker(newMarkerPos);
+      setCenter(newMarkerPos);
+
+      const fallbackAddress = typeof addressField.value === 'string' && addressField.value.trim().length > 0
+        ? addressField.value
+        : `Pinned location: ${newMarkerPos.lat.toFixed(6)}, ${newMarkerPos.lng.toFixed(6)}`;
+      setValue(name, fallbackAddress, { shouldValidate: true, shouldDirty: true });
 
       const geocoder = new window.google.maps.Geocoder();
       geocoder.geocode({ location: newMarkerPos }, (results, status) => {
@@ -97,7 +104,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
         }
       });
     }
-  }, [setValue, name, isMapLoaded]);
+  }, [setValue, name, isMapLoaded, addressField.value]);
 
   const onMapLoad = useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
@@ -161,7 +168,7 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
         />
 
         {isMobile ? (
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" className="w-full text-muted-foreground justify-start" type="button">
                 <MapIcon className="mr-2 h-4 w-4" />
@@ -179,11 +186,9 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
                 <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded mb-3">
                   Tap on the map to place the pin at your exact location.
                 </div>
-                {/* 
-                           Note: The parent sheet usually has a generic close.
-                           Since 'setValue' updates immediately on click, no "Save" button strictly needed.
-                           But a "Done" button helps UX.
-                        */}
+                <Button type="button" className="w-full" onClick={() => setIsSheetOpen(false)} disabled={!marker}>
+                  Done
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
