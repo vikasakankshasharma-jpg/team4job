@@ -118,6 +118,19 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
   const tAuth = useTranslations('auth');
   const tSkills = useTranslations('skills');
 
+  const getErrorMessage = useCallback((error: any) => {
+    if (!error) return "An unexpected error occurred.";
+    const errorCode = error.code || (error.message?.match(/\(([^)]+)\)/)?.[1]);
+    if (errorCode) {
+      try {
+        return tError(errorCode);
+      } catch (e) {
+        return error.message || "An unexpected error occurred.";
+      }
+    }
+    return error.message || "An unexpected error occurred.";
+  }, [tError]);
+
   const [currentStep, setCurrentStep] = useState<"role" | "contact" | "verify_mobile" | "verify_email" | "verification" | "photo" | "skills" | "details">("role");
   const [verificationSubStep, setVerificationSubStep] = useState<"enterAadhar" | "enterOtp" | "enterPan" | "verified">("enterAadhar");
   const [verificationId, setVerificationId] = useState("");
@@ -224,7 +237,8 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       setMobileResendTimer(60);
       toast({ title: tAuth('otpSent'), description: "Please check your mobile for the verification code." });
     } catch (error: any) {
-      toast({ title: "Error", description: tError(error.message) || "Could not send OTP.", variant: "destructive" });
+      console.error('[SignUp] Mobile OTP Error:', error);
+      toast({ title: "Error", description: getErrorMessage(error), variant: "destructive" });
       if (recaptchaVerifierRef.current) recaptchaVerifierRef.current.clear();
     } finally {
       setIsLoading(false);
@@ -567,10 +581,10 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           description: result.data.message,
         });
       } else {
-        setError(tError(result.error || 'serverError') || "Failed to initiate verification");
+        setError(getErrorMessage(result.error || 'serverError'));
       }
     } catch (e: any) {
-      setError(tError(e.message) || "An unexpected error occurred. Please try again.");
+      setError(getErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -846,7 +860,7 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
       if (error.code === 'auth/email-already-in-use') {
         form.setError("email", { type: "manual", message: "This email is already registered." });
       } else {
-        toast({ title: "Sign Up Failed", description: tError(error.message), variant: "destructive" });
+        toast({ title: "Sign Up Failed", description: getErrorMessage(error), variant: "destructive" });
       }
       setCurrentStep("details");
     } finally {
