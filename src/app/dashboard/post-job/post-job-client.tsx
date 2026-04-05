@@ -345,14 +345,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   // Auto-save hook
-  const getDraftData = () => ({
+  const getDraftData = (): Partial<JobDraft> => ({
     title: form.getValues('jobTitle'),
     description: form.getValues('jobDescription'),
     jobCategory: form.getValues('jobCategory'),
     skills: form.getValues('skills')?.split(',').map(s => s.trim()),
     budget: normalizeDraftBudget(form.getValues('priceEstimate')),
     location: form.getValues('address.cityPincode'),
-    address: form.getValues('address'),
+    address: form.getValues('address') as any,
     fullAddress: form.getValues('address.fullAddress'),
 
     jobStartDate: form.getValues('jobStartDate') ? new Date(form.getValues('jobStartDate')) : undefined,
