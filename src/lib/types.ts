@@ -5,7 +5,7 @@ export type Address = {
   house: string;
   street: string;
   landmark?: string;
-  city: string;
+  city?: string;
   cityPincode: string;
   fullAddress?: string;
 };

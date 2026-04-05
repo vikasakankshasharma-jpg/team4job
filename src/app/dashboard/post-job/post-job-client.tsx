@@ -35,7 +35,7 @@ import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import { Job, JobAttachment, User, PlatformSettings } from "@/lib/types";
+import { Job, JobAttachment, User, PlatformSettings, Address } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useHelp } from "@/hooks/use-help";
