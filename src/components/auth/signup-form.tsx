@@ -810,6 +810,12 @@ export function SignUpForm({ isMapLoaded, referredBy }: { isMapLoaded: boolean; 
           ...values.address,
           cityPincode: values.address.cityPincode || '',
         },
+        addresses: {
+          residence: {
+            ...values.address,
+            cityPincode: values.address.cityPincode || '',
+          },
+        },
         subscription: {
           planId: 'trial',
           planName: 'Free Trial',

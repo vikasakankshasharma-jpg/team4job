@@ -16,6 +16,7 @@ export let users: User[] = [
     avatarUrl: PlaceHolderImages[0].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/admin/200/200',
     address: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' },
+    addresses: { residence: { house: '1', street: 'Admin Lane', cityPincode: '110001, Connaught Place S.O', fullAddress: '1 Admin Lane, Connaught Place, New Delhi, 110001' } },
     pincodes: { residential: '110001' },
     status: 'active'
   },
@@ -29,6 +30,7 @@ export let users: User[] = [
     avatarUrl: PlaceHolderImages[1].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/priya/200/200',
     address: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' },
+    addresses: { residence: { house: 'B-12', street: 'MG Road', cityPincode: '560001, Ashoknagar S.O', fullAddress: 'B-12, MG Road, Ashok Nagar, Bengaluru, 560001' } },
     pincodes: { residential: '560001' },
     status: 'active'
   },
@@ -42,6 +44,7 @@ export let users: User[] = [
     avatarUrl: PlaceHolderImages[2].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/vikram/200/200',
     address: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' },
+    addresses: { residence: { house: '42/C', street: 'Link Road', cityPincode: '400053, Andheri West S.O', fullAddress: '42/C, Link Road, Andheri West, Mumbai, 400053' } },
     pincodes: { residential: '400053', office: '400063' },
     status: 'active',
     professionalProfile: {
@@ -67,6 +70,7 @@ export let users: User[] = [
     avatarUrl: PlaceHolderImages[3].imageUrl,
     realAvatarUrl: 'https://picsum.photos/seed/ravi/200/200',
     address: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' },
+    addresses: { residence: { house: 'Plot 88', street: 'Sector 18', cityPincode: '122022, Gurgaon S.O', fullAddress: 'Plot 88, Sector 18, Gurgaon, Haryana, 122022' } },
     pincodes: { residential: '122022' },
     status: 'active',
     professionalProfile: {
