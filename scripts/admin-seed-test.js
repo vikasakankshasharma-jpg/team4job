@@ -2,7 +2,7 @@
   try {
     process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8080';
     process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
-    process.env.GOOGLE_CLOUD_PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dodo-beta';
+    process.env.GOOGLE_CLOUD_PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'team4job-live';
 
     const adminApp = await import('firebase-admin/app');
     const { initializeApp, getApps } = adminApp;

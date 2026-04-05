@@ -10,7 +10,7 @@ if (!process.env.CI) {
 // Initialize Firebase Admin
 if (!admin.apps.length) {
     admin.initializeApp({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dodo-beta'
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'team4job-live'
     });
 }
 const db = admin.firestore();

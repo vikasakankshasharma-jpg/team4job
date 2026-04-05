@@ -14,8 +14,8 @@ const originalFetch = global.fetch;
 global.fetch = async (input, init) => {
     // console.log("Intercepted fetch:", input); // Debugging
     const headers = new Headers(init?.headers);
-    headers.set('Referer', 'https://dodo-beta.web.app/');
-    headers.set('Origin', 'https://dodo-beta.web.app');
+    headers.set('Referer', 'https://team4job-live.web.app/');
+    headers.set('Origin', 'https://team4job-live.web.app');
 
     // Add User-Agent just in case
     headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -26,7 +26,7 @@ global.fetch = async (input, init) => {
     });
 };
 
-console.log("🔧 Patched fetch with Referer: https://dodo-beta.web.app/");
+console.log("🔧 Patched fetch with Referer: https://team4job-live.web.app/");
 
 // 3. Industry-specific seed data for CCTV, Security Surveillance & Access Control
 const SEED_DOCS = [

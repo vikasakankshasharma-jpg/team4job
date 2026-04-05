@@ -5,9 +5,9 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
     apiKey: "AIzaSyC0NaO2x65_mdXpe1S62l2bwoc3KZwjn3o",
-    authDomain: "dodo-beta.firebaseapp.com",
-    projectId: "dodo-beta",
-    storageBucket: "dodo-beta.firebasestorage.app",
+    authDomain: "team4job-live.firebaseapp.com",
+    projectId: "team4job-live",
+    storageBucket: "team4job-live.firebasestorage.app",
     messagingSenderId: "912974459558",
     appId: "1:912974459558:web:0d04a5c2d3373c28547a67"
 };

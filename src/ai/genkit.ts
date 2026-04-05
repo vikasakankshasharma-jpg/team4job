@@ -37,7 +37,7 @@ export const ai: any = isCI ? {
     }),
     // Vertex AI for embeddings
     vertexAI({
-      projectId: 'dodo-beta',
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'team4job-live',
       location: 'us-east4',
       // Use service account credentials in Firebase Functions, ADC locally
       ...(process.env.VERTEX_AI_CREDENTIALS ? {

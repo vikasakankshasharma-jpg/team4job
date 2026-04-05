@@ -82,10 +82,20 @@ const chartConfig = {
 } satisfies ChartConfig
 
 
+const addressSchema = z.object({
+    house: z.string().min(1, "House/Flat No is required."),
+    street: z.string().min(1, "Street/Area is required."),
+    landmark: z.string().optional(),
+    city: z.string().min(1, "City/Village is required."),
+    cityPincode: z.string().regex(/^\d{6}$/, "Must be a 6-digit pincode."),
+});
+
 const editProfileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
-    residentialPincode: z.string().regex(/^\d{6}$/, "Must be a 6-digit pincode."),
-    officePincode: z.string().optional().refine(val => val === '' || /^\d{6}$/.test(val!), "Must be a 6-digit pincode or empty."),
+    email: z.string().email("Invalid email address."),
+    mobile: z.string().regex(/^[0-9]{10}$/, "Must be a 10-digit mobile number."),
+    residence: addressSchema,
+    office: addressSchema.optional(),
     gstin: z.string().optional().refine(val => val === '' || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val!), "Invalid GSTIN format."),
 });
 
@@ -99,8 +109,22 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
         resolver: zodResolver(editProfileSchema),
         defaultValues: {
             name: user.name || "",
-            residentialPincode: user.pincodes?.residential || "",
-            officePincode: user.pincodes?.office || "",
+            email: user.email || "",
+            mobile: user.mobile || "",
+            residence: {
+                house: user.addresses?.residence?.house || "",
+                street: user.addresses?.residence?.street || "",
+                landmark: user.addresses?.residence?.landmark || "",
+                city: user.addresses?.residence?.city || "",
+                cityPincode: user.addresses?.residence?.cityPincode || "",
+            },
+            office: user.addresses?.office ? {
+                house: user.addresses.office.house || "",
+                street: user.addresses.office.street || "",
+                landmark: user.addresses.office.landmark || "",
+                city: user.addresses.office.city || "",
+                cityPincode: user.addresses.office.cityPincode || "",
+            } : undefined,
             gstin: user.gstin || "",
         },
     });
@@ -122,14 +146,16 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
             const token = await user.getIdToken();
             const updateData: any = {
                 name: values.name,
-                pincodes: {
-                    residential: values.residentialPincode,
-                    office: values.officePincode || '',
+                email: values.email,
+                mobile: values.mobile,
+                addresses: {
+                    residence: values.residence,
+                    office: values.office,
                 },
                 gstin: values.gstin || '',
             };
 
-            const response = await fetch('/api/users/profile', {
+            const response = await fetch('/api/user/profile', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -183,36 +209,73 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="residentialPincode"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('residentialPincode')}</FormLabel>
-                                <FormControl>
-                                    <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    {isProfessional && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
-                            name="officePincode"
+                            name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('officePincode')}</FormLabel>
-                                    <FormDescription>
-                                        {t('officePincodeDesc')}
-                                    </FormDescription>
-                                    <FormControl>
-                                        <Input placeholder={t('officePincodePlaceholder')} {...field} />
-                                    </FormControl>
+                                    <FormLabel>{t('emailAddress')}</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name="mobile"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('mobileNumber')}</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <Separator />
+                    <h4 className="text-sm font-semibold flex items-center gap-2"><MapPin className="h-4 w-4" /> {t('residenceAddress')}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="residence.house" render={({ field }) => (
+                            <FormItem><FormLabel>{t('houseNo')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="residence.street" render={({ field }) => (
+                            <FormItem><FormLabel>{t('streetArea')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="residence.landmark" render={({ field }) => (
+                            <FormItem><FormLabel>{t('landmark')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="residence.city" render={({ field }) => (
+                            <FormItem><FormLabel>{t('cityVillage')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="residence.cityPincode" render={({ field }) => (
+                            <FormItem><FormLabel>{t('pincode')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+
+                    {isProfessional && (
+                        <>
+                            <Separator />
+                            <h4 className="text-sm font-semibold flex items-center gap-2"><Building className="h-4 w-4" /> {t('officeAddress')}</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="office.house" render={({ field }) => (
+                                    <FormItem><FormLabel>{t('houseNo')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="office.street" render={({ field }) => (
+                                    <FormItem><FormLabel>{t('streetArea')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="office.landmark" render={({ field }) => (
+                                    <FormItem><FormLabel>{t('landmark')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="office.city" render={({ field }) => (
+                                    <FormItem><FormLabel>{t('cityVillage')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="office.cityPincode" render={({ field }) => (
+                                    <FormItem><FormLabel>{t('pincode')}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                            </div>
+                        </>
                     )}
                     {isProfessional && (
                         <div className="space-y-4">
@@ -875,9 +938,12 @@ export default function ProfileClient() {
                 return {
                     ...prevUser,
                     name: values.name,
-                    pincodes: {
-                        residential: values.residentialPincode,
-                        office: values.officePincode || prevUser.pincodes?.office || '',
+                    email: values.email,
+                    mobile: values.mobile,
+                    addresses: {
+                        ...prevUser.addresses,
+                        residence: values.residence,
+                        office: values.office,
                     },
                     gstin: values.gstin || prevUser.gstin,
                 };
@@ -958,21 +1024,102 @@ export default function ProfileClient() {
                                 )}
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
-                                <div className="flex items-center gap-2">
-                                    <CalendarDays className="h-4 w-4" />
+                            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 text-sm text-muted-foreground mt-4">
+                                <div className="flex items-center gap-2 px-3 py-1 bg-background/50 rounded-full border border-border/50">
+                                    <CalendarDays className="h-4 w-4 text-primary" />
                                     <span>Member since {format(toDate(user.memberSince), 'MMMM yyyy')}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{user.pincodes?.residential || 'N/A'} (Home)</span>
+                                
+                                {/* Email Verification Badge */}
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${user.isEmailVerified ? 'bg-success/10 border-success/20 text-success' : 'bg-destructive/10 border-destructive/20 text-destructive'}`}>
+                                    {user.isEmailVerified ? <ShieldCheck className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                                    <span>{user.email} {user.isEmailVerified ? '(Verified)' : '(Unverified)'}</span>
                                 </div>
-                                {user.pincodes?.office && (
-                                    <div className="flex items-center gap-2">
-                                        <Building className="h-4 w-4" />
-                                        <span>{user.pincodes.office} (Office)</span>
-                                    </div>
+
+                                {/* Mobile Verification Badge */}
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${user.isMobileVerified ? 'bg-success/10 border-success/20 text-success' : 'bg-destructive/10 border-destructive/20 text-destructive'}`}>
+                                    {user.isMobileVerified ? <ShieldCheck className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                                    <span>{user.mobile} {user.isMobileVerified ? '(Verified)' : '(Unverified)'}</span>
+                                </div>
+                            </div>
+
+                            {/* Cooling Period Warning */}
+                            {user.restrictedUntil && toDate(user.restrictedUntil) > new Date() && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 text-amber-700 dark:text-amber-400 text-sm"
+                                >
+                                    <AlertTriangle className="h-5 w-5 shrink-0" />
+                                    <p>
+                                        <strong>Security Cooling Period Active:</strong> Sensitive operations (like payouts) are restricted until {format(toDate(user.restrictedUntil), "MMM d, h:mm a")} due to recent contact info changes.
+                                    </p>
+                                </motion.div>
+                            )}
+
+                            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Residence Address Card */}
+                                <Card className="bg-background/40 border-none shadow-sm">
+                                    <CardHeader className="p-4 pb-2">
+                                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                            <MapPin className="h-3 w-3" /> {t('residenceAddress')}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0 text-sm">
+                                        {user.addresses?.residence ? (
+                                            <>
+                                                <p className="font-medium">{user.addresses.residence.house}, {user.addresses.residence.street}</p>
+                                                <p className="text-muted-foreground">{user.addresses.residence.landmark}</p>
+                                                <p className="text-muted-foreground">{user.addresses.residence.city} - {user.addresses.residence.cityPincode}</p>
+                                            </>
+                                        ) : (
+                                            <p className="italic text-muted-foreground">{t('notProvided')}</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Office Address Card */}
+                                {role === 'Professional' && (
+                                    <Card className="bg-background/40 border-none shadow-sm">
+                                        <CardHeader className="p-4 pb-2">
+                                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                                <Building className="h-3 w-3" /> {t('officeAddress')}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-4 pt-0 text-sm">
+                                            {user.addresses?.office ? (
+                                                <>
+                                                    <p className="font-medium">{user.addresses.office.house}, {user.addresses.office.street}</p>
+                                                    <p className="text-muted-foreground">{user.addresses.office.landmark}</p>
+                                                    <p className="text-muted-foreground">{user.addresses.office.city} - {user.addresses.office.cityPincode}</p>
+                                                </>
+                                            ) : (
+                                                <p className="italic text-muted-foreground">{t('notProvided')}</p>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 )}
+
+                                {/* Verified Address (Aadhar) Card */}
+                                <Card className="bg-primary/5 border-primary/10 shadow-sm">
+                                    <CardHeader className="p-4 pb-2">
+                                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                                            <ShieldCheck className="h-3 w-3" /> {t('verifiedAddressAadhar')}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-0 text-sm">
+                                        {user.addresses?.verified || user.kycAddress ? (
+                                            <div className="space-y-1">
+                                                <p className="font-medium text-primary/90">{user.addresses?.verified || user.kycAddress}</p>
+                                                <p className="text-[10px] text-primary/60 mt-2 flex items-center gap-1 italic">
+                                                    <AlertTriangle className="h-2 w-2" /> {t('readOnlyVerified')}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <p className="italic text-muted-foreground">{t('pendingVerification')}</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
                             </div>
 
                             <div className="mt-6">

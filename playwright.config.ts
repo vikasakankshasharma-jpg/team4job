@@ -52,9 +52,9 @@ const getWebServerEnv = () => {
 // In CI, variables are injected by GitHub Actions. Locally, we load them from .env files.
 if (!process.env.CI) {
     // Load environment variables from .env.local
-    dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
-    // Load .env.test if it exists (for emulator support). Test variables MUST override local variables
-    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
+    dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+    // Load .env.test if it exists (for emulator support). Test variables MUST NOT override explicitly passed system variables.
+    dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 }
 
 /**

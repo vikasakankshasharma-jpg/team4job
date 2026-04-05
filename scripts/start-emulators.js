@@ -12,7 +12,7 @@ const startFirestoreEmulator = () => {
   console.log('Starting Firestore Emulator on port 8080...');
   return spawn('java', [
     '-Xmx512m',
-    '-Dgcloud.project=dodo-beta',
+    '-Dgcloud.project=team4job-live',
     '-jar',
     path.join(__dirname, '../node_modules/@firebase/database/dist/firestore-emulator.jar'),
     '--port=8080'

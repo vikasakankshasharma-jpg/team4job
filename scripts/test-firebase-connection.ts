@@ -17,7 +17,7 @@ async function testConnection() {
             try {
                 firebase.initializeApp({
                     credential: firebase.credential.applicationDefault(),
-                    projectId: 'dodo-beta'
+                    projectId: 'team4job-live'
                 });
             } catch (e: any) {
                 console.log('Failed to init with ADC, checking GOOGLE_APPLICATION_CREDENTIALS env...');

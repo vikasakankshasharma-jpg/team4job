@@ -2,9 +2,10 @@
 import { DocumentReference, Timestamp } from "firebase/firestore";
 
 export type Address = {
-  house?: string;
-  street?: string;
+  house: string;
+  street: string;
   landmark?: string;
+  city: string;
   cityPincode: string;
   fullAddress?: string;
 };
@@ -34,6 +35,11 @@ export type User = {
     office?: string;
   };
   address: Address;
+  addresses: {
+    residence: Address;
+    office?: Address;
+    verified?: string; // Read-only, from Aadhar
+  };
   district?: string; // Added for district-wise queries
   roles: ('Client' | 'Professional' | 'Admin' | 'Support Team')[];
   memberSince: Date | Timestamp;
@@ -54,6 +60,7 @@ export type User = {
   isPanVerified?: boolean;
   kycAddress?: string;
   gstin?: string;
+  restrictedUntil?: Date | Timestamp; // 48-hour cooling period for sensitive changes
   payouts?: {
     beneficiaryId?: string;
     accountHolderName?: string;

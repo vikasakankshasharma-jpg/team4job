@@ -17,22 +17,22 @@
 export const TEST_ACCOUNTS = {
     // Primary test accounts (used by most E2E tests)
     client: {
-        email: 'rajesh.client@team4job.com',
+        email: 'giver_vip_v3@team4job.com',
         password: 'TestUser_2026!',
         role: 'Client',
-        name: 'Rajesh Kumar',
+        name: 'Priya VIP Giver',
     },
     professional: {
-        email: 'amit.pro@team4job.com',
+        email: 'installer_pro_v3@team4job.com',
         password: 'TestUser_2026!',
         role: 'Professional',
-        name: 'Amit Patel',
+        name: 'Rajesh Pro Installer',
     },
     admin: {
-        email: 'vikasakankshasharma@gmail.com',
+        email: 'vikasakankshasharma_v3@gmail.com',
         password: 'Admin_Pass2026!',
         role: 'Admin',
-        name: 'Vikram Singh',
+        name: 'Vikas Admin',
     },
 
     // Extended accounts for comprehensive testing

@@ -16,6 +16,12 @@ export class AuthHelper {
 
     private async seedTestUsers() {
         if (AuthHelper.seeded) return;
+        
+        if (process.env.ALLOW_E2E_SEED === 'false' || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'false') {
+            console.log('[AuthHelper] Bypassing mock user seeding because tests are executing against Live Production infrastructure.');
+            AuthHelper.seeded = true;
+            return;
+        }
 
         const maxRetries = 3;
         let attempts = 0;

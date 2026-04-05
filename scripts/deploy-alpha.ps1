@@ -37,7 +37,7 @@ Write-Host "🎉 Deployment Complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📍 Your app is now live at:" -ForegroundColor Cyan
 Write-Host "   - Primary: https://team4job.com"
-Write-Host "   - Firebase: https://dodo-beta.web.app"
+Write-Host "   - Firebase: https://team4job-live.web.app"
 Write-Host ""
 Write-Host "🧪 Next Steps:" -ForegroundColor Yellow
 Write-Host "   1. Visit https://team4job.com and verify it loads"
@@ -46,6 +46,6 @@ Write-Host "   3. Check /dashboard/audit-logs for functionality"
 Write-Host "   4. Send invitations to Alpha testers"
 Write-Host ""
 Write-Host "📊 Monitor at:" -ForegroundColor Cyan
-Write-Host "   - Firebase Console: https://console.firebase.google.com/project/dodo-beta"
+Write-Host "   - Firebase Console: https://console.firebase.google.com/project/team4job-live"
 Write-Host "   - Admin Dashboard: https://team4job.com/dashboard/admin"
 Write-Host ""

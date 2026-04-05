@@ -12,7 +12,7 @@ export const openApiSpec = {
     },
     servers: [
         {
-            url: 'https://dodo-beta.web.app/api',
+            url: 'https://www.team4job.com/api',
             description: 'Production Server',
         },
         {

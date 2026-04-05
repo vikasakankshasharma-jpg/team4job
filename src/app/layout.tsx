@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://dodo-beta.web.app",
+    url: "https://www.team4job.com",
     siteName: "Team4Job",
     title: "Team4Job | Hire Verified Professionals",
     description: "The most secure way to hire skilled professionals. Vetted experts and escrow protection.",

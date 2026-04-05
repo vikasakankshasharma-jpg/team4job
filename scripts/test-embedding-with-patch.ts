@@ -11,8 +11,8 @@ if (!process.env.CI) {
 const originalFetch = global.fetch;
 global.fetch = async (input, init) => {
     const headers = new Headers(init?.headers);
-    headers.set('Referer', 'https://dodo-beta.web.app/');
-    headers.set('Origin', 'https://dodo-beta.web.app');
+    headers.set('Referer', 'https://team4job-live.web.app/');
+    headers.set('Origin', 'https://team4job-live.web.app');
     return originalFetch(input, { ...init, headers });
 };
 
