@@ -36,9 +36,9 @@ export default function NotFound() {
                         </Link>
                     </Button>
                     <Button asChild className="group gap-2 px-8 py-6 text-lg shadow-xl shadow-primary/20 transition-all hover:shadow-primary/30 active:scale-95">
-                        <Link href="/dashboard">
+                        <Link href="/login">
                             <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-                            Back to Dashboard
+                            Sign In
                         </Link>
                     </Button>
                 </div>

@@ -167,7 +167,7 @@ export function SidebarNav() {
                                     <span className="sr-only">{label}</span>
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
+                            <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
                         </Tooltip>
                     );
                 })}
@@ -187,7 +187,7 @@ export function SidebarNav() {
                             <span className="sr-only">{tNav('profile')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{tNav('profile')}</TooltipContent>
+                    <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{tNav('profile')}</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
@@ -204,7 +204,7 @@ export function SidebarNav() {
                             <span className="sr-only">{tNav('settings')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="font-bold border-none bg-foreground text-background rounded-xl px-4 py-2">{tNav('settings')}</TooltipContent>
+                    <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{tNav('settings')}</TooltipContent>
                 </Tooltip>
 
                 <SupportDialog />

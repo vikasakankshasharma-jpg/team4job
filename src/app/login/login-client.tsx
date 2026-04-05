@@ -70,9 +70,8 @@ export default function LoginClient() {
   return (
     <div className="flex min-h-screen flex-col items-center p-4 relative overflow-hidden bg-background">
       {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-30 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/10 blur-[120px] rounded-full" />
+      <div className="absolute inset-0 z-0 h-full w-full bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-40 blur-[100px]"></div>
       </div>
 
       <header className="w-full max-w-5xl flex items-center p-8 relative z-10">
@@ -100,8 +99,8 @@ export default function LoginClient() {
         <div className="w-full max-w-[450px]">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-2xl p-1 mb-8 border border-border/50 backdrop-blur-sm h-14">
-              <TabsTrigger value="login" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300">{t('loginTab')}</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300">{t('signupTab')}</TabsTrigger>
+              <TabsTrigger value="login" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300 data-[state=inactive]:hover:bg-background/20">{t('loginTab')}</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300 data-[state=inactive]:hover:bg-background/20">{t('signupTab')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login" className="mt-0 outline-none">

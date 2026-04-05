@@ -118,10 +118,10 @@ export function HeaderClient() {
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
                         {index === breadcrumbSegments.length - 2 ? (
-                            <BreadcrumbPage className="capitalize">{segment.replace('-', ' ')}</BreadcrumbPage>
+                            <BreadcrumbPage className="capitalize">{segment.replaceAll('-', ' ')}</BreadcrumbPage>
                         ) : (
                             <BreadcrumbLink asChild>
-                                <Link href={`/${breadcrumbSegments.slice(0, index + 2).join('/')}`} className="capitalize">{segment.replace('-', ' ')}</Link>
+                                <Link href={`/${breadcrumbSegments.slice(0, index + 2).join('/')}`} className="capitalize">{segment.replaceAll('-', ' ')}</Link>
                             </BreadcrumbLink>
                         )}
                     </BreadcrumbItem>

@@ -87,19 +87,19 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
                             href={item.href}
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0 transition-colors",
-                                "active:bg-accent",
+                                "active:bg-primary/5",
                                 item.primary
                                     ? "text-primary"
                                     : active
-                                        ? "text-foreground"
+                                        ? "text-primary"
                                         : "text-muted-foreground"
                             )}
                         >
                             <div
                                 className={cn(
-                                    "flex items-center justify-center rounded-lg transition-all",
+                                    "flex items-center justify-center rounded-xl transition-all",
                                     item.primary && "bg-primary text-primary-foreground p-2",
-                                    !item.primary && active && "bg-accent"
+                                    !item.primary && active && "bg-primary/10 px-3 py-1"
                                 )}
                             >
                                 <Icon

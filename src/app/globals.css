@@ -64,19 +64,19 @@
   }
 
   .dark {
-    --background: 240 10% 2%;
-    /* Deeper dark background (Zinc-950 style) */
+    --background: 240 5% 6%;
+    /* Softer dark background */
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 240 5% 8%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 2%;
+    --popover: 240 5% 6%;
     --popover-foreground: 0 0% 98%;
     --primary: 226 70% 58%;
     /* Punchy Premium Blue (#4F46E5 style) */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 10%;
+    --secondary: 240 3.7% 12%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 10%;
+    --muted: 240 3.7% 12%;
     --muted-foreground: 240 5% 64.9%;
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
@@ -88,21 +88,21 @@
     --warning-foreground: 38 92% 50%;
     --info: 217.2 91.2% 59.8%;
     --info-foreground: 0 0% 98%;
-    --border: 240 3.7% 12%;
-    --input: 240 3.7% 12%;
+    --border: 240 3.7% 16%;
+    --input: 240 3.7% 16%;
     --ring: 226 70% 58%;
     --chart-1: 226 70% 58%;
     --chart-2: 240 3.7% 15.9%;
     --chart-3: 142.1 70.6% 45.3%;
     --chart-4: 47.9 95.8% 53.1%;
     --chart-5: 0 62.8% 30.6%;
-    --sidebar-background: 240 10% 2%;
+    --sidebar-background: 240 5% 6%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 226 70% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 12%;
+    --sidebar-border: 240 3.7% 16%;
     --sidebar-ring: 226 70% 58%;
 
     /* Dark mode status colors */
