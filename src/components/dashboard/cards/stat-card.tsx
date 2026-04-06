@@ -14,18 +14,18 @@ export const StatCard = ({ title, value, description, icon: Icon, href, iconBgCo
         className="h-full"
     >
         <Link href={href} className="block h-full group">
-            <Card className="flex flex-col h-full relative overflow-hidden min-w-0 border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2rem] transition-all duration-500">
+            <Card className="flex flex-col h-full relative overflow-hidden min-w-0 bg-surface-container-low border border-outline-variant/10 rounded-xl transition-colors hover:bg-surface-container group">
                 {/* Accent Glow */}
                 <div className={cn("absolute top-0 left-0 w-full h-1.5 opacity-30 group-hover:opacity-100 transition-opacity", iconBgColor)} />
                 
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 min-w-0 p-6">
                     <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 mr-2">{title}</CardTitle>
-                    <div className={cn("p-2.5 rounded-2xl transition-all duration-500 group-hover:rotate-6 group-hover:shadow-lg", iconBgColor)}>
+                    <div className={cn("p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110", iconBgColor)}>
                         <Icon className={cn("h-5 w-5", iconColor)} />
                     </div>
                 </CardHeader>
                 <CardContent className="flex-grow p-6 pt-0">
-                    <div className="text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">
+                    <div className="text-3xl font-black font-headline tracking-tight text-on-surface">
                         {value}
                     </div>
                     {description && <p className="text-xs text-muted-foreground/80 mt-2 font-bold leading-tight uppercase tracking-wider">{description}</p>}
@@ -41,7 +41,7 @@ export const StatCard = ({ title, value, description, icon: Icon, href, iconBgCo
 );
 
 export const StatCardSkeleton = () => (
-    <Card className="flex flex-col h-full relative overflow-hidden min-w-0 border-none bg-card/40 animate-pulse rounded-[2rem]">
+    <Card className="flex flex-col h-full relative overflow-hidden min-w-0 bg-surface-container-low border border-outline-variant/10 animate-pulse rounded-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 min-w-0 p-6">
             <div className="h-4 w-24 bg-muted rounded" />
             <div className="h-10 w-10 bg-muted rounded-2xl" />

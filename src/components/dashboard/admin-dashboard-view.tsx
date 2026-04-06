@@ -187,8 +187,8 @@ export function AdminDashboardView() {
     }
 
     return (
-        <div className="space-y-6 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface p-4 md:p-8 min-h-screen">
-            <h1 className="text-3xl font-extrabold font-headline tracking-tighter">{t('welcome')}</h1>
+        <div className="space-y-6 lg:space-y-8 w-full">
+            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter text-on-surface leading-none">{t('welcome')}</h1>
             <div className="space-y-6">
                 <FinancialSummaryCard transactions={transactions} />
 
@@ -208,7 +208,7 @@ export function AdminDashboardView() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="col-span-1">
                         {/* Recent Signups or Activity - simplified to Card structure for safety */}
-                        <Card className="border-0 shadow-lg shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-xl overflow-hidden">
+                        <Card className="bg-surface-container-low border border-outline-variant/10 rounded-xl overflow-hidden shadow-sm">
                             <CardHeader className="pb-4"><CardTitle className="text-xl font-bold font-headline tracking-tight">{t('recentSignups')}</CardTitle></CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
