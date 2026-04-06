@@ -72,7 +72,7 @@ export function MobileBottomNav({ className }: MobileBottomNavProps) {
     return (
         <nav
             className={cn(
-                "md:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]",
+                "sm:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-[env(safe-area-inset-bottom)]",
                 className
             )}
         >
