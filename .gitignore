@@ -75,6 +75,8 @@ vertex-ai-key.json
 serviceAccountKey.json
 service-account.json
 .env*.bak
+.env.test
+CREDENTIALS.md
 API_KEYS.md
 dom-dump.html
 
