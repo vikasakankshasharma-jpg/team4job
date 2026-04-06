@@ -130,7 +130,7 @@ export default function HomeClient() {
                             {t('heroDescription')}
                         </p>
                         
-                        <div className="flex flex-col sm:flex-row justify-center gap-5 mb-24">
+                        <div className="flex flex-col sm:flex-row justify-center gap-5 mb-12">
                             <Button size="lg" asChild className="h-16 px-10 text-xl font-bold rounded-xl shadow-blue-500/20 shadow-2xl hover:translate-y-[-2px] transition-all group" onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
                                 <Link href="/login?tab=signup" className="flex items-center">
                                     {t('postJobButton')} <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />

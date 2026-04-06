@@ -27,9 +27,9 @@ export function FeaturesSection({ t }: FeaturesSectionProps) {
     ];
 
     return (
-        <section id="features" className="py-24 md:py-32 bg-slate-50/50 dark:bg-zinc-900/30 border-y relative overflow-hidden">
+        <section id="features" className="py-16 md:py-20 bg-slate-50/50 dark:bg-zinc-900/30 border-y relative overflow-hidden">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center mb-20">
+                <div className="text-center mb-12">
                     <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">{t('sectionTitle')}</h2>
                     <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto whitespace-pre-line">
                         {t('sectionDesc')}
