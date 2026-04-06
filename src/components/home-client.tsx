@@ -11,18 +11,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
-// Lazy load non-critical sections
+// Lazy load non-critical sections — no loading placeholder since ssr:true handles initial render
 const FeaturesSection = dynamic(() => import('./landing/features-section').then(mod => mod.FeaturesSection), {
     ssr: true,
-    loading: () => <div className="h-96 animate-pulse bg-muted/20" />
 });
 const HowItWorksSection = dynamic(() => import('./landing/how-it-works-section').then(mod => mod.HowItWorksSection), {
     ssr: true,
-    loading: () => <div className="h-96 animate-pulse bg-muted/20" />
 });
 const TrustProofSection = dynamic(() => import('./landing/trust-proof').then(mod => mod.TrustProofSection), {
     ssr: true,
-    loading: () => <div className="h-64 animate-pulse bg-muted/20" />
 });
 
 // Footer and CTA are also candidates for late loading

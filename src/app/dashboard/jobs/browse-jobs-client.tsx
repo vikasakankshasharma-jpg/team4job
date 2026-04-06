@@ -76,7 +76,7 @@ const getLocationParts = (
 };
 
 export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] }) {
-  const { user, role } = useUser();
+  const { user, role, loading: userLoading } = useUser();
   const { setHelp } = useHelp();
   const router = useRouter();
   const tJob = useTranslations('job');
@@ -349,10 +349,46 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
     selectedSkills.length > 0
   ].filter(Boolean).length;
 
+  // Auth guard: if user is loading, show skeleton
+  if (userLoading) {
+    return (
+      <div className="space-y-10 pb-20 px-4 sm:px-6 lg:px-8">
+        <JobCardSkeletonGrid count={6} />
+      </div>
+    );
+  }
+
+  // Not logged in: prompt to sign in
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-6 text-center px-4">
+        <MapPin className="h-16 w-16 text-primary/40" />
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight mb-2">Browse Available Jobs</h2>
+          <p className="text-muted-foreground max-w-sm">
+            Sign in as a Professional to view and bid on jobs near you.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <a href="/login" className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 transition-colors">
+            Sign In
+          </a>
+          <a href="/login?tab=signup" className="inline-flex h-11 items-center justify-center rounded-xl border border-border px-6 text-sm font-semibold transition-colors hover:bg-secondary/50">
+            Create Account
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // Wrong role: clients and admins don't browse jobs this way
   if (role === 'Admin' || role === 'Client') {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">{tCommon('loading')}</p>
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4 text-center px-4">
+        <MapPin className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-muted-foreground font-medium">
+          This page is for Professionals. <a href="/dashboard" className="text-primary underline">Go to your dashboard</a>.
+        </p>
       </div>
     );
   }
