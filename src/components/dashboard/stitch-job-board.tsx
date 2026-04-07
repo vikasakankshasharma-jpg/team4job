@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 // STITCH GENERATED COMPONENT: StitchProfessionalJobBoard
 // Note: Requires globals.css and stitch-colors.css
@@ -27,7 +28,7 @@ export function StitchProfessionalJobBoard() {
 <span className="material-symbols-outlined" data-icon="settings">settings</span>
 </button>
 <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
-<img alt="User profile" data-alt="Close up portrait of a professional male software engineer with a confident smile in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_PPcJSJ2elOpsg1YPE8XMYcpD0oo1fcqfXDB_DtjMmTQ3t77SqaKCKXh3N40MkeWFcupw2WklUQqN0C2BOb-gHhJpRJqDsAWnsuqcrzN_dkAOhwbgqNAD7gKP6kdreLnhy-JIV3hoXUT9czIQz1VFMjBz77ArzCyvHo9DE-fMwwjj9uAQvSGD3yrnWPOtovG1O_2Ub8UsBIw40NOj5KiONypATogj4pHndSbgv6Fl9-5vUIeft9YYzc320kU2NHptc_nD4Vi23J5-" />
+<Image alt="User profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_PPcJSJ2elOpsg1YPE8XMYcpD0oo1fcqfXDB_DtjMmTQ3t77SqaKCKXh3N40MkeWFcupw2WklUQqN0C2BOb-gHhJpRJqDsAWnsuqcrzN_dkAOhwbgqNAD7gKP6kdreLnhy-JIV3hoXUT9czIQz1VFMjBz77ArzCyvHo9DE-fMwwjj9uAQvSGD3yrnWPOtovG1O_2Ub8UsBIw40NOj5KiONypATogj4pHndSbgv6Fl9-5vUIeft9YYzc320kU2NHptc_nD4Vi23J5-" width={32} height={32} unoptimized />
 </div>
 </div>
 </header>

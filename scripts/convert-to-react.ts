@@ -66,11 +66,11 @@ const colorsMatch = html.match(/"colors":\s*({[^}]+})/);
 if (colorsMatch) {
     try {
         const colors = JSON.parse(colorsMatch[1]);
-        let cssVars = ":root {\\n";
+        let cssVars = ":root {\n";
         for (const [key, value] of Object.entries(colors)) {
-            cssVars += \`  --stitch-\${key}: \${value};\\n\`;
+            cssVars += "  --stitch-" + key + ": " + value + ";\n";
         }
-        cssVars += "}\\n";
+        cssVars += "}\n";
         fs.writeFileSync('src/app/stitch-colors.css', cssVars);
         console.log("Written stitch colors to src/app/stitch-colors.css");
     } catch(e) {}

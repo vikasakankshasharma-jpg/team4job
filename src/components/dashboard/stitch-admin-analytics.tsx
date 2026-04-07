@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 // STITCH GENERATED COMPONENT: StitchAdminAnalytics
 // Note: Requires globals.css and stitch-colors.css
@@ -30,7 +31,7 @@ export function StitchAdminAnalytics() {
 <span className="material-symbols-outlined" data-icon="help_outline">help_outline</span>
 </button>
 <div className="h-8 w-8 rounded-full overflow-hidden bg-surface-container-highest border border-outline-variant/20">
-<img alt="Admin Avatar" className="w-full h-full object-cover" data-alt="close-up portrait of professional software architect with glasses in a dark moody office with blue computer screen lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo0ZXVjK4jS3frKv2jlLWs4Uuc546rwgUaKWlQJhC6QcYEEWJpkUMLInvMnmaZwmP88SPtT3fNCRCObhdu7R65Lep0PHWguYLVQNuflmyQXB2wGWDdTNLj5ezdIyd2KaChE6SIeV1FDmKyGlhDGZXlElO-R3QCMdeDM_kGmRgoqDF_kQD7G-fsZ1XBWbo9HpviSACZQBjNh8Qfd1wvhPtuBNlqnMTE7vie0d1oIlzr0FP7tTiRQp_SLObON0Km1YYXEUsp9WxZr5ok" />
+<Image alt="Admin Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo0ZXVjK4jS3frKv2jlLWs4Uuc546rwgUaKWlQJhC6QcYEEWJpkUMLInvMnmaZwmP88SPtT3fNCRCObhdu7R65Lep0PHWguYLVQNuflmyQXB2wGWDdTNLj5ezdIyd2KaChE6SIeV1FDmKyGlhDGZXlElO-R3QCMdeDM_kGmRgoqDF_kQD7G-fsZ1XBWbo9HpviSACZQBjNh8Qfd1wvhPtuBNlqnMTE7vie0d1oIlzr0FP7tTiRQp_SLObON0Km1YYXEUsp9WxZr5ok" width={32} height={32} unoptimized />
 </div>
 </div>
 </header>
@@ -203,7 +204,7 @@ export function StitchAdminAnalytics() {
 <span className="text-[10px] font-bold text-on-surface">ID: #DS-8902</span>
 <span className="text-[9px] font-mono text-slate-500">2m ago</span>
 </div>
-<p className="text-[11px] font-medium leading-relaxed mb-2">Escrow release blocked for "Network Upgrade" project. Professional claims completion.</p>
+<p className="text-[11px] font-medium leading-relaxed mb-2">Escrow release blocked for &quot;Network Upgrade&quot; project. Professional claims completion.</p>
 <div className="flex items-center gap-2">
 <div className="w-4 h-4 rounded-full bg-slate-700"></div>
 <span className="text-[10px] text-slate-400 italic">User: AlphaLabs</span>

@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 // STITCH GENERATED COMPONENT: StitchPostJobClient
 // Note: Requires globals.css and stitch-colors.css
@@ -22,7 +23,7 @@ export function StitchPostJobClient() {
 <button className="material-symbols-outlined text-on-surface-variant dark:text-slate-400 hover:text-primary transition-colors">notifications</button>
 <button className="material-symbols-outlined text-on-surface-variant dark:text-slate-400 hover:text-primary transition-colors">settings</button>
 <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest">
-<img alt="User profile" className="w-full h-full object-cover" data-alt="close-up portrait of a professional engineer wearing a clean navy polo shirt in a bright office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu5mG0UHlzjgrqfJWmqcjGiFbRrBx2nVAbFnTDCJhp9ci8zgeuzgGJhhfosRewLwRvXZ_YysvfQdLcL6939zPnUTIXGVgTT1t96l8klECQdfGXOv5PNolbM_gKojopg5B0OwtEXxCiLl6l_umWhFnlcWiQxTGzvIgE27z4M369O2djAi9GN9r19yaid8m9AxumQjTgAOm0Uq3Ia-aCv6OWWFBc9sFgDqdVGdyZKGjQrH-4XaS7AMAViSId7Qy9tAweGAZB0zi0_64a" />
+<Image alt="User profile" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu5mG0UHlzjgrqfJWmqcjGiFbRrBx2nVAbFnTDCJhp9ci8zgeuzgGJhhfosRewLwRvXZ_YysvfQdLcL6939zPnUTIXGVgTT1t96l8klECQdfGXOv5PNolbM_gKojopg5B0OwtEXxCiLl6l_umWhFnlcWiQxTGzvIgE27z4M369O2djAi9GN9r19yaid8m9AxumQjTgAOm0Uq3Ia-aCv6OWWFBc9sFgDqdVGdyZKGjQrH-4XaS7AMAViSId7Qy9tAweGAZB0zi0_64a" width={32} height={32} unoptimized />
 </div>
 </div>
 </div>
@@ -171,7 +172,7 @@ export function StitchPostJobClient() {
 <h3 className="font-bold mb-1 text-on-surface dark:text-slate-100">Job Location</h3>
 <p className="text-xs text-on-surface-variant dark:text-slate-400 mb-4">Coordinates: 40.7128° N, 74.0060° W</p>
 <div className="relative h-64 w-full rounded-lg overflow-hidden bg-surface-container">
-<img className="w-full h-full object-cover grayscale opacity-80 dark:invert" data-alt="clean minimal vector map of downtown Manhattan with primary blue accent markers and soft grey roads" data-location="New York City" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOf_IpdYg2PkiYGaRSiDBzR-jxafSjmLA15-f2LV134-Rb98H0AUN1l1WJjl2oqvgDk06Wfn5zTcFvYZgYXUfzujO6EgS6rwvPfpR7Vfl9nqkhjnhgVx4Gd9VAMkLVW5KnZTa2MHOQh-On6YGh4iWjQtRFLjGkBZLTpZySSob_FUVxOyx9e_T4H76Pe-gpWczkwMWkMYFzQGJwf4xh-sMcauQMOUHhcffqcjbgTqhAI97kRe29n1prHZhOf1sgrmuWnmOUqdSNISfn" />
+<Image className="w-full h-full object-cover grayscale opacity-80 dark:invert" alt="clean minimal vector map of downtown Manhattan with primary blue accent markers and soft grey roads" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOf_IpdYg2PkiYGaRSiDBzR-jxafSjmLA15-f2LV134-Rb98H0AUN1l1WJjl2oqvgDk06Wfn5zTcFvYZgYXUfzujO6EgS6rwvPfpR7Vfl9nqkhjnhgVx4Gd9VAMkLVW5KnZTa2MHOQh-On6YGh4iWjQtRFLjGkBZLTpZySSob_FUVxOyx9e_T4H76Pe-gpWczkwMWkMYFzQGJwf4xh-sMcauQMOUHhcffqcjbgTqhAI97kRe29n1prHZhOf1sgrmuWnmOUqdSNISfn" width={600} height={400} unoptimized />
 <div className="absolute inset-0 flex items-center justify-center">
 <div className="w-12 h-12 bg-primary/20 rounded-full animate-ping absolute"></div>
 <span className="material-symbols-outlined text-primary text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
