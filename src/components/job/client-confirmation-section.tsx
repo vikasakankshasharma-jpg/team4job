@@ -54,10 +54,13 @@ interface ClientConfirmationSectionProps {
     onAddFunds: () => void;
 }
 
+import { useTranslations } from "next-intl";
+
 export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, onAddFunds }: ClientConfirmationSectionProps) {
     const { toast } = useToast();
     const { storage } = useFirebase();
     const router = useRouter();
+    const t = useTranslations('client.jobActions');
     const [isLoading, setIsLoading] = React.useState(false);
     const [disputeReason, setDisputeReason] = React.useState("");
     const [disputeFiles, setDisputeFiles] = React.useState<File[]>([]);
@@ -73,15 +76,15 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
             if (!res.success) throw new Error(res.error);
 
             toast({
-                title: "Job Approved & Payment Released!",
-                description: "The payment has been released to the Professional.",
+                title: t('approveSuccess'),
+                description: t('approveSuccessDesc'),
                 variant: 'default'
             });
 
         } catch (error: any) {
            toast({
-                title: "Error Approving Job",
-                description: error.message || "An unexpected error occurred.",
+                title: t('errorTitle'),
+                description: error.message || t('genericError'),
                 variant: "destructive",
             });
         } finally {
@@ -91,7 +94,11 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
 
     const handleRaiseDispute = async () => {
         if (!disputeReason.trim() || disputeFiles.length === 0) {
-            toast({ title: "Evidence Required", description: "Please provide a reason and upload evidence.", variant: "destructive" });
+            toast({ 
+                title: t('evidenceRequiredTitle'), 
+                description: t('evidenceRequiredDesc'), 
+                variant: "destructive" 
+            });
             return;
         }
         if (!user || !storage) return;
@@ -140,11 +147,11 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
             });
             await onJobUpdate({ status: 'Disputed' as any, disputeId: newDisputeId });
 
-            toast({ title: "Dispute Raised", description: "The dispute has been submitted for admin review." });
+            toast({ title: t('disputeSuccess'), description: t('disputeSuccessDesc') });
             router.push(`/dashboard/disputes/${newDisputeId}`);
 
         } catch (error) {
-           toast({ title: "Error", description: "Failed to raise dispute.", variant: "destructive" });
+           toast({ title: t('errorTitle'), description: t('genericError'), variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -153,8 +160,8 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
     return (
         <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
             <CardHeader>
-                <CardTitle>Confirm Job Completion</CardTitle>
-                <CardDescription>The Professional has submitted the job for your review. Please examine the proof of work and either approve completion or raise a dispute if there are issues.</CardDescription>
+                <CardTitle>{t('confirmCompletion')}</CardTitle>
+                <CardDescription>{t('confirmDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
                 {/* Job Cancellation (Pre-Work only) */}
@@ -162,20 +169,20 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                     <div className="space-y-4">
                         <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" onClick={onCancel}>
                             <Ban className="mr-2 h-4 w-4" />
-                            Cancel Job
+                            {t('cancelJob')}
                         </Button>
                         <Button variant="secondary" className="w-full" onClick={onAddFunds}>
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Funds (Extras)
+                            {t('addFunds')}
                         </Button>
                     </div>
                 )}
 
                 {isclient && (job.status === 'In Progress' || job.status === 'Pending Funding') && !job.workStartedAt && job.startOtp && (
                     <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center space-y-2" data-testid="start-otp-display">
-                        <h4 className="text-sm font-semibold text-yellow-800">Start Code</h4>
+                        <h4 className="text-sm font-semibold text-yellow-800">{t('startCode')}</h4>
                         <p className="text-3xl font-mono font-bold tracking-wider text-yellow-900" data-testid="start-otp-value">{job.startOtp}</p>
-                        <p className="text-xs text-yellow-700">Share this with Professional on arrival.</p>
+                        <p className="text-xs text-yellow-700">{t('startCodeHelper')}</p>
                     </div>
                 )}
 
@@ -188,7 +195,7 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                 {job.workStartedAt && job.status === 'In Progress' && (
                     <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm flex items-center justify-center">
                         <Zap className="h-4 w-4 mr-2" />
-                        Work Started at {toDate(job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {t('workStartedAt', { time: toDate(job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                     </div>
                 )}
 
@@ -207,27 +214,27 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                         <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Approve & Release Payment
+                            {t('approveAndPay')}
                         </Button>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button variant="secondary" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white">
                                     <RefreshCcw className="mr-2 h-4 w-4" />
-                                    Request Revision
+                                    {t('requestRevision')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Request Revision</DialogTitle>
-                                    <DialogDescription>Ask the Professional to make changes. This will set the job status back to &quot;In Progress&quot;.</DialogDescription>
+                                    <DialogTitle>{t('requestRevision')}</DialogTitle>
+                                    <DialogDescription>{t('revisionDesc')}</DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
-                                        <Label>Reason for Revision (Required)</Label>
+                                        <Label>{t('revisionReason')}</Label>
                                         <Textarea
                                             value={disputeReason}
                                             onChange={e => setDisputeReason(e.target.value)}
-                                            placeholder="e.g. The wiring is exposed, please fix it..."
+                                            placeholder={t('revisionPlaceholder')}
                                         />
                                     </div>
                                 </div>
@@ -238,7 +245,11 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                                     <Button onClick={async () => {
                                         if (!user) return;
                                         if (!disputeReason.trim()) {
-                                            toast({ title: "Reason Required", description: "Please explain what needs to be revised.", variant: "destructive" });
+                                            toast({ 
+                                                title: t('reasonRequired'), 
+                                                description: t('reasonRequiredDesc'), 
+                                                variant: "destructive" 
+                                            });
                                             return;
                                         }
                                         setIsLoading(true);
@@ -255,16 +266,16 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                                                 comments: [...(job.comments || []), newComment]
                                             });
 
-                                            toast({ title: "Revision Requested", description: "Job status reverted to 'In Progress'." });
+                                            toast({ title: t('revisionSuccess'), description: t('revisionSuccessDesc') });
                                             setDisputeReason("");
                                         } catch (e) {
-                                            toast({ title: "Error", description: "Failed to request revision.", variant: "destructive" });
+                                            toast({ title: t('errorTitle'), description: t('genericError'), variant: "destructive" });
                                         } finally {
                                             setIsLoading(false);
                                         }
                                     }} disabled={isLoading} variant="secondary" className="bg-amber-500 hover:bg-amber-600 text-white">
                                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Request Revision
+                                        {t('requestRevision')}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
@@ -274,21 +285,21 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                             <DialogTrigger asChild>
                                 <Button variant="destructive" className="flex-1">
                                     <AlertOctagon className="mr-2 h-4 w-4" />
-                                    Raise a Dispute
+                                    {t('raiseDispute')}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Raise a Dispute</DialogTitle>
-                                    <DialogDescription>If the work is incomplete or unsatisfactory, provide details and evidence below.</DialogDescription>
+                                    <DialogTitle>{t('raiseDispute')}</DialogTitle>
+                                    <DialogDescription>{t('disputeDesc')}</DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
                                     <div className="space-y-2">
-                                        <Label>Reason</Label>
-                                        <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder="Explain the issue..." />
+                                        <Label>{t('disputeReason')}</Label>
+                                        <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder={t('disputePlaceholder')} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Evidence (Required)</Label>
+                                        <Label>{t('disputeEvidence')}</Label>
                                         <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
                                     </div>
                                 </div>

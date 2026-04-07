@@ -21,9 +21,12 @@ interface ProfessionalCompletionSectionProps {
     onSubmitWork?: (attachments: any[]) => Promise<void>;
 }
 
+import { useTranslations } from "next-intl";
+
 export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmitWork }: ProfessionalCompletionSectionProps) {
     const { toast } = useToast();
     const { storage } = useFirebase();
+    const t = useTranslations('professional.jobActions.completeWork');
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [completionFiles, setCompletionFiles] = React.useState<File[]>([]);
     const [otp, setOtp] = React.useState("");
@@ -32,8 +35,8 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
     const handleCompleteJob = async () => {
         if (completionFiles.length === 0) {
             toast({
-                title: "Proof of Work Required",
-                description: "Please upload at least one photo or video showing the completed work.",
+                title: t('proofRequired'),
+                description: t('proofRequiredDesc'),
                 variant: "destructive",
             });
             return;
@@ -43,8 +46,8 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
             const isE2E = typeof window !== 'undefined' && window.location.hostname === 'localhost';
             if (!isE2E) {
                 toast({
-                    title: "Payout Account Not Setup",
-                    description: "Please set up your bank account in your profile before you can complete a job.",
+                    title: t('payoutSetup'),
+                    description: t('payoutSetupDesc'),
                     variant: "destructive",
                 });
                 return;
@@ -81,15 +84,15 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
                     const res = await completeJobWithOtpAction(job.id, user.id, otp, uploadedAttachments);
                     if (!res.success) throw new Error(res.error);
                     toast({
-                        title: "Job Completed Successfully!",
-                        description: "OTP Verified. Payment has been released.",
-                        variant: 'default' // 'success' isn't standard in all toast implementations
+                        title: t('success'),
+                        description: t('successDesc'),
+                        variant: 'default'
                     });
 
                 } catch (error: any) {
                    toast({
-                        title: "OTP Verification Failed",
-                        description: error.message || "Invalid OTP or system error.",
+                        title: t('otpFailed'),
+                        description: error.message || t('otpFailedDesc'),
                         variant: "destructive"
                     });
                     setIsSubmitting(false);
@@ -110,8 +113,8 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
                 }
 
                 toast({
-                    title: "Submitted for Confirmation",
-                    description: "Your proof of work has been sent to the Client for approval.",
+                    title: t('submitted'),
+                    description: t('submittedDesc'),
                     variant: 'default'
                 });
             } else {
@@ -123,16 +126,16 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
                 await onJobUpdate(updatedJobData);
                 
                 toast({
-                    title: "Submitted for Confirmation",
-                    description: "Your proof of work has been sent to the Client for approval.",
+                    title: t('submitted'),
+                    description: t('submittedDesc'),
                     variant: 'default'
                 });
             }
 
         } catch (error: any) {
            toast({
-                title: "Submission Error",
-                description: "An unexpected error occurred while submitting your work.",
+                title: t('errorTitle'),
+                description: t('errorDesc'),
                 variant: "destructive",
             });
         } finally {
@@ -142,28 +145,28 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
     };
 
     return (
-        <div className="space-y-4" data-testid="Professional-completion-section">
+        <div className="space-y-4" data-testid="professional-completion-section">
             <div className="space-y-2">
-                <Label>Proof of Completion</Label>
+                <Label>{t('proofLabel')}</Label>
                 <FileUpload onFilesChange={setCompletionFiles} maxFiles={5} />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="otp-input">Completion OTP (Optional)</Label>
+                <Label htmlFor="otp-input">{t('otpLabel')}</Label>
                 <Input
                     id="otp-input"
-                    placeholder="Enter 6-digit OTP provided by Client"
+                    placeholder={t('otpPlaceholder')}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
                 />
-                <p className="text-xs text-muted-foreground">Entering the correct OTP will instantly release your payment.</p>
+                <p className="text-xs text-muted-foreground">{t('otpHelper')}</p>
             </div>
             <div className="flex justify-end pt-4">
                 <Button onClick={handleCompleteJob} disabled={completionFiles.length === 0 || isSubmitting} data-testid="submit-for-review-button" className="w-full">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                         otp ? <Zap className="mr-2 h-4 w-4 text-amber-500 fill-amber-500" /> : <Send className="mr-2 h-4 w-4" />
                     )}
-                    {otp ? (isVerifyingOtp ? "Verifying..." : "Verify OTP & Complete Job") : "Submit for Review"}
+                    {otp ? (isVerifyingOtp ? t('verifying') : t('verifyAndComplete')) : t('submitForReview')}
                 </Button>
             </div>
         </div>

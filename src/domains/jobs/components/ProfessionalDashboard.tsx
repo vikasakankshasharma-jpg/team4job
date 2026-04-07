@@ -40,7 +40,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
 }) {
     const { user } = useUser();
     const { setHelp } = useHelp();
-    const t = useTranslations('Professional.dashboard');
+    const t = useTranslations('professional.dashboard');
     const tDash = useTranslations('dashboard');
 
     const isVerified = user?.professionalProfile?.verified;
