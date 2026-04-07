@@ -14,6 +14,7 @@
     "emulators": "firebase emulators:start --only auth,firestore,storage --import=./firebase-export --export-on-exit",
     "build": "cross-env NODE_OPTIONS=\"--max-old-space-size=4096\" next build",
     "start": "next start",
+    "db:seed": "tsx src/lib/firebase/seed.ts",
     "lint": "npm run check:e2e-tags && npm run lint:i18n && eslint .",
     "lint:i18n": "node scripts/i18n-check.cjs",
     "lint:i18n:fix": "node scripts/i18n-check.cjs --fix",

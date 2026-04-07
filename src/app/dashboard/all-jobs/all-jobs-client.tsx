@@ -116,7 +116,7 @@ function JobCard({ job, onRowClick, t }: { job: Job, onRowClick: (jobId: string)
 
 export default function AllJobsClient() {
   const router = useRouter();
-  const t = useTranslations('allJobs');
+  const t = useTranslations('admin.allJobs');
   const { user, isAdmin, loading: userLoading } = useUser();
   const { db } = useFirebase();
   const queryClient = useQueryClient();

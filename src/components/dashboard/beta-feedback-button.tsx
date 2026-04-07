@@ -93,10 +93,10 @@ export function BetaFeedbackButton() {
         <>
             <Button
                 onClick={() => setOpen(true)}
-                className="fixed bottom-20 sm:bottom-4 left-4 sm:left-24 z-50 shadow-lg gap-2 rounded-full px-4 h-12 bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
+                className="fixed bottom-28 sm:bottom-8 right-6 z-[100] shadow-2xl gap-2 rounded-full px-4 h-12 bg-primary hover:bg-primary/90 text-primary-foreground transform hover:scale-105 active:scale-95 transition-all duration-300 ring-2 ring-white/20"
             >
                 <MessageSquarePlus className="h-5 w-5" />
-                <span className="hidden sm:inline">{t('button')}</span>
+                <span className="hidden sm:inline font-semibold">{t('button')}</span>
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>

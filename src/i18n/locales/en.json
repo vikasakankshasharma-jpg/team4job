@@ -256,7 +256,8 @@
         "auditLog": "Audit Log",
         "pendingSignups": "Pending Signups",
         "signupAnalytics": "Signup Analytics",
-        "systemHealth": "System Health"
+        "systemHealth": "System Health",
+        "logout": "Log Out"
     },
     "feedback": {
         "button": "Beta Feedback",
@@ -1533,6 +1534,7 @@
                 "admin": "Admin",
                 "support": "Support Team",
                 "status": "Status",
+                "allStatuses": "All Statuses",
                 "active": "Active",
                 "suspended": "Suspended",
                 "deactivated": "Deactivated"

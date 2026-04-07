@@ -44,7 +44,7 @@ function initializeFirebaseAdmin(): App {
             return app;
         }
     } catch (error: any) {
-        // Continue to check env var
+        // Continue to next method
     }
 
     // 2. If file not found, try to use environment variable
@@ -55,8 +55,8 @@ function initializeFirebaseAdmin(): App {
                 credential: cert(serviceAccount)
             });
             return app;
-        } catch (error) {
-
+        } catch (error: any) {
+            // Continue to next method
         }
     }
 
@@ -75,12 +75,13 @@ function initializeFirebaseAdmin(): App {
                 })
             });
             return app;
-        } catch (error) {
-
+        } catch (error: any) {
+            // Continue to fatal exit
         }
     }
 
     // 4. If neither method works, exit
+    console.error('[Seed] FATAL: Firebase Admin init failed. Run: firebase console → Service Accounts → Generate new key → save to src/lib/firebase/service-account.json');
     process.exit(1);
 }
 

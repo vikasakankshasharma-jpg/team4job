@@ -2,7 +2,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { ShieldCheck, Globe, Zap, ArrowRight } from "lucide-react";
+import { ShieldCheck, Globe, Zap, ArrowRight, Droplets, Hammer } from "lucide-react";
 import { motion } from "framer-motion";
 
 export interface Category {
@@ -19,7 +19,9 @@ interface CategorySelectionStepProps {
 const IconMap: Record<string, any> = {
     ShieldCheck,
     Globe,
-    Zap
+    Zap,
+    Droplets,
+    Hammer
 };
 
 export function CategorySelectionStep({ categories, onSelect }: CategorySelectionStepProps) {
@@ -42,8 +44,11 @@ export function CategorySelectionStep({ categories, onSelect }: CategorySelectio
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                             <Card
-                                className="p-8 cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all h-full flex flex-col group relative overflow-hidden bg-card"
-                                onClick={() => onSelect(category.id)}
+                                className="p-8 cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all h-full flex flex-col group relative overflow-hidden bg-card z-10 active:scale-[0.98]"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onSelect(category.id);
+                                }}
                                 data-testid={`${category.id}-category-card`}
                             >
                                 <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
