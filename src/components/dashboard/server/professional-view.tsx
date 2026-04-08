@@ -51,7 +51,7 @@ export async function ProfessionalServerView({ user }: { user: User }) {
                 <ProfessionalStatsWidget userId={user.id} />
             </Suspense>
 
-            <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg mt-8" />}>
+            <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-[1.5rem] mt-8" />}>
                 <ProfessionalChartsWidget userId={user.id} />
             </Suspense>
 
@@ -74,7 +74,7 @@ export async function ProfessionalServerView({ user }: { user: User }) {
                         </CardContent>
                     </Card>
 
-                    <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg" />}>
+                    <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-[1.5rem]" />}>
                         <RecentActivityWidget userId={user.id} />
                     </Suspense>
 

@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function JobCardSkeleton() {
     return (
-        <Card className="flex flex-col relative" data-testid="skeleton-loader">
+        <Card className="flex flex-col relative rounded-[3rem] border-none bg-surface-container-low/40" data-testid="skeleton-loader">
             <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">
@@ -30,24 +30,17 @@ export function JobCardSkeleton() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow">
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4 rounded" />
-                        <Skeleton className="h-4 w-40" />
+            <CardContent className="px-10 pb-10 flex-grow">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-5">
+                        <Skeleton className="h-20 w-full rounded-[2rem]" />
+                        <Skeleton className="h-20 w-full rounded-[2rem]" />
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4 rounded" />
-                        <Skeleton className="h-4 w-24" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4 rounded" />
-                        <Skeleton className="h-4 w-48" />
-                    </div>
+                    <Skeleton className="h-20 w-full rounded-[2rem]" />
                 </div>
             </CardContent>
-            <CardFooter>
-                <Skeleton className="h-10 w-full rounded-md" />
+            <CardFooter className="p-10 pt-0">
+                <Skeleton className="h-16 w-full rounded-[2rem]" />
             </CardFooter>
         </Card>
     );

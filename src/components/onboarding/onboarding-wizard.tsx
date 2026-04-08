@@ -119,8 +119,8 @@ export function OnboardingWizard() {
                                     borderColor: step.id <= currentStep ? "rgb(var(--primary))" : "rgb(var(--muted-foreground)/0.2)"
                                 }}
                                 className={cn(
-                                    "w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold border-2 transition-all duration-500",
-                                    step.id === currentStep && "shadow-[0_0_20px_rgba(var(--primary),0.3)] ring-4 ring-primary/10"
+                                    "w-14 h-14 rounded-[1.25rem] flex items-center justify-center text-sm font-black italic border-2 transition-all duration-500",
+                                    step.id === currentStep && "shadow-[0_0_30px_rgba(var(--primary),0.3)] ring-4 ring-primary/10"
                                 )}
                             >
                                 {step.id < currentStep ? (
@@ -150,8 +150,8 @@ export function OnboardingWizard() {
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.4, ease: "easeOut" }}
                     >
-                        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
-                            <CardContent className="p-8 md:p-12 min-h-[500px]">
+                        <Card className="border-none bg-card/40 backdrop-blur-3xl shadow-[0_45px_120px_rgba(0,0,0,0.2)] rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
+                            <CardContent className="p-8 md:p-16 min-h-[500px]">
                                 {currentStep === 1 && <BasicInfo data={data} updateData={updateData} />}
                                 {currentStep === 2 && <Experience data={data} updateData={updateData} />}
                                 {currentStep === 3 && <Documents data={data} updateData={updateData} />}
@@ -164,36 +164,36 @@ export function OnboardingWizard() {
                                             <p className="text-muted-foreground">{t('review.pendingDesc')}</p>
                                         </div>
                                         
-                                        <div className="grid md:grid-cols-2 gap-8">
-                                            <div className="p-6 rounded-3xl bg-muted/20 border border-border/50 space-y-4">
-                                                <h3 className="font-bold text-lg flex items-center gap-2">
-                                                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm">1</span>
+                                         <div className="grid md:grid-cols-2 gap-8">
+                                            <div className="p-10 rounded-[3rem] bg-muted/20 border border-border/50 space-y-4 ring-1 ring-white/5 shadow-inner">
+                                                <h3 className="font-black italic text-lg flex items-center gap-3">
+                                                    <span className="w-10 h-10 rounded-[1rem] bg-primary/10 flex items-center justify-center text-primary text-sm shadow-inner ring-1 ring-primary/20">1</span>
                                                     {t('review.basicInfo')}
                                                 </h3>
-                                                <div className="space-y-2 text-sm">
-                                                    <p className="flex justify-between"><span className="text-muted-foreground">{t('review.name')}:</span> <span className="font-bold">{data.firstName} {data.lastName}</span></p>
-                                                    <p className="flex justify-between"><span className="text-muted-foreground">{t('review.city')}:</span> <span className="font-bold">{data.city} ({data.pincode})</span></p>
-                                                    <p className="flex justify-between"><span className="text-muted-foreground">{t('review.shop')}:</span> <span className="font-bold">{data.shopName || "N/A"}</span></p>
+                                                <div className="space-y-3 text-sm font-medium">
+                                                    <p className="flex justify-between border-b border-white/5 pb-2"><span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('review.name')}:</span> <span className="font-black italic uppercase tracking-tight">{data.firstName} {data.lastName}</span></p>
+                                                    <p className="flex justify-between border-b border-white/5 pb-2"><span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('review.city')}:</span> <span className="font-black italic uppercase tracking-tight">{data.city} ({data.pincode})</span></p>
+                                                    <p className="flex justify-between"><span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('review.shop')}:</span> <span className="font-black italic uppercase tracking-tight">{data.shopName || "N/A"}</span></p>
                                                 </div>
                                             </div>
                                             
-                                            <div className="p-6 rounded-3xl bg-muted/20 border border-border/50 space-y-4">
-                                                <h3 className="font-bold text-lg flex items-center gap-2">
-                                                    <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-sm">2</span>
+                                            <div className="p-10 rounded-[3rem] bg-muted/20 border border-border/50 space-y-4 ring-1 ring-white/5 shadow-inner">
+                                                <h3 className="font-black italic text-lg flex items-center gap-3">
+                                                    <span className="w-10 h-10 rounded-[1rem] bg-primary/10 flex items-center justify-center text-primary text-sm shadow-inner ring-1 ring-primary/20">2</span>
                                                     {t('review.experience')}
                                                 </h3>
-                                                <div className="space-y-2 text-sm">
-                                                    <p className="flex justify-between">
-                                                        <span className="text-muted-foreground">{t('review.years')}:</span> 
-                                                        <span className="font-bold">{t(`experience.years${data.experience?.replace('-', '').replace('+', 'plus')}`)}</span>
+                                                <div className="space-y-4 text-sm font-medium">
+                                                    <p className="flex justify-between border-b border-white/5 pb-2">
+                                                        <span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('review.years')}:</span> 
+                                                        <span className="font-black italic uppercase tracking-tight">{t(`experience.years${data.experience?.replace('-', '').replace('+', 'plus')}`)}</span>
                                                     </p>
-                                                    <p className="flex flex-col gap-1">
-                                                        <span className="text-muted-foreground">{t('experience.categoryLabel')}:</span> 
-                                                        <span className="font-bold text-primary">{data.category ? t(`experience.categories.${data.category}.label`) : t('review.noneSelected')}</span>
+                                                    <p className="flex flex-col gap-2">
+                                                        <span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('experience.categoryLabel')}:</span> 
+                                                        <span className="font-black italic uppercase tracking-tight text-primary text-lg">{data.category ? t(`experience.categories.${data.category}.label`) : t('review.noneSelected')}</span>
                                                     </p>
-                                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                                    <div className="flex flex-wrap gap-2 mt-2">
                                                         {(data.skills || []).map((s: string) => (
-                                                            <span key={s} className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">
+                                                            <span key={s} className="px-3 py-1 rounded-[0.75rem] bg-primary/10 text-primary text-[10px] font-black italic uppercase tracking-wider border border-primary/20 shadow-sm">
                                                                 {tSkills(s)}
                                                             </span>
                                                         ))}
@@ -202,11 +202,11 @@ export function OnboardingWizard() {
                                             </div>
                                         </div>
 
-                                        <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex gap-4 items-start">
-                                            <AlertCircle className="h-6 w-6 text-primary shrink-0 transition-transform hover:scale-110" />
+                                         <div className="p-8 rounded-[3rem] bg-primary/5 border border-primary/20 flex gap-5 items-start shadow-inner ring-1 ring-primary/10">
+                                            <AlertCircle className="h-8 w-8 text-primary shrink-0 transition-transform hover:scale-110 shadow-[0_0_15px_rgba(var(--primary),0.4)]" />
                                             <div className="text-sm">
-                                                <p className="font-bold text-primary mb-1">{t('review.pendingTitle')}</p>
-                                                <p className="text-muted-foreground leading-relaxed">{t('review.pendingDesc')}</p>
+                                                <p className="font-black italic uppercase tracking-widest text-primary mb-2">{t('review.pendingTitle')}</p>
+                                                <p className="text-muted-foreground leading-relaxed font-medium italic">{t('review.pendingDesc')}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -218,12 +218,12 @@ export function OnboardingWizard() {
             </div>
 
             {/* Premium Navigation Buttons */}
-            <div className="flex justify-between max-w-2xl mx-auto w-full gap-4">
+            <div className="flex justify-between max-w-2xl mx-auto w-full gap-6">
                 <Button 
                     variant="ghost" 
                     onClick={prevStep} 
                     disabled={currentStep === 1 || isSubmitting}
-                    className="h-14 px-8 rounded-2xl font-bold hover:bg-muted/10"
+                    className="h-16 px-10 rounded-[1.5rem] font-black italic uppercase tracking-[0.2em] hover:bg-muted/10 transition-all"
                 >
                     {t('steps.back') || 'Back'}
                 </Button>
@@ -232,24 +232,24 @@ export function OnboardingWizard() {
                     <Button 
                         onClick={handleSubmit} 
                         disabled={isSubmitting}
-                        className="h-14 px-12 rounded-2xl font-bold shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="h-16 px-14 rounded-[1.5rem] font-black italic uppercase tracking-[0.3em] shadow-[0_25px_60px_-10px_rgba(var(--primary),0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                         {isSubmitting ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <Loader2 className="h-6 w-6 animate-spin" />
                         ) : (
                             <>
                                 {t('submit.button')}
-                                <Check className="ml-2 h-5 w-5" />
+                                <Check className="ml-3 h-6 w-6" />
                             </>
                         )}
                     </Button>
                 ) : (
                     <Button 
                         onClick={nextStep}
-                        className="h-14 px-12 rounded-2xl font-bold shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="h-16 px-14 rounded-[1.5rem] font-black italic uppercase tracking-[0.3em] shadow-[0_25px_60px_-10px_rgba(var(--primary),0.3)] transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                         {t('steps.next') || 'Next'}
-                        <ArrowRight className="ml-2 h-5 w-5" />
+                        <ArrowRight className="ml-3 h-6 w-6" />
                     </Button>
                 )}
             </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,18 +7,55 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gem, Medal, Star, ShieldCheck, Briefcase, TrendingUp, CalendarDays, Building, MapPin, Grid, List, Award, Edit, UserX, UserCheck, Loader2, Ban, Trash2, Gauge, Clock, MessageSquare, Copy, UserPlus } from "lucide-react";
+import { 
+    Gem, 
+    Medal, 
+    Star, 
+    ShieldCheck, 
+    Briefcase, 
+    TrendingUp, 
+    CalendarDays, 
+    Building, 
+    MapPin, 
+    Grid, 
+    List, 
+    Award, 
+    Edit, 
+    UserX, 
+    UserCheck, 
+    Loader2, 
+    Ban, 
+    Trash2, 
+    Gauge, 
+    Clock, 
+    MessageSquare, 
+    Copy, 
+    UserPlus,
+    XCircle,
+    CheckCircle2,
+    Sparkles,
+    Zap,
+    ShieldAlert,
+    ChevronRight,
+    Search,
+    Filter,
+    Plus,
+    FileText,
+    ArrowRight
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import React, { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { format, differenceInMilliseconds } from "date-fns";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Job, User, Dispute } from "@/lib/types";
+import { useTranslations } from 'next-intl';
+import { Job, User, Dispute, Bid } from "@/lib/types";
 import { getStatusVariant, toDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -45,21 +81,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  AlertDialogCancel as AlertDialogCancelBtn
 } from "@/components/ui/alert-dialog";
-
+import { motion, AnimatePresence } from "framer-motion";
 
 const tierIcons: Record<string, React.ReactNode> = {
-  Bronze: <Medal className="h-6 w-6 text-yellow-700" />,
-  Silver: <Medal className="h-6 w-6 text-gray-400" />,
-  Gold: <Gem className="h-6 w-6 text-amber-500" />,
-  Platinum: <Gem className="h-6 w-6 text-cyan-400" />,
+  Bronze: <Medal className="h-8 w-8 text-yellow-700" />,
+  Silver: <Medal className="h-8 w-8 text-gray-300" />,
+  Gold: <Gem className="h-8 w-8 text-amber-500" />,
+  Platinum: <Gem className="h-8 w-8 text-cyan-400" />,
 };
 
-const tierData: Record<string, { points: number, next: string, goal: number }> = {
-  'Bronze': { points: 0, next: 'Silver', goal: 500 },
-  'Silver': { points: 500, next: 'Gold', goal: 1000 },
-  'Gold': { points: 1000, next: 'Platinum', goal: 2000 },
-  'Platinum': { points: 2000, next: 'Max', goal: 2000 },
+const tierData: Record<string, { points: number, next: string, goal: number, color: string }> = {
+  'Bronze': { points: 0, next: 'Silver', goal: 500, color: 'from-yellow-700/20 to-transparent' },
+  'Silver': { points: 500, next: 'Gold', goal: 1000, color: 'from-slate-400/20 to-transparent' },
+  'Gold': { points: 1000, next: 'Platinum', goal: 2000, color: 'from-amber-500/20 to-transparent' },
+  'Platinum': { points: 2000, next: 'Max', goal: 2000, color: 'from-cyan-400/20 to-transparent' },
 };
 
 const chartConfig = {
@@ -69,78 +106,62 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-
-
 const wasJobAwardedDirectly = (job: Job) => {
   if (!job.awardedProfessional) return false;
-
   const awardedProfessionalId = getRefId(job.awardedProfessional);
   if (!awardedProfessionalId) return false;
-
-  if (!job.bids || job.bids.length === 0) {
-    return true;
-  }
-
-  const hasBidFromAwarded = (job.bids || []).some(bid => getRefId(bid.professional) === awardedProfessionalId);
-
-  return !hasBidFromAwarded;
+  if (!job.bids || job.bids.length === 0) return true;
+  return !(job.bids || []).some(bid => getRefId(bid.professional) === awardedProfessionalId);
 };
 
 function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, onSubscriptionUpdate: (newExpiry: Date) => void }) {
   const { toast } = useToast();
   const { db } = useFirebase();
+  const tCommon = useTranslations('common');
   const [days, setDays] = React.useState(30);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleGrantAccess = async () => {
     const newExpiryDate = new Date();
     newExpiryDate.setDate(newExpiryDate.getDate() + days);
-
     const userRef = doc(db, 'users', user.id);
     await updateDoc(userRef, {
       'subscription.planId': 'premium',
       'subscription.planName': 'Admin Granted Access',
       'subscription.expiresAt': newExpiryDate,
     });
-
     onSubscriptionUpdate(newExpiryDate);
-    toast({
-      title: "Subscription Updated",
-      description: `${user.name} has been granted access for ${days} days.`,
-    });
+    toast({ title: "Subscription Updated", description: `${user.name} has been granted access.` });
     setIsOpen(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" className="h-10 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all">
           <Edit className="h-4 w-4 mr-2" />
-          Manage Subscription
+          SUBSCRIPTION CONTROL
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Manage Subscription for {user.name}</DialogTitle>
-          <DialogDescription>
-            Grant or extend a user&apos;s subscription for free. The user will be notified.
-          </DialogDescription>
+      <DialogContent className="rounded-[3.5rem] bg-surface-container-low/60 backdrop-blur-3xl border-none p-12 shadow-[0_45px_120px_rgba(0,0,0,0.3)] ring-1 ring-white/10">
+        <DialogHeader className="space-y-4">
+          <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase">{user.name.split(' ')[0]}&apos;s Access</DialogTitle>
+          <DialogDescription className="text-sm font-medium opacity-60">Grant or extend this user&apos;s premium capabilities directly from the bridge.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label htmlFor="days" className="text-sm font-medium">Grant Access For (Days)</label>
-            <Input
-              id="days"
-              type="number"
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-              min="1"
-            />
-          </div>
+        <div className="space-y-6 py-8">
+            <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic">Log Term (Days)</Label>
+                <Input
+                    type="number"
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    className="h-16 rounded-2xl bg-background/50 border-none ring-1 ring-white/5 font-black text-xl"
+                />
+            </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-          <Button onClick={handleGrantAccess}>Grant Access</Button>
+        <DialogFooter className="gap-3">
+          <DialogClose asChild><Button variant="ghost" className="h-14 px-8 rounded-[1.25rem] font-black text-xs uppercase tracking-widest italic hover:bg-white/5">ABORT COMMAND</Button></DialogClose>
+          <Button onClick={handleGrantAccess} className="h-14 px-8 rounded-[1.25rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 italic hover:scale-105 active:scale-95 transition-all">GRANT ACCESS</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -164,280 +185,166 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
       const response = await axios.post('/api/admin/impersonate', { targetUserId: user.id }, {
         headers: { Authorization: `Bearer ${idToken}` }
       });
-
       const { token } = response.data;
       await signInWithCustomToken(auth, token);
-
-      toast({ title: "Impersonation Active", description: `You are now logged in as ${user.name}.` });
-      window.location.href = '/dashboard'; // Force reload as new user
-
+      toast({ title: "Impersonation Active" });
+      window.location.href = '/dashboard';
     } catch (error: any) {
-      toast({
-        title: "Impersonation Failed",
-        description: error.response?.data?.error || "Could not login as user.",
-        variant: "destructive"
-      });
+      toast({ title: "Impersonation Failed", description: "Authorization revoked.", variant: "destructive" });
       setIsLoading(false);
     }
   };
 
-  const handleDeactivate = async () => {
-    setIsLoading(true);
-    await updateDoc(doc(db, 'users', user.id), { status: 'deactivated' });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'deactivated' }).catch(e => {
-        // Failed to sync public profile
-    });
-    onUserUpdate({ status: 'deactivated' });
-    toast({ title: 'User Deactivated', description: `${user.name}'s account has been deactivated.`, variant: 'destructive' });
-    setIsLoading(false);
-  };
-
-  const handleReactivate = async () => {
-    setIsLoading(true);
-    await updateDoc(doc(db, 'users', user.id), { status: 'active' });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'active' }).catch(e => {
-        // Failed to sync public profile
-    });
-    onUserUpdate({ status: 'active' });
-    toast({ title: 'User Reactivated', description: `${user.name}'s account is now active.`, variant: 'default' });
-    setIsLoading(false);
-  };
-
-  const handleSuspend = async () => {
-    setIsLoading(true);
-    const suspensionEndDate = new Date();
-    suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
-    await updateDoc(doc(db, 'users', user.id), { status: 'suspended', suspensionEndDate });
-    await updateDoc(doc(db, 'public_profiles', user.id), { status: 'suspended' }).catch(e => {
-        // Failed to sync public profile
-    });
-    onUserUpdate({ status: 'suspended', suspensionEndDate });
-    toast({ title: 'User Suspended', description: `${user.name} has been suspended for ${suspensionDays} days.` });
-    setIsLoading(false);
-    setIsSuspendOpen(false);
-  };
+  const setStatus = async (s: string, date?: Date) => {
+      setIsLoading(true);
+      const updates: any = { status: s };
+      if (date) updates.suspensionEndDate = date;
+      await updateDoc(doc(db, 'users', user.id), updates);
+      await updateDoc(doc(db, 'public_profiles', user.id), { status: s }).catch(() => {});
+      onUserUpdate(updates);
+      setIsLoading(false);
+      setIsSuspendOpen(false);
+  }
 
   const handleDelete = async () => {
     setIsLoading(true);
     await deleteFirestoreDoc(doc(db, 'users', user.id));
-
-    toast({
-      title: "User Deleted",
-      description: `User ${user.name} has been permanently deleted.`,
-      variant: "destructive",
-    });
-    setIsLoading(false);
+    toast({ title: "Subject Terminated", variant: "destructive" });
     router.push("/dashboard/users");
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Admin Actions</CardTitle>
-        <CardDescription>Manage this user&apos;s account status and permissions.</CardDescription>
+    <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.3)] bg-surface-container-highest/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10 group relative">
+      <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-destructive via-amber-500 to-destructive animate-gradient-x opacity-40" />
+      <CardHeader className="p-10 pb-4 relative">
+        <CardTitle className="text-3xl font-black italic tracking-tighter uppercase flex items-center gap-4">
+            <ShieldAlert className="h-8 w-8 text-destructive animate-pulse" />
+            ADMIN CONTROL TERMINAL
+            <div className="h-1.5 flex-1 bg-gradient-to-r from-destructive/20 to-transparent rounded-full" />
+        </CardTitle>
+        <CardDescription className="text-sm font-medium opacity-60">High-authority protocols for account management and security enforcement.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between rounded-lg border p-4 bg-indigo-50/50 border-indigo-100">
-          <div>
-            <h3 className="font-semibold text-indigo-900">Login as User (&quot;God Mode&quot;)</h3>
-            <p className="text-sm text-indigo-700/80">Access the platform exactly as {user.name} sees it. Useful for debugging.</p>
+      <CardContent className="p-10 space-y-6">
+        <div className="bg-primary/5 p-8 rounded-[2rem] border border-primary/10 flex flex-col md:flex-row items-center justify-between gap-6 transition-all hover:bg-primary/10">
+          <div className="space-y-1">
+            <h3 className="font-black text-lg italic tracking-tight uppercase flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                Auth Impersonation
+            </h3>
+            <p className="text-sm text-muted-foreground font-medium">Access the bridge exactly as {user.name.split(' ')[0]} sees it.</p>
           </div>
-          <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-100" onClick={handleImpersonate} disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <UserCheck className="mr-2 h-4 w-4" />
-            Login as {user.name.split(' ')[0]}
+          <Button variant="outline" className="h-14 px-8 rounded-2xl border-primary/20 text-primary font-black text-xs uppercase tracking-widest hover:bg-primary/10 shadow-xl shadow-primary/5" onClick={handleImpersonate} disabled={isLoading}>
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
+            LOG IN AS {user.name.split(' ')[0]}
           </Button>
         </div>
 
-        {user.status === 'active' && (
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <h3 className="font-semibold">Suspend Account</h3>
-              <p className="text-sm text-muted-foreground">Temporarily disable account access for a set period.</p>
-            </div>
-            <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" disabled={isLoading}><Ban className="mr-2 h-4 w-4" />Suspend</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Suspend {user.name}</DialogTitle>
-                  <DialogDescription>
-                    The user will be logged out and unable to access their account until the suspension ends.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <Label htmlFor="suspension-days">Suspension Duration (Days)</Label>
-                  <Input
-                    id="suspension-days"
-                    type="number"
-                    value={suspensionDays}
-                    onChange={(e) => setSuspensionDays(parseInt(e.target.value))}
-                    min="1"
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-background/40 p-8 rounded-[2rem] border border-white/5 flex flex-col justify-between gap-6 hover:bg-background/60 transition-all">
+                <div className="space-y-1">
+                    <h3 className="font-black text-lg italic tracking-tight uppercase">Account Suspension</h3>
+                    <p className="text-xs text-muted-foreground font-medium">Temporarily revoke access for protocol violations.</p>
                 </div>
-                <DialogFooter>
-                  <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
-                  <Button variant="destructive" onClick={handleSuspend} disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Confirm Suspension
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-        <div className="flex items-center justify-between rounded-lg border p-4">
-          <div>
-            <h3 className="font-semibold">
-              {user.status === 'deactivated' ? 'Re-activate Account' : 'Deactivate Account'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {user.status === 'deactivated' ? 'Restore access to the user.' : 'Disable account access.'}
-            </p>
-          </div>
-          {user.status === 'deactivated' ? (
-            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleReactivate} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <UserCheck className="mr-2 h-4 w-4" />Re-activate
-            </Button>
-          ) : (
-            <Button variant="destructive" onClick={handleDeactivate} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <UserX className="mr-2 h-4 w-4" />Deactivate
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
-          <div>
-            <h3 className="font-semibold text-destructive">Delete User</h3>
-            <p className="text-sm text-destructive/70">
-              Permanently remove the user and all their data. This action cannot be undone.
-            </p>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={isLoading}><Trash2 className="mr-2 h-4 w-4" />Delete Permanently</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the user <span className="font-bold">{user.name}</span> from authentication and Firestore. This action is irreversible. Please type <span className="font-bold text-foreground">DELETE</span> to confirm.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <Input
-                placeholder="Type DELETE to confirm"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setDeleteConfirmation('')}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  onClick={handleDelete}
-                  disabled={deleteConfirmation !== 'DELETE' || isLoading}
-                >
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete User'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                {user.status === 'active' ? (
+                    <Dialog open={isSuspendOpen} onOpenChange={setIsSuspendOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-500/10 border-amber-500/20 text-amber-500"><Ban className="mr-2 h-4 w-4" />INITIATE SUSPENSION</Button>
+                        </DialogTrigger>
+                        <DialogContent className="group relative overflow-hidden rounded-[3.5rem] bg-surface-container-low/40 backdrop-blur-3xl border border-white/5 p-12 shadow-[0_45px_120px_rgba(0,0,0,0.15)] transition-all hover:translate-x-1">
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl font-black italic uppercase">SUSPEND PROTOCOL</DialogTitle>
+                                <DialogDescription className="font-medium opacity-60">Specify the duration of access revocation for {user.name}.</DialogDescription>
+                            </DialogHeader>
+                            <div className="py-8 space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest opacity-40 italic">Duration (Days)</Label>
+                                <Input type="number" value={suspensionDays} onChange={(e) => setSuspensionDays(parseInt(e.target.value))} className="h-16 rounded-2xl bg-background/50 border-none ring-1 ring-white/5 font-black text-xl" />
+                            </div>
+                            <DialogFooter className="gap-4">
+                                <Button variant="ghost" onClick={() => setIsSuspendOpen(false)} className="h-14 font-black italic rounded-[1.25rem] hover:bg-white/5 px-8">ABORT</Button>
+                                <Button variant="destructive" className="h-14 px-10 rounded-[1.25rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-destructive/20 italic hover:scale-105 transition-all" onClick={() => setStatus('suspended', new Date(Date.now() + suspensionDays * 86400000))} disabled={isLoading}>REVOKE ACCESS</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                ) : (
+                    <Button className="w-full h-14 rounded-2xl bg-success text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-success/20" onClick={() => setStatus('active')} disabled={isLoading}><UserCheck className="mr-2 h-4 w-4" />RESTORE ACCESS</Button>
+                )}
+            </div>
+
+            <div className="bg-destructive/5 p-8 rounded-[2rem] border border-destructive/10 flex flex-col justify-between gap-6 hover:bg-destructive/10 transition-all">
+                <div className="space-y-1">
+                    <h3 className="font-black text-lg italic tracking-tight uppercase text-destructive">System Termination</h3>
+                    <p className="text-xs text-destructive/60 font-medium italic">Permanent data erasure. This protocol is irreversible.</p>
+                </div>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-destructive/20" disabled={isLoading}><Trash2 className="mr-2 h-4 w-4" />PURGE SUBJECT</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[3.5rem] bg-surface-container-low/60 backdrop-blur-3xl border-none p-12 shadow-[0_45px_120px_rgba(0,0,0,0.3)] ring-1 ring-white/10">
+                        <AlertDialogHeader className="space-y-4">
+                            <AlertDialogTitle className="text-3xl font-black italic uppercase text-destructive">DATA PURGE CONFIRMATION</AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm font-medium opacity-60">You are about to permanently erase all records for <span className="text-foreground font-black">{user.name}</span>. Type <span className="text-destructive font-black">PURGE</span> below to authorize.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="py-8">
+                            <Input placeholder="Authorization Code" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} className="h-16 rounded-2xl bg-destructive/5 border-none ring-1 ring-destructive/20 font-black text-xl text-destructive" />
+                        </div>
+                        <AlertDialogFooter className="gap-4">
+                            <Button variant="ghost" onClick={() => setDeleteConfirmation('')} className="h-14 font-black italic rounded-[1.25rem] hover:bg-white/5 px-8">ABORT TERMINATION</Button>
+                            <Button className="h-14 px-12 rounded-[1.25rem] bg-destructive text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-destructive/40 italic hover:scale-105 transition-all" onClick={handleDelete} disabled={deleteConfirmation !== 'PURGE' || isLoading}>CONFIRM PURGE</Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function JobListItem({ job }: { job: Job }) {
-  const isDirectAward = wasJobAwardedDirectly(job);
-  return (
-    <Link href={`/dashboard/jobs/${job.id}`} className="block hover:bg-accent rounded-lg p-4 -mx-4">
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex-1">
-          <p className="font-semibold">{job.title}</p>
-          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
-            <span>Posted: {format(toDate(job.postedAt), "MMM d, yyyy")}</span>
-            <span className="flex items-center gap-1">
-              {(job.bids || []).length} Bids
-            </span>
-            {getRefId(job.awardedProfessional) && (
-              <span className="flex items-center gap-1">
-                <Award className="h-3 w-3" />
-                {isDirectAward ? 'Direct Award' : 'Bidding'}
-              </span>
-            )}
-          </div>
-        </div>
-        <Badge variant={getStatusVariant(job.status)}>{job.status}</Badge>
-      </div>
-    </Link>
-  )
-}
-
 function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
   const totalDisputes = disputes.length;
   const resolvedDisputes = disputes.filter(d => d.status === 'Resolved').length;
   const resolutionRate = totalDisputes > 0 ? (resolvedDisputes / totalDisputes) * 100 : 0;
-
-  const totalResolutionTime = disputes
-    .filter(d => d.status === 'Resolved' && d.createdAt && d.resolvedAt)
-    .reduce((acc, d) => {
-      const timeDiff = differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt));
-      return acc + timeDiff;
-    }, 0);
-
-  const avgResolutionTimeMs = resolvedDisputes > 0 ? totalResolutionTime / resolvedDisputes : 0;
-  const avgResolutionTimeDays = avgResolutionTimeMs / (1000 * 60 * 60 * 24);
-
-  const chartData = [{ name: 'Resolved', value: resolutionRate, fill: 'hsl(var(--primary))' }];
-  const performanceChartConfig = {
-    value: { label: 'Disputes' },
-  } satisfies ChartConfig;
+  const totalResolutionTime = disputes.filter(d => d.status === 'Resolved' && d.createdAt && d.resolvedAt).reduce((acc, d) => acc + differenceInMilliseconds(toDate(d.resolvedAt!), toDate(d.createdAt)), 0);
+  const avgResolutionTimeDays = resolvedDisputes > 0 ? (totalResolutionTime / resolvedDisputes) / (1000 * 60 * 60 * 24) : 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Dispute Performance</CardTitle>
-        <CardDescription>Metrics based on this team member&apos;s involvement in disputes.</CardDescription>
+    <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.3)] bg-surface-container-low/40 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10">
+      <CardHeader className="p-10 pb-4">
+        <CardTitle className="text-2xl font-black italic tracking-tighter uppercase opacity-60 flex items-center gap-4">
+            DISPUTE TELEMETRY
+            <div className="h-1.5 flex-1 bg-gradient-to-r from-primary/20 to-transparent rounded-full" />
+        </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-6 md:grid-cols-2">
-        <Card className="flex flex-col items-center justify-center p-6">
-          <ChartContainer
-            config={performanceChartConfig}
-            className="mx-auto aspect-square h-full w-full max-w-[250px]"
-          >
-            <RadialBarChart
-              data={chartData}
-              startAngle={90}
-              endAngle={-270}
-              innerRadius="70%"
-              outerRadius="110%"
-            >
-              <PolarGrid gridType="circle" radialLines={false} stroke="none" />
-              <RadialBar dataKey="value" background cornerRadius={10} />
-              <PolarAngleAxis type="number" domain={[0, 100]} dataKey="value" tick={false} />
-            </RadialBarChart>
-          </ChartContainer>
-          <p className="text-5xl font-bold mt-[-2.5rem]">{resolutionRate.toFixed(0)}<span className="text-xl text-muted-foreground">%</span></p>
-          <p className="text-center text-sm text-muted-foreground mt-2">Resolution Rate</p>
-        </Card>
-        <div className="grid grid-rows-3 gap-4">
-          <Card className="flex flex-col items-center justify-center p-4 text-center">
-            <MessageSquare className="h-6 w-6 mb-2 text-primary" />
-            <p className="text-2xl font-bold">{totalDisputes}</p>
-            <p className="text-sm text-muted-foreground">Total Disputes Handled</p>
-          </Card>
-          <Card className="flex flex-col items-center justify-center p-4 text-center">
-            <ShieldCheck className="h-6 w-6 mb-2 text-green-600" />
-            <p className="text-2xl font-bold">{resolvedDisputes}</p>
-            <p className="text-sm text-muted-foreground">Disputes Resolved</p>
-          </Card>
-          <Card className="flex flex-col items-center justify-center p-4 text-center">
-            <Clock className="h-6 w-6 mb-2 text-amber-500" />
-            <p className="text-2xl font-bold">{avgResolutionTimeDays.toFixed(1)} Days</p>
-            <p className="text-sm text-muted-foreground">Avg. Resolution Time</p>
-          </Card>
+      <CardContent className="p-10 grid gap-10 md:grid-cols-2 items-center">
+        <div className="flex flex-col items-center justify-center p-10 bg-surface-container-high/40 rounded-[2.5rem] border border-white/5 shadow-inner group">
+          <div className="relative flex items-center justify-center mb-4">
+              <ResponsiveContainer width={200} height={200}>
+                <RadialBarChart innerRadius="70%" outerRadius="110%" barSize={10} data={[{ name: 'Rate', value: resolutionRate, fill: 'hsl(var(--primary))' }]}>
+                  <RadialBar background dataKey="value" cornerRadius={5} />
+                </RadialBarChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-5xl font-black italic tracking-tighter">{resolutionRate.toFixed(0)}<span className="text-xl opacity-40">%</span></span>
+              </div>
+          </div>
+          <p className="font-black text-[10px] uppercase tracking-[0.3em] opacity-40">RESOLUTION RATE</p>
+        </div>
+        <div className="grid grid-cols-1 gap-6">
+            {[
+                { label: "HANDLED", val: totalDisputes, icon: MessageSquare, color: "text-primary", bg: "bg-primary/10" },
+                { label: "RESOLVED", val: resolvedDisputes, icon: ShieldCheck, color: "text-success", bg: "bg-success/10" },
+                { label: "AVG TIME", val: `${avgResolutionTimeDays.toFixed(1)}d`, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" }
+            ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-6 p-6 bg-surface-container-high/40 rounded-3xl border border-white/5 hover:bg-surface-container-high/60 transition-all group">
+                    <div className={cn("p-4 rounded-2xl shadow-xl transition-transform group-hover:scale-110", stat.bg, stat.color)}>
+                        <stat.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic">{stat.label}</p>
+                        <p className="text-2xl font-black italic tracking-tighter">{stat.val}</p>
+                    </div>
+                </div>
+            ))}
         </div>
       </CardContent>
     </Card>
@@ -446,28 +353,12 @@ function DisputePerformanceCard({ disputes }: { disputes: Dispute[] }) {
 
 function PageSkeleton() {
   return (
-    <div className="grid gap-8">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <Skeleton className="h-24 w-24 rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-1/3" />
-              <Skeleton className="h-5 w-1/2" />
-              <Skeleton className="h-5 w-2/3" />
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-1/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-40 w-full" />
-        </CardContent>
-      </Card>
+    <div className="container py-12 space-y-12 animate-pulse">
+        <div className="h-80 w-full bg-surface-container-low rounded-[3rem]" />
+        <div className="grid grid-cols-3 gap-8">
+            <div className="col-span-2 h-64 bg-surface-container-low rounded-[2rem]" />
+            <div className="h-64 bg-surface-container-low rounded-[2rem]" />
+        </div>
     </div>
   );
 }
@@ -485,392 +376,307 @@ export default function UserProfileClient() {
   const [userCompletedJobs, setUserCompletedJobs] = useState<Job[]>([]);
   const [involvedDisputes, setInvolvedDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
-  const [jobsView, setJobsView] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!db || !id) return;
-
       setLoading(true);
-
       const isOwner = authUser?.id === id;
-      // Admins and Owners can access the full 'users' doc.
-      // Everyone else sees the 'public_profiles' doc.
       const collectionName = (isAdmin || isOwner) ? 'users' : 'public_profiles';
-
       const userDocRef = doc(db, collectionName, id);
       const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        setLoading(false);
-        notFound();
-        return;
-      }
-
+      if (!userDoc.exists()) { setLoading(false); notFound(); return; }
       const fetchedUser = { id: userDoc.id, ...userDoc.data() } as User;
       setProfileUser(fetchedUser);
 
-      const { roles } = fetchedUser;
-      const isProfessional = roles.includes('Professional');
-      const isClient = roles.includes('Client');
-      const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
-
+      const isProfessional = fetchedUser.roles.includes('Professional');
+      const isClient = fetchedUser.roles.includes('Client');
+      const isTeamMember = fetchedUser.roles.includes('Admin') || fetchedUser.roles.includes('Support Team');
       const promises: Promise<any>[] = [];
 
-      if (isClient) {
-        promises.push(getDocs(query(collection(db, "jobs"), where('client', '==', userDocRef))));
-      } else {
-        promises.push(Promise.resolve({ docs: [] }));
-      }
-
-      if (isProfessional) {
-        promises.push(getDocs(query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedProfessional', '==', userDocRef))));
-      } else {
-        promises.push(Promise.resolve({ docs: [] }));
-      }
-
-      if (isTeamMember) {
-        promises.push(getDocs(query(collection(db, "disputes"), where('handledBy', '==', id))));
-      } else {
-        promises.push(Promise.resolve({ docs: [] }));
-      }
+      promises.push(isClient ? getDocs(query(collection(db, "jobs"), where('client', '==', userDocRef))) : Promise.resolve({ docs: [] }));
+      promises.push(isProfessional ? getDocs(query(collection(db, 'jobs'), where('status', '==', 'Completed'), where('awardedProfessional', '==', userDocRef))) : Promise.resolve({ docs: [] }));
+      promises.push(isTeamMember ? getDocs(query(collection(db, "disputes"), where('handledBy', '==', id))) : Promise.resolve({ docs: [] }));
 
       try {
         const [postedJobsSnapshot, completedJobsSnapshot, disputesSnapshot] = await Promise.all(promises);
-
         const allJobUsers = new Set<string>();
-        const allJobsRaw: Job[] = [
-          ...postedJobsSnapshot.docs.map((d: any) => d.data() as Job),
-          ...completedJobsSnapshot.docs.map((d: any) => d.data() as Job)
-        ];
-
+        const allJobsRaw: Job[] = [...postedJobsSnapshot.docs.map((d: any) => d.data()), ...completedJobsSnapshot.docs.map((d: any) => d.data())];
         allJobsRaw.forEach(job => {
           if (getRefId(job.client)) allJobUsers.add(getRefId(job.client)!);
           if (getRefId(job.awardedProfessional)) allJobUsers.add(getRefId(job.awardedProfessional)!);
         });
-
         const usersMap = new Map<string, User>();
         if (allJobUsers.size > 0) {
           const usersQuery = query(collection(db, 'users'), where('__name__', 'in', Array.from(allJobUsers)));
           const userDocs = await getDocs(usersQuery);
           userDocs.forEach(docSnap => usersMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as User));
         }
-
-        const populateJob = (job: Job) => {
-          const clientId = getRefId(job.client);
-          const awardedProfessionalId = getRefId(job.awardedProfessional);
-          return {
-            ...job,
-            client: clientId ? usersMap.get(clientId) : undefined,
-            awardedProfessional: awardedProfessionalId ? usersMap.get(awardedProfessionalId) : undefined,
-          }
-        };
-
+        const populateJob = (job: Job) => ({ ...job, client: usersMap.get(getRefId(job.client)!), awardedProfessional: usersMap.get(getRefId(job.awardedProfessional)!) });
         setUserPostedJobs(postedJobsSnapshot.docs.map((d: any) => populateJob(d.data() as Job)));
         setUserCompletedJobs(completedJobsSnapshot.docs.map((d: any) => populateJob(d.data() as Job)));
         setInvolvedDisputes(disputesSnapshot.docs.map((d: any) => d.data() as Dispute));
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to load some user data." });
-      }
-
+      } catch (error) { toast({ title: "Error", description: "Telemetry sync failed." }); }
       setLoading(false);
     };
-
     fetchUserData();
   }, [id, db, toast, authUser?.id, isAdmin]);
 
+  if (loading || !profileUser) return <PageSkeleton />;
 
-  const handleSubscriptionUpdate = (newExpiry: Date) => {
-    setProfileUser(prev => prev ? {
-      ...prev,
-      subscription: {
-        ...prev.subscription!,
-        expiresAt: newExpiry,
-      }
-    } : null);
-  };
-
-  const handleUserUpdate = (data: Partial<User>) => {
-    setProfileUser(prev => prev ? { ...prev, ...data } : null);
-  }
-
-  if (loading || !profileUser) {
-    return <PageSkeleton />;
-  }
-
-  const { name, email, id: userId, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
+  const { name, memberSince, realAvatarUrl, address, roles, subscription, status, suspensionEndDate } = profileUser;
   const professionalProfile = profileUser.professionalProfile;
   const isProfessional = roles.includes('Professional');
   const isClient = roles.includes('Client');
   const isTeamMember = roles.includes('Admin') || roles.includes('Support Team');
-
-  const jobsCompletedCount = userCompletedJobs.length;
-
   const currentTierInfo = professionalProfile ? tierData[professionalProfile.tier] : null;
   const progressPercentage = currentTierInfo && professionalProfile ? ((professionalProfile.points - currentTierInfo.points) / (currentTierInfo.goal - currentTierInfo.points)) * 100 : 0;
 
-  const getUserStatusBadge = () => {
-    switch (status) {
-      case 'suspended':
-        return <Badge variant="destructive">Suspended</Badge>;
-      case 'deactivated':
-        return <Badge variant="destructive">Deactivated</Badge>;
-      default:
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
-    }
-  }
-
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(userId);
-    toast({
-      title: "User ID Copied!",
-      description: "The user's public ID has been copied to your clipboard.",
-    });
-  }
-
   return (
-    <div className="grid gap-8">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <Avatar className="h-24 w-24 border-2 border-primary">
-              <AvatarImage src={realAvatarUrl} alt={name} />
-              <AvatarFallback className="text-3xl">
-                {name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-4">
-                <CardTitle className="text-3xl">{name}</CardTitle>
-                {getUserStatusBadge()}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground mt-1">
-                {roles.map(r => <Badge key={r} variant="outline" className="font-normal">{r}</Badge>)}
-                {professionalProfile?.verified && <Badge variant="secondary" className="gap-1 pl-2 font-normal"><ShieldCheck className="h-4 w-4 text-green-600" /> Verified</Badge>}
-              </div>
-              <div className="flex flex-col mt-2">
-                <div className="flex items-center gap-2">
-                  <p className="text-muted-foreground font-mono truncate max-w-sm">{userId}</p>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyId}><Copy className="h-4 w-4" /></Button>
-                </div>
-                {suspensionEndDate && status === 'suspended' && (
-                  <p className="text-sm text-destructive font-medium">Suspension ends: {format(toDate(suspensionEndDate), "PP")}</p>
-                )}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12 pb-20">
+      {/* Cinematic Portfolio Hero */}
+      <div className={cn(
+          "relative min-h-[500px] rounded-[4.5rem] overflow-hidden flex flex-col justify-end p-12 sm:p-24 shadow-[0_40px_100px_rgba(0,0,0,0.1)] group transition-all duration-700",
+          currentTierInfo ? `bg-gradient-to-br ${currentTierInfo.color}` : "bg-gradient-to-br from-primary/10 via-background to-transparent"
+      )}>
+          {/* Animated Background Pulse */}
+          <div className="absolute top-[10%] right-[-5%] w-[800px] h-[800px] bg-primary/10 rounded-full blur-[180px] pointer-events-none animate-pulse" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-end justify-between gap-12 w-full">
+              <div className="flex flex-col items-center lg:items-start gap-8">
+                  <div className="relative group/avatar">
+                      <Avatar className="h-40 w-40 sm:h-56 sm:w-56 border-[8px] border-background shadow-2xl ring-2 ring-primary/20 transition-transform duration-700 group-hover/avatar:scale-105">
+                          <AvatarImage src={realAvatarUrl} className="object-cover" />
+                          <AvatarFallback className="text-6xl font-black bg-gradient-to-br from-primary/10 to-primary/30">{name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {status === 'active' && (
+                          <div className="absolute bottom-6 right-6 h-10 w-10 bg-success rounded-full border-4 border-background shadow-xl flex items-center justify-center">
+                              <ShieldCheck className="h-5 w-5 text-white" />
+                          </div>
+                      )}
+                  </div>
+
+                  <div className="text-center lg:text-left space-y-4">
+                      <div className="flex flex-col gap-2">
+                         <div className="flex items-center justify-center lg:justify-start gap-6 flex-wrap">
+                            <motion.h1 className="text-6xl sm:text-8xl md:text-[9rem] font-black italic tracking-tighter uppercase line-clamp-1 leading-[0.75] mb-2">{name}</motion.h1>
+                            {status === 'active' ? (
+                                <Badge className="px-6 py-3 rounded-full bg-success/20 text-success border-none font-black text-[10px] uppercase tracking-[0.4em] italic animate-pulse ring-1 ring-success/30 backdrop-blur-md">LIVE PROTOCOL</Badge>
+                            ) : (
+                                <Badge variant="destructive" className="px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl">{status.toUpperCase()}</Badge>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                            {roles.map(r => (
+                                <Badge key={r} variant="outline" className="px-4 py-1.5 rounded-full border-primary/20 bg-primary/5 text-primary font-black text-[9px] uppercase tracking-widest">{r}</Badge>
+                            ))}
+                            {professionalProfile?.verified && (
+                                <Badge className="px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-500 border-none font-black text-[9px] uppercase tracking-widest italic flex items-center gap-2">
+                                    <ShieldCheck className="h-3 w-3" /> VERIFIED EXPERT
+                                </Badge>
+                            )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8 text-[11px] font-black uppercase tracking-[0.2em] opacity-40">
+                          <div className="flex items-center gap-3"><CalendarDays className="h-4 w-4" /> MEMBER SINCE {format(toDate(memberSince), 'MMMM yyyy')}</div>
+                          <div className="flex items-center gap-3"><MapPin className="h-4 w-4" /> {address?.cityPincode || "GLOBAL NODE"}</div>
+                          <div className="flex items-center gap-3 font-mono cursor-pointer hover:opacity-100 transition-opacity" onClick={() => {navigator.clipboard.writeText(profileUser.id); toast({title: "UID COPIED"})}}>
+                              <Copy className="h-4 w-4" /> {profileUser.id.slice(0, 12)}...
+                          </div>
+                      </div>
+                  </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mt-2">
-                <div className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  <span>Member since {format(toDate(memberSince), 'MMMM yyyy')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>{address.cityPincode}</span>
-                </div>
+              <div className="flex flex-col gap-4 min-w-[300px]">
+                  {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={(exp) => setProfileUser(p => p ? {...p, subscription: {...p.subscription!, expiresAt: exp}} : null)} />}
+                  {authUser?.roles.includes('Client') && isProfessional && authUser.id !== profileUser.id && (
+                    <Button asChild className="h-20 px-12 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all italic">
+                        <Link href={`/dashboard/post-job?directAwardProfessionalId=${profileUser.id}`}>
+                            <UserPlus className="mr-4 h-6 w-6" /> HIRE NOW
+                        </Link>
+                    </Button>
+                  )}
+                  {subscription && (
+                    <div className="p-8 bg-white/5 dark:bg-black/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 ring-1 ring-white/5 flex flex-col gap-1 shadow-2xl">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 italic">ACCESS LEVEL</p>
+                        <p className="font-black text-2xl italic tracking-tight uppercase">{subscription.planName}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-primary font-black mt-2 tracking-[0.2em] uppercase italic">
+                            <Clock className="h-3.5 w-3.5" /> CLOSURE: {format(toDate(subscription.expiresAt), 'MMM d, yyyy')}
+                        </div>
+                    </div>
+                  )}
               </div>
-            </div>
-            {isAdmin && subscription && <ManageSubscriptionDialog user={profileUser} onSubscriptionUpdate={handleSubscriptionUpdate} />}
-            {authUser?.roles.includes('Client') && isProfessional && (
-              <Button asChild>
-                <Link href={`/dashboard/post-job?directAwardProfessionalId=${userId}`}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Hire Now for a Project
-                </Link>
-              </Button>
-            )}
           </div>
-        </CardHeader>
-        {subscription && (
-          <CardContent>
-            <div className="text-sm">
-              <span className="font-semibold">{subscription.planName}</span>
-              <span className="text-muted-foreground"> (Expires: {format(toDate(subscription.expiresAt), 'MMM d, yyyy')})</span>
-            </div>
-          </CardContent>
+      </div>
+
+      <div className="container px-6 sm:px-12 grid gap-12">
+        {isAdmin && authUser?.id !== profileUser.id && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                <AdminActionsCard user={profileUser} onUserUpdate={(d) => setProfileUser(p => p ? {...p, ...d} : null)} />
+            </motion.div>
         )}
-      </Card>
 
-      {isAdmin && authUser?.id !== profileUser.id && (
-        <AdminActionsCard user={profileUser} onUserUpdate={handleUserUpdate} />
-      )}
+        {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
 
-      {isTeamMember && involvedDisputes.length > 0 && <DisputePerformanceCard disputes={involvedDisputes} />}
+        {isProfessional && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+                <div className="lg:col-span-2 space-y-12">
+                    {/* Professional Reputation Card */}
+                    <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.3)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10 relative group">
+                        <div className="absolute top-0 right-0 p-10 opacity-5 scale-150 rotate-12 pointer-events-none group-hover:rotate-45 transition-transform duration-1000">
+                            <Award className="h-32 w-32 text-primary" />
+                        </div>
+                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                            <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-on-surface/40 flex items-center gap-4">
+                                PROFESSIONAL REPUTATION
+                                <div className="h-1.5 flex-1 bg-gradient-to-r from-primary/20 to-transparent rounded-full" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-10 space-y-12 pt-10">
+                            {!professionalProfile ? (
+                                <div className="p-10 bg-surface-container-high/40 rounded-[2.5rem] border border-dashed border-white/5 text-center">
+                                    <p className="font-black text-lg italic uppercase opacity-40">NEW PROFESSIONAL PROTOCOL</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className={cn(
+                                        "p-10 rounded-[3rem] ring-1 ring-white/10 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-10",
+                                        currentTierInfo ? `bg-gradient-to-br ${currentTierInfo.color}` : "bg-surface-container-high"
+                                    )}>
+                                        <div className="flex items-center gap-8 relative z-10">
+                                            <div className="bg-background/80 p-6 rounded-[2rem] shadow-2xl ring-1 ring-white/5">
+                                                {tierIcons[professionalProfile.tier] || <Zap className="h-10 w-10" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 italic">CURRENT STANDING</p>
+                                                <p className="text-4xl font-black italic tracking-tight">{professionalProfile.tier.toUpperCase()} TIER</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-center md:text-right relative z-10">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 italic">REPUTATION POINTS</p>
+                                            <p className="text-5xl font-black italic tracking-tighter text-primary">{professionalProfile.points}</p>
+                                        </div>
+                                    </div>
 
-      {isProfessional && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Professional Reputation</CardTitle>
-            <CardDescription>This user&apos;s performance and trust score on the platform.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            {!professionalProfile ? (
-              <div className="text-center py-8 bg-muted/50 rounded-lg">
-                <p className="font-semibold">New Professional</p>
-                <p className="text-sm text-muted-foreground">This user has not completed their professional setup.</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-accent/20">
-                  <div className="flex items-center gap-4">
-                    {tierIcons[professionalProfile.tier]}
-                    <div>
-                      <p className="text-sm">Tier</p>
-                      <p className="text-xl font-bold">{professionalProfile.tier}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm">Reputation Points</p>
-                      <p className="text-xl font-bold text-right">{professionalProfile.points}</p>
-                    </div>
-                  </div>
+                                    {currentTierInfo && currentTierInfo.next !== 'Max' && (
+                                        <div className="bg-surface-container-high/40 p-10 rounded-[2.5rem] border border-white/5 space-y-6">
+                                            <div className="flex justify-between items-end">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 italic mb-1">ASCENSION PATH</p>
+                                                    <p className="font-black text-xl italic tracking-tight">PROGRESS TO {currentTierInfo.next.toUpperCase()}</p>
+                                                </div>
+                                                <p className="font-black text-lg italic opacity-80">{professionalProfile.points} / {currentTierInfo.goal} PTS</p>
+                                            </div>
+                                            <Progress value={progressPercentage} className="h-3 rounded-full bg-background/50" />
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                        <div className="p-8 bg-surface-container-high/40 rounded-[2.5rem] border border-white/5 flex items-center gap-6 group hover:bg-surface-container-high/60 transition-all">
+                                            <div className="p-4 bg-primary/10 text-primary rounded-2xl shadow-xl transition-transform group-hover:scale-110">
+                                                <Star className="h-8 w-8" />
+                                            </div>
+                                            <div>
+                                                <p className="text-3xl font-black italic tracking-tighter">{(professionalProfile.rating || 0).toFixed(1)}<span className="text-lg opacity-40">/5.0</span></p>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">FROM {professionalProfile.reviews || 0} REVIEWS</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-8 bg-surface-container-high/40 rounded-[2.5rem] border border-white/5 flex items-center gap-6 group hover:bg-surface-container-high/60 transition-all">
+                                            <div className="p-4 bg-success/10 text-success rounded-2xl shadow-xl transition-transform group-hover:scale-110">
+                                                <Briefcase className="h-8 w-8" />
+                                            </div>
+                                            <div>
+                                                <p className="text-3xl font-black italic tracking-tighter">{userCompletedJobs.length}</p>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">JOBS COMPLETED</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 italic flex items-center gap-4">
+                                            CORE COMPETENCIES
+                                            <div className="h-[1px] flex-1 bg-white/5" />
+                                        </h4>
+                                        <div className="flex flex-wrap gap-4">
+                                            {(professionalProfile.skills || []).map(skill => (
+                                                <Badge key={skill} className="px-5 py-2 rounded-full border-none bg-background text-foreground font-black text-[10px] uppercase tracking-widest shadow-xl ring-1 ring-white/5 hover:scale-105 transition-transform">{skill}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {professionalProfile.reputationHistory && professionalProfile.reputationHistory.length > 0 && (
+                                        <div className="bg-surface-container-high/20 p-10 rounded-[3rem] border border-white/5 space-y-8">
+                                            <div className="flex items-center gap-4">
+                                                <TrendingUp className="h-5 w-5 text-primary" />
+                                                <h4 className="font-black text-[11px] uppercase tracking-[0.3em] opacity-40 italic">REPUTATION TELEMETRY (6MO)</h4>
+                                            </div>
+                                            <div className="h-64 w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={professionalProfile.reputationHistory}>
+                                                        <defs>
+                                                            <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                                                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                                        <XAxis dataKey="month" tick={{fontSize: 9, fontWeight: 900}} axisLine={false} tickLine={false} />
+                                                        <YAxis hide />
+                                                        <Tooltip contentStyle={{backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '10px', color: '#fff'}} />
+                                                        <Area type="monotone" dataKey="points" stroke="hsl(var(--primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorPoints)" />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {currentTierInfo && currentTierInfo.next !== 'Max' && (
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-sm font-medium">Progress to {currentTierInfo.next}</p>
-                      <p className="text-sm font-medium">{professionalProfile.points} / {currentTierInfo.goal} pts</p>
-                    </div>
-                    <Progress value={progressPercentage} className="h-2" />
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                  <div className="p-4 rounded-lg border">
-                    <Star className="mx-auto h-6 w-6 mb-2 text-primary" />
-                    <p className="text-2xl font-bold">{(professionalProfile.rating || 0).toFixed(1)}/5.0</p>
-                    <p className="text-sm text-muted-foreground">from {professionalProfile.reviews || 0} reviews</p>
-                  </div>
-                  <div className="p-4 rounded-lg border">
-                    <Briefcase className="mx-auto h-6 w-6 mb-2 text-primary" />
-                    <p className="text-2xl font-bold">{jobsCompletedCount}</p>
-                    <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                  </div>
+                <div className="space-y-12 h-fit">
+                    {/* Activity Feed / Compact Sidebar */}
+                    <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.3)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10">
+                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                            <CardTitle className="text-xl font-black italic tracking-[0.4em] uppercase text-on-surface/40">ACTIVE LOGS</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-10 pt-10 space-y-6">
+                            {userPostedJobs.length === 0 && userCompletedJobs.length === 0 ? (
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-20 text-center py-10">EMPTY FEED</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {[...userPostedJobs, ...userCompletedJobs].slice(0, 5).map((job, i) => (
+                                        <Link key={i} href={`/dashboard/jobs/${job.id}`} className="group block">
+                                            <div className="p-1.5 flex items-center gap-4 hover:translate-x-2 transition-transform">
+                                                <div className={cn(
+                                                    "h-2 w-2 rounded-full",
+                                                    job.status === 'Completed' ? "bg-success" : "bg-primary"
+                                                )} />
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-xs uppercase tracking-tight italic line-clamp-1 group-hover:text-primary transition-colors">{job.title}</p>
+                                                    <p className="text-[9px] font-black uppercase opacity-40">{format(toDate(job.postedAt), "MMM d, yyyy")}</p>
+                                                </div>
+                                                <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-40 transition-opacity" />
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                        <CardFooter className="p-10 pt-4">
+                            <Button variant="ghost" className="w-full rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity" asChild>
+                                <Link href="/dashboard/jobs">VIEW ARCHIVES</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Skills</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(professionalProfile.skills || []).length > 0 ? professionalProfile.skills.map(skill => (
-                      <Badge key={skill} variant="secondary">{skill}</Badge>
-                    )) : <p className="text-sm text-muted-foreground">No skills added.</p>}
-                  </div>
-                </div>
-
-                {professionalProfile.reputationHistory && professionalProfile.reputationHistory.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        Reputation History (Last 6 Months)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={chartConfig} className="h-64 w-full">
-                        <AreaChart data={professionalProfile.reputationHistory} margin={{ left: -20, right: 20, top: 10, bottom: 0 }}>
-                          <CartesianGrid vertical={false} />
-                          <XAxis
-                            dataKey="month"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                          />
-                          <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                          />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Area
-                            dataKey="points"
-                            type="natural"
-                            fill="var(--color-points)"
-                            fillOpacity={0.4}
-                            stroke="var(--color-points)"
-                          />
-                        </AreaChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <Tabs defaultValue="posted">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <TabsList>
-                {isClient && <TabsTrigger value="posted">Posted Jobs ({userPostedJobs.length})</TabsTrigger>}
-                {isProfessional && <TabsTrigger value="completed">Completed Jobs ({userCompletedJobs.length})</TabsTrigger>}
-              </TabsList>
-              <div className="flex items-center gap-1 rounded-md bg-secondary p-1">
-                <Button
-                  variant={jobsView === 'list' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setJobsView('list')}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={jobsView === 'grid' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setJobsView('grid')}
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isClient && (
-              <TabsContent value="posted">
-                {userPostedJobs.length > 0 ? (
-                  jobsView === 'grid' ? (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {userPostedJobs.map(job => (
-                        <JobCard key={job.id} job={job} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {userPostedJobs.map(job => (
-                        <JobListItem key={job.id} job={job} />
-                      ))}
-                    </div>
-                  )
-                ) : <p className="text-muted-foreground col-span-full text-center py-8">This user has not posted any jobs yet.</p>}
-              </TabsContent>
-            )}
-
-            {isProfessional && (
-              <TabsContent value="completed">
-                {userCompletedJobs.length > 0 ? (
-                  jobsView === 'grid' ? (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      {userCompletedJobs.map(job => (
-                        <JobCard key={job.id} job={job} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {userCompletedJobs.map(job => (
-                        <JobListItem key={job.id} job={job} />
-                      ))}
-                    </div>
-                  )
-                ) : <p className="text-muted-foreground col-span-full text-center py-8">This professional has not completed any jobs yet.</p>}
-              </TabsContent>
-            )}
-          </CardContent>
-        </Tabs>
-      </Card>
-    </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
+
+

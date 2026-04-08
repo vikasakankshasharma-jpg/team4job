@@ -5,15 +5,21 @@ import { useUser } from "@/hooks/use-user";
 import { ClientStats } from "@/domains/jobs/job.types";
 import { Transaction } from "@/lib/types";
 import { 
-    CheckCircle, 
-    Gavel, 
-    Briefcase, 
-    Wrench, 
-    Zap, 
-    PlusCircle, 
-    Settings, 
-    Check 
+    Check, 
+    Sparkles,
+    Award,
+    TrendingUp,
+    Search,
+    Briefcase,
+    CheckCircle,
+    Gavel,
+    Zap,
+    PlusCircle
 } from "lucide-react";
+import { motion } from 'framer-motion';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 import { useTranslations } from 'next-intl';
 
@@ -31,68 +37,117 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
   const userName = user?.name || 'Client';
 
   return (
-    <div className="w-full">
+    <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full space-y-10 pb-12"
+    >
+        {/* Top Gradient Accent */}
+        <div className="h-2 w-full bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x rounded-full opacity-50 mb-8" />
+
         {/* Header & Welcome */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-2">
-            <div>
-                <span className="text-primary font-bold text-xs tracking-widest uppercase mb-2 block">{t('workspace')}</span>
-                <h2 className="text-3xl md:text-4xl font-black font-headline text-on-surface tracking-tighter leading-none">{t('overview')}</h2>
-                <p className="text-on-surface-variant mt-2 max-w-md">{t('welcome', { name: userName })}</p>
-            </div>
-            <div className="flex items-center gap-3 bg-surface-container-low p-2 rounded-xl border border-outline-variant/10">
-                <div className="px-4 py-2 bg-surface-container-highest rounded-lg text-xs font-bold text-primary tracking-wider uppercase">{t('workspace')}</div>
-                <div className="flex items-center gap-2 pr-4">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span className="text-xs font-medium text-on-surface-variant">{t('active')}</span>
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+            <div className="space-y-2">
+                <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
+                    {t('workspace')} // ACTIVE COMMAND HUB
+                </Badge>
+                <h2 className="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85] mb-4">
+                    {t('overview')}
+                </h2>
+                <div className="flex items-center gap-3 text-muted-foreground font-medium text-lg italic opacity-80 decoration-primary/20 underline underline-offset-8">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    {t('welcome', { name: userName })}
                 </div>
+            </div>
+            <div className="flex items-center gap-4 bg-surface-container-low/60 backdrop-blur-xl p-3 px-6 rounded-[2rem] border border-outline-variant/10 shadow-2xl shadow-primary/5 group">
+                <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.5)]" />
+                <span className="text-xs font-black uppercase tracking-widest text-primary italic">{t('active')}</span>
+                <div className="h-4 w-[1px] bg-outline-variant/20 mx-2" />
+                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 italic">Series 4.0 // Production Hub</div>
             </div>
         </header>
 
         {/* Stats Bento Grid */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div className="bg-surface-container-low p-6 rounded-xl hover:bg-surface-container transition-colors group">
-                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">{t('activeJobs')}</p>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black font-headline text-on-surface">{stats?.activeJobs || 0}</span>
-                    <span className="text-[10px] text-green-500 font-bold ml-1">{t('inProgress')}</span>
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                    <Briefcase className="h-16 w-16 text-primary" />
                 </div>
-                <div className="mt-4 h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-3/4"></div>
+                <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('activeJobs')}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.activeJobs || 0}</span>
                 </div>
-            </div>
+                <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "75%" }}
+                        className="h-full bg-primary shadow-[0_0_20px_rgba(var(--primary),0.6)]" 
+                    />
+                </div>
+            </motion.div>
             
-            <div className="bg-surface-container-low p-6 rounded-xl hover:bg-surface-container transition-colors group">
-                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">{t('completedJobs')}</p>
-                <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black font-headline text-on-surface">{stats?.completedJobs || 0}</span>
-                    <CheckCircle className="text-primary h-4 w-4" />
+            <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                    <CheckCircle className="h-16 w-16 text-success" />
                 </div>
-                <div className="mt-4 h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary w-1/2"></div>
+                <p className="text-[10px] font-black text-success tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('completedJobs')}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.completedJobs || 0}</span>
                 </div>
-            </div>
+                <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "50%" }}
+                        className="h-full bg-success shadow-[0_0_20px_rgba(var(--success),0.6)]" 
+                    />
+                </div>
+            </motion.div>
 
-            <div className="bg-surface-container-low p-6 rounded-xl hover:bg-surface-container transition-colors group">
-                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">{t('totalBidsRcvd')}</p>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black font-headline text-on-surface">{stats?.totalBids || 0}</span>
-                    <span className="text-[10px] text-blue-500 font-bold ml-1">{t('toReview')}</span>
+            <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                    <TrendingUp className="h-16 w-16 text-blue-500" />
                 </div>
-                <div className="mt-4 h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 w-1/3"></div>
+                <p className="text-[10px] font-black text-blue-400 tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('totalBidsRcvd')}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.totalBids || 0}</span>
                 </div>
-            </div>
+                <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "33%" }}
+                        className="h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)]" 
+                    />
+                </div>
+            </motion.div>
 
-            <div className="bg-surface-container-low p-6 rounded-xl hover:bg-surface-container transition-colors group">
-                <p className="text-[10px] font-bold text-on-surface-variant tracking-widest uppercase mb-1">{t('openDisputes')}</p>
-                <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black font-headline text-on-surface">{stats?.openDisputes || 0}</span>
-                    <Gavel className="text-secondary h-4 w-4" />
+            <motion.div 
+                whileHover={{ y: -5 }}
+                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                    <Gavel className="h-16 w-16 text-warning" />
                 </div>
-                <div className="mt-4 h-1 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-400 w-11/12"></div>
+                <p className="text-[10px] font-black text-warning tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('openDisputes')}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.openDisputes || 0}</span>
                 </div>
-            </div>
+                <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                    <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: "90%" }}
+                        className="h-full bg-warning shadow-[0_0_20px_rgba(234,179,8,0.6)]" 
+                    />
+                </div>
+            </motion.div>
         </section>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -100,106 +155,122 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
             <div className="lg:col-span-2 space-y-8">
                 {/* Active Hiring Pipeline */}
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center bg-surface-container-low px-4 py-2 rounded-t-xl mb-4 border-b border-outline-variant/10">
-                        <h3 className="font-headline font-bold text-on-surface text-lg">{t('hiringPipeline')}</h3>
-                        <Link className="text-xs font-bold text-primary hover:underline" href="/dashboard/posted-jobs">{t('viewAllJobs')}</Link>
+                    <div className="flex justify-between items-center bg-surface-container-low/40 backdrop-blur-3xl px-10 py-6 rounded-t-[3rem] mt-2 border-b border-outline-variant/10 ring-1 ring-white/5">
+                        <div className="flex items-center gap-4">
+                            <Search className="h-6 w-6 text-primary" />
+                            <h3 className="text-2xl font-black italic tracking-tighter uppercase">{t('hiringPipeline')}</h3>
+                        </div>
+                        <Link className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline italic" href="/dashboard/posted-jobs">
+                            {t('viewAllJobs')}
+                        </Link>
                     </div>
 
                     {(!stats || stats.activeJobs === 0) ? (
-                        <div className="bg-surface-container-low p-8 rounded-xl flex items-center justify-center border border-dashed border-outline-variant/30">
-                            <div className="text-center w-full max-w-sm">
-                                <Briefcase className="h-16 w-16 text-slate-400 mx-auto mb-4 opacity-50" />
-                                <h4 className="text-lg font-bold text-on-surface mb-2">{t('noActiveJobs')}</h4>
-                                <p className="text-sm text-on-surface-variant mb-6">{t('noActiveJobsDesc')}</p>
-                                <Link href="/wizard" className="inline-block px-6 py-2 bg-primary text-white rounded-lg font-bold text-sm shadow-md hover:bg-primary/90 transition-colors">{t('postJobFast')}</Link>
+                        <div className="bg-surface-container-low/40 backdrop-blur-3xl p-20 rounded-b-[3rem] flex items-center justify-center border border-dashed border-outline-variant/30 relative group overflow-hidden ring-1 ring-white/5 ring-t-0">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="text-center w-full max-w-sm relative z-10">
+                                <div className="h-24 w-24 rounded-[2rem] bg-muted/40 flex items-center justify-center mx-auto mb-8 shadow-inner ring-1 ring-white/5">
+                                    <Briefcase className="h-12 w-12 text-slate-400 opacity-50" />
+                                </div>
+                                <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-2">{t('noActiveJobs')}</h4>
+                                <p className="text-sm text-muted-foreground mb-10 font-medium opacity-80 leading-relaxed">{t('noActiveJobsDesc')}</p>
+                                <Button asChild className="h-12 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-primary/20">
+                                    <Link href="/wizard">{t('postJobFast')}</Link>
+                                </Button>
                             </div>
                         </div>
                     ) : (
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            {/* In a real scenario, we would map over actual active jobs here */}
-                            {/* For the Beta, we show the real count above and details in the list view */}
-                            <div className="col-span-full bg-surface-container-low p-6 rounded-xl text-center border border-outline-variant/10">
-                                <p className="text-sm text-on-surface-variant">{t('manageJobsDesc')}</p>
-                                <Link href="/dashboard/posted-jobs" className="mt-4 inline-block text-primary font-bold hover:underline italic tracking-tighter uppercase text-xs">{t('goToMyJobs')}</Link>
+                        <div className="grid sm:grid-cols-2 gap-8 p-10 bg-surface-container-low/20 backdrop-blur-3xl rounded-b-[3rem] border border-outline-variant/10 ring-1 ring-white/5 ring-t-0 shadow-inner">
+                            <div className="col-span-full text-center space-y-4 py-8">
+                                <p className="text-lg font-medium italic opacity-60 tracking-tight">{t('manageJobsDesc')}</p>
+                                <Button asChild variant="outline" className="h-12 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] italic border-primary/20 hover:bg-primary/5 shadow-xl transition-all">
+                                    <Link href="/dashboard/posted-jobs">{t('goToMyJobs')}</Link>
+                                </Button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Expenses Chart mock (hidden if no transactions for now) */}
+                {/* Expenses Chart mock */}
                 {transactions && transactions.length > 0 && (
-                    <div className="bg-surface-container rounded-xl overflow-hidden mt-8 border border-outline-variant/10">
-                        <div className="p-6 flex justify-between items-center border-b border-outline-variant/10 bg-surface-container-low">
-                            <h3 className="font-headline font-bold text-on-surface">{t('recentExpenses')}</h3>
-                            <div className="flex gap-2">
-                                <button className="px-3 py-1 rounded-md bg-primary/10 text-[10px] font-bold text-primary tracking-widest">{t('weekly')}</button>
-                                <button className="px-3 py-1 rounded-md text-[10px] font-bold text-on-surface-variant hover:text-on-surface tracking-widest">{t('monthly')}</button>
+                    <Card className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 group">
+                        <div className="p-10 flex justify-between items-center border-b border-outline-variant/10 bg-muted/10 relative z-10">
+                            <div className="flex items-center gap-4">
+                                <TrendingUp className="h-6 w-6 text-primary" />
+                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">{t('recentExpenses')}</h3>
+                            </div>
+                            <div className="flex gap-3 p-1.5 bg-background/40 backdrop-blur-md rounded-[2rem] shadow-inner">
+                                <button className="px-6 py-2 rounded-[2rem] bg-primary text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground shadow-xl transition-all italic">{t('weekly')}</button>
+                                <button className="px-6 py-2 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:bg-primary/10 transition-all italic">{t('monthly')}</button>
                             </div>
                         </div>
-                        <div className="p-8 aspect-[21/9] flex items-end justify-between gap-2">
-                            <div className="flex-1 bg-slate-200 dark:bg-slate-800/50 rounded-t-lg h-[40%] group relative" />
+                        <div className="p-10 aspect-[21/9] flex items-end justify-between gap-3 group-hover:gap-4 transition-all duration-500">
+                            {[40, 65, 45, 90, 55, 80, 70].map((h, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${h}%` }}
+                                    transition={{ delay: i * 0.1, duration: 1, ease: "circOut" }}
+                                    className="flex-1 bg-gradient-to-t from-primary/40 to-primary rounded-[2.5rem] relative group/bar"
+                                >
+                                    <div className="absolute inset-0 bg-primary opacity-0 group-hover/bar:opacity-100 blur-md transition-opacity" />
+                                </motion.div>
+                            ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
             </div>
 
             {/* Right Column: Sidebar Actions & Profile */}
             <div className="space-y-8">
                 {/* Quick Actions Module */}
-                <div className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/5 shadow-sm">
-                    <h3 className="font-headline font-bold text-on-surface mb-6 flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" />
+                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 relative overflow-hidden group">
+                    <div className="absolute bottom-0 right-0 p-10 opacity-5 scale-150 -rotate-12 group-hover:scale-[2] transition-transform duration-1000">
+                        <Award className="h-32 w-32 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-10 flex items-center gap-4">
+                        <Zap className="h-6 w-6 text-primary animate-pulse" />
                         {t('quickActions')}
                     </h3>
-                    <div className="space-y-3">
-                        <Link href="/wizard" className="w-full flex items-center gap-4 p-3 rounded-xl bg-surface-container hover:bg-surface-container-high transition-all group">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform flex-shrink-0">
-                                <PlusCircle className="h-5 w-5" />
+                    <div className="space-y-4">
+                        <Link href="/wizard" className="w-full flex items-center gap-5 p-4 rounded-[1.5rem] bg-muted/30 hover:bg-primary/10 transition-all group/action border border-white/5 shadow-inner">
+                            <div className="w-12 h-12 rounded-[1rem] bg-primary/10 flex items-center justify-center text-primary group-hover/action:scale-110 group-hover/action:bg-primary group-hover/action:text-white transition-all duration-300 flex-shrink-0 shadow-lg shadow-primary/10">
+                                <PlusCircle className="h-6 w-6" />
                             </div>
                             <div className="text-left flex-1 min-w-0">
-                                <p className="text-sm font-bold text-on-surface truncate">{t('postNewJob')}</p>
-                                <p className="text-[10px] text-on-surface-variant truncate">{t('postNewJobDesc')}</p>
+                                <p className="text-base font-black italic tracking-tighter uppercase text-on-surface leading-none mb-1">{t('postNewJob')}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 italic">{t('postNewJobDesc')}</p>
                             </div>
                         </Link>
                         
-                        <Link href="/dashboard/posted-jobs" className="w-full flex items-center gap-4 p-3 rounded-xl bg-surface-container hover:bg-surface-container-high transition-all group">
-                            <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary group-hover:scale-110 transition-transform flex-shrink-0">
-                                <Gavel className="h-5 w-5" />
+                        <Link href="/dashboard/posted-jobs" className="w-full flex items-center gap-5 p-4 rounded-[1.5rem] bg-muted/30 hover:bg-secondary/10 transition-all group/action border border-white/5 shadow-inner">
+                            <div className="w-12 h-12 rounded-[1rem] bg-secondary/10 flex items-center justify-center text-secondary group-hover/action:scale-110 group-hover/action:bg-secondary group-hover/action:text-white transition-all duration-300 flex-shrink-0 shadow-lg shadow-secondary/10">
+                                <Gavel className="h-6 w-6" />
                             </div>
                             <div className="text-left flex-1 min-w-0">
-                                <p className="text-sm font-bold text-on-surface truncate">{t('reviewBids')}</p>
-                                <p className="text-[10px] text-on-surface-variant truncate">{t('reviewBidsDesc')}</p>
-                            </div>
-                        </Link>
-
-                        <Link href="/dashboard/settings" className="w-full flex items-center gap-4 p-3 rounded-xl bg-surface-container hover:bg-surface-container-high transition-all group">
-                            <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 group-hover:scale-110 transition-transform flex-shrink-0">
-                                <Settings className="h-5 w-5" />
-                            </div>
-                            <div className="text-left flex-1 min-w-0">
-                                <p className="text-sm font-bold text-on-surface truncate">{t('manageSettings')}</p>
-                                <p className="text-[10px] text-on-surface-variant truncate">{t('manageSettingsDesc')}</p>
+                                <p className="text-base font-black italic tracking-tighter uppercase text-on-surface leading-none mb-1">{t('reviewBids')}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 italic">{t('reviewBidsDesc')}</p>
                             </div>
                         </Link>
                     </div>
                 </div>
 
                 {/* Recent Activity Timeline */}
-                <div className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/5 shadow-sm">
-                    <h3 className="font-headline font-bold text-on-surface mb-6">{t('recentActivity')}</h3>
-                    <div className="relative space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200 dark:before:bg-slate-800">
-                        <div className="relative pl-8">
-                            <div className="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-surface-container-low">
-                                <Check className="h-3 w-3 text-white" />
+                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5">
+                    <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-10">{t('recentActivity')}</h3>
+                    <div className="relative space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-primary/20 before:shadow-[0_0_8px_rgba(var(--primary),0.3)]">
+                        <div className="relative pl-10">
+                            <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-surface-container-low shadow-lg shadow-primary/20">
+                                <Check className="h-4 w-4 text-white font-black" />
                             </div>
-                            <p className="text-sm font-bold text-on-surface leading-tight">{t('accountCreated')}</p>
-                            <p className="text-[10px] text-on-surface-variant mt-0.5">{t('welcomeToPlatform')}</p>
+                            <p className="text-base font-black italic tracking-tighter uppercase text-on-surface leading-tight">{t('accountCreated')}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1 italic opacity-60">{t('welcomeToPlatform')}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </motion.div>
   );
 }
 

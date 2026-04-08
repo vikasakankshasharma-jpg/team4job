@@ -23,7 +23,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                 {/* Personal Info Group */}
                 <div className="p-8 rounded-[2.5rem] border-2 border-border/50 bg-card/50 space-y-6 shadow-sm">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        <div className="p-2 rounded-xl bg-primary/10">
+                        <div className="p-2.5 rounded-[0.75rem] bg-primary/10 ring-1 ring-primary/20 shadow-inner">
                             <User className="h-5 w-5 text-primary" />
                         </div>
                         Personal Identity
@@ -36,7 +36,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                                 placeholder="John"
                                 value={data.firstName || ""}
                                 onChange={(e) => updateData({ ...data, firstName: e.target.value })}
-                                className="h-14 bg-background border-muted-foreground/20 focus:border-primary/50 rounded-2xl text-lg px-6 transition-all shadow-inner"
+                                className="h-16 bg-background/50 backdrop-blur-3xl border-white/10 focus:border-primary/50 rounded-[1.25rem] text-lg px-8 transition-all shadow-inner font-semibold italic"
                             />
                         </div>
                         <div className="space-y-2">
@@ -46,7 +46,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                                 placeholder="Doe"
                                 value={data.lastName || ""}
                                 onChange={(e) => updateData({ ...data, lastName: e.target.value })}
-                                className="h-14 bg-background border-muted-foreground/20 focus:border-primary/50 rounded-2xl text-lg px-6 transition-all shadow-inner"
+                                className="h-16 bg-background/50 backdrop-blur-3xl border-white/10 focus:border-primary/50 rounded-[1.25rem] text-lg px-8 transition-all shadow-inner font-semibold italic"
                             />
                         </div>
                     </div>
@@ -55,8 +55,8 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                 {/* Business Info Group */}
                 <div className="p-8 rounded-[2.5rem] border-2 border-border/50 bg-card/50 space-y-6 shadow-sm">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        <div className="p-2 rounded-xl bg-primary/10">
-                            <Building2 className="h-5 w-5 text-primary" />
+                        <div className="p-2.5 rounded-[0.75rem] bg-primary/10 ring-1 ring-primary/20 shadow-inner">
+                            <Store className="h-5 w-5 text-primary" />
                         </div>
                         Business Profile
                     </h3>
@@ -75,7 +75,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                 {/* Location Group */}
                 <div className="p-8 rounded-[2.5rem] border-2 border-border/50 bg-card/50 space-y-6 shadow-sm">
                     <h3 className="font-bold text-lg flex items-center gap-2">
-                        <div className="p-2 rounded-xl bg-primary/10">
+                        <div className="p-2.5 rounded-[0.75rem] bg-primary/10 ring-1 ring-primary/20 shadow-inner">
                             <MapPin className="h-5 w-5 text-primary" />
                         </div>
                         Service Area
@@ -88,7 +88,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                                 placeholder="Mumbai"
                                 value={data.city || ""}
                                 onChange={(e) => updateData({ ...data, city: e.target.value })}
-                                className="h-14 bg-background border-muted-foreground/20 focus:border-primary/50 rounded-2xl text-lg px-6 transition-all shadow-inner"
+                                className="h-16 bg-background/50 backdrop-blur-3xl border-white/10 focus:border-primary/50 rounded-[1.25rem] text-lg px-8 transition-all shadow-inner font-semibold italic"
                             />
                         </div>
                         <div className="space-y-2">
@@ -99,7 +99,7 @@ export function BasicInfo({ data, updateData }: BasicInfoProps) {
                                 maxLength={6}
                                 value={data.pincode || ""}
                                 onChange={(e) => updateData({ ...data, pincode: e.target.value })}
-                                className="h-14 bg-background border-muted-foreground/20 focus:border-primary/50 rounded-2xl text-lg px-6 transition-all shadow-inner font-mono tracking-widest"
+                                className="h-16 bg-background/50 backdrop-blur-3xl border-white/10 focus:border-primary/50 rounded-[1.25rem] text-lg px-8 transition-all shadow-inner font-mono tracking-[0.3em] font-black italic"
                             />
                         </div>
                     </div>

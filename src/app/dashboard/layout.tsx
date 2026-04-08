@@ -3,6 +3,9 @@ import { Header } from '@/components/dashboard/header';
 import { MobileBottomNav } from '@/components/navigation/mobile-bottom-nav';
 import { DashboardProviders } from '@/components/dashboard/dashboard-providers';
 import { BetaFeedbackButton } from '@/components/dashboard/beta-feedback-button';
+import { IntelOrb } from '@/components/help/intel-orb';
+import { BriefingSidebar } from '@/components/help/briefing-sidebar';
+import { MissionTourAnchor } from '@/components/help/mission-tour-anchor';
 
 export default function DashboardLayout({
   children,
@@ -20,6 +23,9 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
+      <IntelOrb />
+      <BriefingSidebar />
+      <MissionTourAnchor />
       <BetaFeedbackButton />
       <MobileBottomNav />
     </DashboardProviders>

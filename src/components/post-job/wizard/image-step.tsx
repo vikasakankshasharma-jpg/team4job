@@ -51,17 +51,17 @@ export function ImageStep({ onAnalyze, onBack, category }: ImageStepProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <Card className="p-8 shadow-2xl border-0 overflow-hidden relative bg-card">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-accent to-primary" />
-                    <h2 className="text-3xl font-extrabold tracking-tight mb-3">Visual Job Posting</h2>
-                    <p className="text-muted-foreground text-lg font-medium opacity-80 mb-10 max-w-sm mx-auto text-center">
-                        Upload a photo of the site or equipment. Our AI will analyze it to plan your <span className="text-primary font-bold">{category}</span> work.
+                <Card className="p-12 shadow-[0_45px_120px_rgba(0,0,0,0.2)] border-none overflow-hidden relative bg-card/40 backdrop-blur-3xl rounded-[3.5rem] ring-1 ring-white/5">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-accent to-primary" />
+                    <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none mb-4">Vision Intake</h2>
+                    <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-50 italic mb-12 max-w-sm mx-auto text-center leading-relaxed">
+                        Upload a photo of the site or equipment. Our AI will analyze it to plan your <span className="text-primary">{category}</span> work.
                     </p>
  
-                    <div className="flex flex-col items-center justify-center gap-8">
+                    <div className="flex flex-col items-center justify-center gap-10">
                         <div 
-                            className={`w-full aspect-video rounded-3xl border-2 border-dashed transition-all overflow-hidden relative group cursor-pointer flex flex-col items-center justify-center
-                                ${isProcessing ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20 bg-muted/5 hover:border-primary/40 hover:bg-muted/10 shadow-sm hover:shadow-md'}
+                            className={`w-full aspect-video rounded-[3rem] border-2 border-dashed transition-all overflow-hidden relative group cursor-pointer flex flex-col items-center justify-center shadow-inner ring-1 ring-white/5
+                                ${isProcessing ? 'border-primary/50 bg-primary/10' : 'border-white/10 bg-background/20 hover:border-primary/40 hover:bg-background/40 shadow-2xl'}
                             `}
                             onClick={() => fileInputRef.current?.click()}
                         >
@@ -70,29 +70,29 @@ export function ImageStep({ onAnalyze, onBack, category }: ImageStepProps) {
                                     src={preview} 
                                     alt="Upload Preview" 
                                     fill 
-                                    className={`object-cover transition-opacity duration-300 ${isProcessing ? 'opacity-30 blur-sm' : 'opacity-100 group-hover:scale-105'}`} 
+                                    className={`object-cover transition-opacity duration-700 ${isProcessing ? 'opacity-30 blur-sm' : 'opacity-100 group-hover:scale-110'}`} 
                                     unoptimized
                                 />
                             ) : (
-                                <div className="text-center p-6 flex flex-col items-center">
-                                    <div className="h-20 w-20 rounded-2xl bg-primary/5 flex items-center justify-center text-primary mb-6 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-                                        <Camera className="h-10 w-10 text-primary/80" />
+                                <div className="text-center p-8 flex flex-col items-center">
+                                    <div className="h-24 w-24 rounded-[1.5rem] bg-primary/10 flex items-center justify-center text-primary mb-8 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 shadow-inner ring-1 ring-primary/20">
+                                        <Camera className="h-10 w-10 text-primary transition-transform duration-500 group-hover:rotate-6" />
                                     </div>
-                                    <span className="text-lg font-bold">Click to upload or take a photo</span>
-                                    <span className="text-sm font-medium text-muted-foreground mt-2 opacity-80 uppercase tracking-widest">PNG, JPG up to 5MB</span>
+                                    <span className="text-sm font-black italic uppercase tracking-[0.3em]">Operational Scan</span>
+                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-muted-foreground mt-4 opacity-50 italic">PNG, JPG // MAX 5MB</span>
                                 </div>
                             )}
                             
                             {isProcessing && (
-                                <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-4">
-                                    <div className="h-16 w-16 bg-background rounded-2xl shadow-xl flex items-center justify-center">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <div className="absolute inset-0 bg-background/60 backdrop-blur-md flex flex-col items-center justify-center gap-6">
+                                    <div className="h-20 w-20 bg-background/60 backdrop-blur-3xl rounded-[1.25rem] shadow-2xl flex items-center justify-center ring-1 ring-white/10">
+                                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
                                     </div>
-                                    <span className="text-sm font-bold uppercase tracking-widest text-foreground shadow-sm bg-background/80 px-4 py-1.5 rounded-full">Analyzing image...</span>
+                                    <span className="text-[10px] font-black italic uppercase tracking-[0.4em] text-foreground shadow-sm bg-background/80 px-6 py-2 rounded-full ring-1 ring-white/10">Vectorizing Visual Stream...</span>
                                 </div>
                             )}
                         </div>
-
+ 
                         <input 
                             type="file" 
                             accept="image/*" 
@@ -103,11 +103,11 @@ export function ImageStep({ onAnalyze, onBack, category }: ImageStepProps) {
                         />
 
                         <Button 
-                            className="w-full h-16 text-lg font-extrabold rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform"
+                            className="w-full h-16 text-[10px] font-black italic uppercase tracking-[0.4em] rounded-[1.5rem] shadow-[0_20px_60px_rgba(var(--primary),0.3)] hover:scale-[1.02] transition-all"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isProcessing}
                         >
-                            <Upload className="mr-2 h-6 w-6" /> {preview ? 'Change Image' : 'Select Image'}
+                            <Upload className="mr-3 h-5 w-5" /> {preview ? 'Update Visual' : 'Establish Visual'}
                         </Button>
                     </div>
  

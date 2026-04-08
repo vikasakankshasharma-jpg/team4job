@@ -91,14 +91,14 @@ export function CancelJobDialog({
                         </Select>
 
                         {isNoShow ? (
-                            <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-md border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 text-sm">
-                                <span className="font-bold block mb-1">Fee Waiver Available:</span>
-                                To avoid the 2.5% cancellation fee for a No-Show, please raise a dispute instead of cancelling. The admin will verify and issue a full refund.
+                            <div className="bg-warning/10 p-5 rounded-[2rem] border border-warning/20 text-warning text-sm shadow-inner backdrop-blur-md">
+                                <span className="font-black italic uppercase tracking-widest block mb-2 text-[10px]">Fee Waiver Available // Protocol Notice</span>
+                                <span className="opacity-70 font-medium italic">To avoid the 2.5% cancellation fee for a No-Show, please raise a dispute instead of cancelling. The admin will verify and issue a full refund.</span>
                             </div>
                         ) : (
-                            <div className="bg-red-50 dark:bg-red-950 p-3 rounded-md border border-red-200 dark:border-red-900 text-red-800 dark:text-red-200 text-sm">
-                                <span className="font-bold block mb-1">Cancellation Fee Applies:</span>
-                                A 2.5% platform fee will be deducted from your refund.
+                            <div className="bg-destructive/10 p-5 rounded-[2rem] border border-destructive/20 text-destructive text-sm shadow-inner backdrop-blur-md">
+                                <span className="font-black italic uppercase tracking-widest block mb-2 text-[10px]">Cancellation Fee Applies // Financial Logic</span>
+                                <span className="opacity-70 font-medium italic">A 2.5% platform fee will be deducted from your refund.</span>
                             </div>
                         )}
                     </div>

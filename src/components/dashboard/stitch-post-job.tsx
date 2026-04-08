@@ -31,7 +31,7 @@ export function StitchPostJobClient() {
 {/* SideNavBar (Hidden on desktop for this specific Wizard flow to maximize focus) */}
 <aside className="hidden lg:flex flex-col h-full py-6 px-4 fixed left-0 top-16 w-64 bg-surface dark:bg-slate-900 border-r border-transparent">
 <div className="flex items-center gap-3 mb-8 px-2">
-<div className="w-10 h-10 bg-primary dark:bg-blue-600 rounded-lg flex items-center justify-center text-white">
+<div className="w-10 h-10 bg-primary dark:bg-blue-600 rounded-[1.5rem] flex items-center justify-center text-white">
 <span className="material-symbols-outlined">construction</span>
 </div>
 <div>
@@ -40,7 +40,7 @@ export function StitchPostJobClient() {
 </div>
 </div>
 <div className="space-y-1">
-<div className="flex items-center gap-3 px-3 py-2 bg-surface-container-highest dark:bg-slate-800 text-primary dark:text-blue-400 font-bold rounded-lg transition-all scale-[0.98] duration-150">
+<div className="flex items-center gap-3 px-3 py-2 bg-surface-container-highest dark:bg-slate-800 text-primary dark:text-blue-400 font-bold rounded-[1rem] transition-all scale-[0.98] duration-150">
 <span className="material-symbols-outlined" data-icon="dashboard">dashboard</span>
 <span className="uppercase tracking-wide text-[11px] Inter">Overview</span>
 </div>
@@ -53,7 +53,7 @@ export function StitchPostJobClient() {
 <span className="uppercase tracking-wide text-[11px] Inter">Drafts</span>
 </div>
 </div>
-<button className="mt-auto mx-2 py-3 bg-primary dark:bg-blue-600 text-on-primary rounded-lg font-bold text-sm tracking-tight flex items-center justify-center gap-2">
+<button className="mt-auto mx-2 py-3 bg-primary dark:bg-blue-600 text-on-primary rounded-[1.5rem] font-bold text-sm tracking-tight flex items-center justify-center gap-2">
 <span className="material-symbols-outlined text-sm">add</span>
             New Installation
         </button>
@@ -85,7 +85,7 @@ export function StitchPostJobClient() {
 {/* Left Column: Form */}
 <div className="lg:col-span-7 space-y-8">
 {/* Section: Job Essentials */}
-<section className="p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-xl shadow-[0_20px_50px_rgba(19,27,46,0.04)]">
+<section className="p-8 bg-surface-container-lowest dark:bg-slate-900 rounded-[2.5rem] shadow-[0_20px_50px_rgba(19,27,46,0.04)]">
 <h2 className="text-xl font-bold mb-6 text-on-surface dark:text-slate-100 flex items-center gap-2">
 <span className="material-symbols-outlined text-primary dark:text-blue-400">info</span>
                         Basic Information
@@ -100,7 +100,7 @@ export function StitchPostJobClient() {
 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 <div>
 <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant dark:text-slate-400 mb-2 block">Device Count</label>
-<div className="flex items-center bg-surface-container-low dark:bg-slate-800 rounded-lg p-1">
+<div className="flex items-center bg-surface-container-low dark:bg-slate-800 rounded-[1rem] p-1">
 <button className="w-10 h-10 flex items-center justify-center text-primary dark:text-blue-400 hover:bg-surface-container-highest dark:hover:bg-slate-700 rounded transition-colors">
 <span className="material-symbols-outlined">remove</span>
 </button>
@@ -112,7 +112,7 @@ export function StitchPostJobClient() {
 </div>
 <div>
 <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant dark:text-slate-400 mb-2 block">Site Category</label>
-<select className="w-full bg-surface-container-low dark:bg-slate-800 border-none rounded-lg py-2.5 px-4 focus:ring-2 ring-primary/20 font-medium">
+<select className="w-full bg-surface-container-low dark:bg-slate-800 border-none rounded-[1.5rem] py-2.5 px-4 focus:ring-2 ring-primary/20 font-medium">
 <option>Industrial Facility</option>
 <option>Corporate Office</option>
 <option>Public Infrastructure</option>
@@ -123,14 +123,14 @@ export function StitchPostJobClient() {
 </div>
 </section>
 {/* Section: Advanced Requirements */}
-<section className="p-8 bg-surface-container-low dark:bg-slate-900/50 rounded-xl border border-outline-variant/10">
+<section className="p-8 bg-surface-container-low dark:bg-slate-900/50 rounded-[2.5rem] border border-outline-variant/10">
 <h2 className="text-xl font-bold mb-6 text-on-surface dark:text-slate-100 flex items-center gap-2">
 <span className="material-symbols-outlined text-primary dark:text-blue-400">verified_user</span>
                         Technical Specifications
                     </h2>
 <div className="space-y-4">
 {/* Technical Switch 1 */}
-<div className="flex items-center justify-between p-4 bg-surface-container-lowest dark:bg-slate-800 rounded-lg">
+<div className="flex items-center justify-between p-4 bg-surface-container-lowest dark:bg-slate-800 rounded-[1.5rem]">
 <div className="flex items-center gap-4">
 <div className="w-10 h-10 rounded bg-error-container/20 flex items-center justify-center text-error">
 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>priority_high</span>
@@ -146,7 +146,7 @@ export function StitchPostJobClient() {
 </label>
 </div>
 {/* Technical Switch 2 */}
-<div className="flex items-center justify-between p-4 bg-surface-container-lowest dark:bg-slate-800 rounded-lg">
+<div className="flex items-center justify-between p-4 bg-surface-container-lowest dark:bg-slate-800 rounded-[1.5rem]">
 <div className="flex items-center gap-4">
 <div className="w-10 h-10 rounded bg-primary-container/20 flex items-center justify-center text-primary dark:text-blue-400">
 <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
@@ -167,11 +167,11 @@ export function StitchPostJobClient() {
 {/* Right Column: Location & Preview */}
 <div className="lg:col-span-5 space-y-6">
 {/* Map Card */}
-<div className="bg-surface-container-lowest dark:bg-slate-900 rounded-xl overflow-hidden shadow-[0_20px_50px_rgba(19,27,46,0.04)]">
+<div className="bg-surface-container-lowest dark:bg-slate-900 rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_rgba(19,27,46,0.04)]">
 <div className="p-6">
 <h3 className="font-bold mb-1 text-on-surface dark:text-slate-100">Job Location</h3>
 <p className="text-xs text-on-surface-variant dark:text-slate-400 mb-4">Coordinates: 40.7128° N, 74.0060° W</p>
-<div className="relative h-64 w-full rounded-lg overflow-hidden bg-surface-container">
+<div className="relative h-64 w-full rounded-[1.5rem] overflow-hidden bg-surface-container">
 <Image className="w-full h-full object-cover grayscale opacity-80 dark:invert" alt="clean minimal vector map of downtown Manhattan with primary blue accent markers and soft grey roads" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOf_IpdYg2PkiYGaRSiDBzR-jxafSjmLA15-f2LV134-Rb98H0AUN1l1WJjl2oqvgDk06Wfn5zTcFvYZgYXUfzujO6EgS6rwvPfpR7Vfl9nqkhjnhgVx4Gd9VAMkLVW5KnZTa2MHOQh-On6YGh4iWjQtRFLjGkBZLTpZySSob_FUVxOyx9e_T4H76Pe-gpWczkwMWkMYFzQGJwf4xh-sMcauQMOUHhcffqcjbgTqhAI97kRe29n1prHZhOf1sgrmuWnmOUqdSNISfn" width={600} height={400} unoptimized />
 <div className="absolute inset-0 flex items-center justify-center">
 <div className="w-12 h-12 bg-primary/20 rounded-full animate-ping absolute"></div>
@@ -179,12 +179,12 @@ export function StitchPostJobClient() {
 </div>
 </div>
 <div className="mt-4">
-<input className="w-full bg-surface-container-low dark:bg-slate-800 border-none rounded-lg text-sm py-3 px-4 text-on-surface-variant dark:text-slate-300" readOnly="" type="text" value="750 7th Ave, New York, NY 10019" />
+<input className="w-full bg-surface-container-low dark:bg-slate-800 border-none rounded-[1.5rem] text-sm py-3 px-4 text-on-surface-variant dark:text-slate-300" readOnly="" type="text" value="750 7th Ave, New York, NY 10019" />
 </div>
 </div>
 </div>
 {/* Preview Insight */}
-<div className="p-6 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl">
+<div className="p-6 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-[2.5rem]">
 <div className="flex items-start gap-4">
 <span className="material-symbols-outlined text-3xl">lightbulb</span>
 <div>
@@ -195,10 +195,10 @@ export function StitchPostJobClient() {
 </div>
 {/* Footer Actions */}
 <div className="flex items-center gap-4 pt-4">
-<button className="flex-1 py-4 text-primary dark:text-blue-400 font-bold text-sm tracking-tight hover:bg-surface-container-high dark:hover:bg-slate-800 rounded-lg transition-all">
+<button className="flex-1 py-4 text-primary dark:text-blue-400 font-bold text-sm tracking-tight hover:bg-surface-container-high dark:hover:bg-slate-800 rounded-[1.5rem] transition-all">
                         Save as Draft
                     </button>
-<button className="flex-[2] py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-bold text-sm tracking-tight shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+<button className="flex-[2] py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-[1.5rem] font-bold text-sm tracking-tight shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Next: Technical Scope
                     </button>
 </div>

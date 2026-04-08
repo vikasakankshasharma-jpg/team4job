@@ -137,12 +137,20 @@ export function LoginForm() {
           control={form.control}
           name="identifier"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('emailMobileLabel')}</FormLabel>
+            <FormItem className="space-y-4">
+              <FormLabel className="text-[10px] font-black italic uppercase tracking-[0.5em] text-on-surface/40 ml-4">{t('emailMobileLabel')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('emailMobilePlaceholder')} {...field} disabled={!!lockoutUntil} className="h-11 shadow-sm focus:shadow-md transition-shadow" autoComplete="off" aria-label={t('emailMobileLabel')} data-testid="login-identifier" />
+                <Input 
+                   placeholder={t('emailMobilePlaceholder')} 
+                   {...field} 
+                   disabled={!!lockoutUntil} 
+                   className="h-20 rounded-[1.5rem] bg-surface-container-low/40 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 font-black text-lg italic tracking-tight" 
+                   autoComplete="off" 
+                   aria-label={t('emailMobileLabel')} 
+                   data-testid="login-identifier" 
+                />
               </FormControl>
-              <FormMessage data-testid="email-error" />
+              <FormMessage data-testid="email-error" className="ml-4 font-black italic uppercase text-[10px] tracking-widest" />
             </FormItem>
           )}
         />
@@ -150,8 +158,8 @@ export function LoginForm() {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('passwordLabel')}</FormLabel>
+            <FormItem className="space-y-4">
+              <FormLabel className="text-[10px] font-black italic uppercase tracking-[0.5em] text-on-surface/40 ml-4">{t('passwordLabel')}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -159,7 +167,7 @@ export function LoginForm() {
                     placeholder={t('passwordPlaceholder')}
                     {...field}
                     disabled={!!lockoutUntil}
-                    className="h-11 pr-12 shadow-sm focus:shadow-md transition-shadow"
+                    className="h-20 rounded-[1.5rem] bg-surface-container-low/40 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 pr-20 font-black text-lg italic tracking-tight"
                     autoComplete="new-password"
                     aria-label={t('passwordLabel')}
                     data-testid="login-password"
@@ -168,25 +176,25 @@ export function LoginForm() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent z-10 text-muted-foreground hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full hover:bg-primary/10 transition-colors z-10 text-muted-foreground hover:text-primary"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      <EyeOff className="h-6 w-6" aria-hidden="true" />
                     ) : (
-                      <Eye className="h-4 w-4" aria-hidden="true" />
+                      <Eye className="h-6 w-6" aria-hidden="true" />
                     )}
                     <span className="sr-only">{showPassword ? t('hidePassword') : t('showPassword')}</span>
                   </Button>
                 </div>
               </FormControl>
-              <FormMessage data-testid="password-error" />
+              <FormMessage data-testid="password-error" className="ml-4 font-black italic uppercase text-[10px] tracking-widest" />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full h-12 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {t('loginSubmit') || 'Log In'}
+        <Button type="submit" className="w-full h-20 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all mt-6" disabled={isLoading || !!lockoutUntil} data-testid="login-submit-btn">
+          {isLoading && <Loader2 className="mr-4 h-6 w-6 animate-spin" />}
+          {t('loginSubmit') || 'AUTHORIZE ACCESS'}
         </Button>
       </form>
     </Form>

@@ -17,6 +17,7 @@ export type PortfolioItem = {
   imageUrl: string;
   title: string;
   description: string;
+  minTierPriority?: number;
   category: string;
   completedAt: Date | Timestamp;
 };
@@ -79,6 +80,7 @@ export type User = {
   professionalProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
+    tierPriority?: number;
     skills: string[];
     rating: number;
     reviews: number;
@@ -210,6 +212,7 @@ export type Job = {
   deadline: Date | Timestamp;
   jobStartDate?: Date | Timestamp;
   isUrgent?: boolean;
+  minTierPriority?: number; // Minimum reputation tier required to bid
   preferredTimeSlot?: 'Morning' | 'Afternoon' | 'Evening' | 'Weekend' | 'Any';
   priceEstimate?: { min: number; max: number };
   dateChangeProposal?: {

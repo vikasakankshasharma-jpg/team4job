@@ -60,10 +60,10 @@ export function Experience({ data, updateData }: ExperienceProps) {
                                 <Label
                                     htmlFor={cat.id}
                                     className={cn(
-                                        "flex flex-col items-center justify-center rounded-[2rem] border-2 p-6 transition-all duration-500 cursor-pointer text-center h-full min-h-[140px]",
+                                        "flex flex-col items-center justify-center rounded-[2.5rem] border-2 p-8 transition-all duration-700 cursor-pointer text-center h-full min-h-[160px] ring-1 ring-white/5",
                                         isSelected 
-                                            ? "border-primary bg-primary/5 shadow-xl shadow-primary/10 ring-4 ring-primary/5" 
-                                            : "border-border/50 bg-card hover:border-primary/40 hover:bg-muted/30"
+                                            ? "border-primary bg-primary/10 shadow-[0_30px_70px_rgba(var(--primary),0.2)] ring-4 ring-primary/5" 
+                                            : "border-border/50 bg-card/60 backdrop-blur-3xl hover:border-primary/40 hover:bg-background/80"
                                     )}
                                 >
                                     <span className={cn(
@@ -110,7 +110,7 @@ export function Experience({ data, updateData }: ExperienceProps) {
                         </div>
                         
                         <div className="p-1">
-                            <div className="flex flex-wrap gap-2 justify-center p-6 rounded-[2.5rem] border-2 border-border/50 bg-muted/5 min-h-[200px]">
+                            <div className="flex flex-wrap gap-4 justify-center p-12 rounded-[3.5rem] border-2 border-border/50 bg-background/40 backdrop-blur-3xl min-h-[220px] ring-1 ring-white/5 shadow-inner">
                                 {filteredSkills.map((skill) => {
                                     const isSelected = (data.skills || []).includes(skill);
                                     return (

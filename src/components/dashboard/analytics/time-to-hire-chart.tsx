@@ -13,13 +13,14 @@ export function TimeToHireChart({ data }: TimeToHireChartProps) {
     const t = useTranslations('analytics');
 
     if (!data || data.length === 0) {
-        // Return wrapper with empty state or let parent handle it. 
-        // For consistency, we return the card with "No data" message.
         return (
             <div data-testid="analytics-chart-time-to-hire" className="col-span-2">
                 <MetricChartCard title={t('timeToHire')} description={t('avgDaysToHireDescription')} className="col-span-2">
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                        {t('noData')}
+                    <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground/30 bg-background/20 rounded-[3rem] border border-dashed border-white/5 shadow-inner">
+                        <div className="p-4 rounded-[2rem] bg-muted/10 mb-6 animate-pulse shadow-2xl shadow-primary/5 border border-white/5">
+                            <LineChart className="h-10 w-10 opacity-20" />
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] italic">{t('noData')}</p>
                     </div>
                 </MetricChartCard>
             </div>
@@ -48,10 +49,20 @@ export function TimeToHireChart({ data }: TimeToHireChartProps) {
                         />
                         <Tooltip
                             contentStyle={{
-                                borderRadius: "8px",
-                                border: "1px solid hsl(var(--border))",
-                                backgroundColor: "hsl(var(--background))",
-                                color: "hsl(var(--foreground))"
+                                borderRadius: "1rem",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                backgroundColor: "rgba(var(--background), 0.8)",
+                                backdropFilter: "blur(24px)",
+                                color: "hsl(var(--foreground))",
+                                boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+                                padding: "12px 20px"
+                            }}
+                            itemStyle={{
+                                fontWeight: "900",
+                                textTransform: "uppercase",
+                                fontStyle: "italic",
+                                letterSpacing: "0.1em",
+                                fontSize: "10px"
                             }}
                         />
                         <Line

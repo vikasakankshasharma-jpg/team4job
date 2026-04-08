@@ -111,18 +111,18 @@ export function JobReviewStep({
 
     return (
         <div className="w-full max-w-4xl mx-auto p-4 space-y-10">
-            <div className="text-center space-y-3">
-                <h2 className="text-3xl font-extrabold tracking-tight">{tJob('reviewTitle')}</h2>
-                <p className="text-muted-foreground text-lg font-medium opacity-80">
+            <div className="text-center space-y-4">
+                <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-none">{tJob('reviewTitle')}</h2>
+                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-50 italic max-w-2xl mx-auto">
                     {tJob('reviewDesc')}
                 </p>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-12">
                 <div className="lg:col-span-8 space-y-8">
-                    <Card className={`p-8 border-0 shadow-2xl transition-all duration-700 relative overflow-hidden bg-card ${justUpdated ? "ring-2 ring-success shadow-success/20 scale-[1.01]" : ""}`}>
+                    <Card className={`p-12 border-none shadow-[0_45px_120px_rgba(0,0,0,0.2)] rounded-[3.5rem] transition-all duration-700 relative overflow-hidden bg-card/40 backdrop-blur-3xl ring-1 ring-white/5 ${justUpdated ? "ring-2 ring-success shadow-success/20 scale-[1.01]" : ""}`}>
                         {/* Elegant Corner Accent */}
-                        <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent transition-opacity duration-700 ${justUpdated ? 'opacity-100' : 'opacity-0'}`} />
+                        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent transition-opacity duration-700 ${justUpdated ? 'opacity-100' : 'opacity-0'}`} />
                         
                         {justUpdated && (
                             <div className="absolute top-6 right-6 text-success flex items-center text-xs font-bold uppercase tracking-widest animate-in fade-in slide-in-from-right-4 duration-500">
@@ -138,9 +138,9 @@ export function JobReviewStep({
                                 </div>
                             </div>
  
-                            <div className="bg-muted/5 p-6 rounded-2xl border border-muted-foreground/10">
-                                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-70 mb-4 block">{tJob('description') || 'Job description'}</Label>
-                                <div className="space-y-4 text-foreground/90 text-base leading-relaxed font-medium">
+                            <div className="bg-background/40 p-10 rounded-[2.5rem] border border-white/5 shadow-inner">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-6 block opacity-70 italic">{tJob('description') || 'Job description'}</Label>
+                                <div className="space-y-4 text-foreground/90 text-[15px] font-medium leading-relaxed italic">
                                     {(data.jobDescription || "").split('\n').map((line, i) => {
                                         const trimmed = line.trim();
                                         if (!trimmed) return <div key={i} className="h-2" />;
@@ -168,7 +168,7 @@ export function JobReviewStep({
                                 placeholder={tJob('editPlaceholder')}
                                 value={userEdit}
                                 onChange={(e) => setUserEdit(e.target.value)}
-                                className="bg-background resize-none rounded-xl border-input/50 focus:border-primary transition-all p-4 text-sm font-medium"
+                                className="bg-background/60 backdrop-blur-3xl resize-none rounded-[1.5rem] border-white/10 focus:border-primary transition-all p-6 text-[13px] font-medium italic shadow-inner"
                                 rows={2}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -180,7 +180,7 @@ export function JobReviewStep({
                             <Button
                                 onClick={handleRecompile}
                                 disabled={!userEdit.trim() || isRecompiling}
-                                className="h-auto w-28 shrink-0 rounded-xl shadow-lg shadow-primary/20"
+                                className="h-auto w-32 shrink-0 rounded-[1.5rem] shadow-[0_20px_50px_rgba(var(--primary),0.2)] font-black italic uppercase tracking-[0.2em] text-[10px]"
                             >
                                 {isRecompiling ? (
                                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -198,15 +198,15 @@ export function JobReviewStep({
 
                 <div className="lg:col-span-4 space-y-6">
                     {data.priceEstimate && (
-                        <Card className="p-6 bg-primary/5 border-0 shadow-lg shadow-primary/5 overflow-hidden relative">
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
-                            <h3 className="font-bold text-xs uppercase tracking-widest text-primary mb-3 opacity-80">{tJob('priceEstimateTitle')}</h3>
-                            <div className="text-3xl font-extrabold tracking-tight">
+                        <Card className="p-10 bg-primary/10 border-none shadow-[0_30px_70px_rgba(var(--primary),0.1)] rounded-[3rem] overflow-hidden relative ring-1 ring-primary/20 backdrop-blur-3xl">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-primary" />
+                            <h3 className="font-black text-[10px] uppercase tracking-[0.4em] text-primary mb-4 italic opacity-80">{tJob('priceEstimateTitle')}</h3>
+                            <div className="text-4xl font-black italic tracking-tighter uppercase leading-none">
                                 ₹{data.priceEstimate.min.toLocaleString()} - ₹{data.priceEstimate.max.toLocaleString()}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-4 font-bold opacity-60 flex items-center justify-between">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mt-6 flex items-center justify-between italic">
                                 <span>{selectedCategory} Market</span>
-                                <CheckCircle2 className="h-3 w-3 text-primary" />
+                                <CheckCircle2 className="h-4 w-4" />
                             </p>
                         </Card>
                     )}
@@ -226,21 +226,21 @@ export function JobReviewStep({
                         </Card>
                     )}
  
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-6 pt-6">
                         <Button
                             size="lg"
-                            className="w-full text-lg font-extrabold shadow-xl shadow-primary/20 h-16 rounded-2xl group transition-all duration-300 hover:scale-[1.02]"
+                            className="w-full text-xl font-black italic uppercase tracking-[0.2em] shadow-[0_30px_70px_rgba(var(--primary),0.3)] h-20 rounded-[2rem] group transition-all duration-300 hover:scale-[1.02]"
                             onClick={() => onPostJob(data)}
                         >
                             {tJob('looksGood')}
-                            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                            <ArrowRight className="ml-3 h-6 w-6 group-hover:translate-x-2 transition-transform" />
                         </Button>
                         <Button
                             variant="outline"
-                            className="w-full text-sm font-bold h-12 rounded-xl border-input/50 hover:bg-primary/5 transition-all"
+                            className="w-full text-[10px] font-black italic uppercase tracking-[0.4em] h-14 rounded-[1.5rem] border-white/10 hover:bg-primary/5 transition-all shadow-xl"
                             onClick={() => setShowSaveDialog(true)}
                         >
-                            <Sparkles className="mr-2 h-4 w-4 text-primary" /> Save as Template
+                            <Sparkles className="mr-3 h-5 w-5 text-primary" /> Save as Template
                         </Button>
                     </div>
                 </div>

@@ -51,44 +51,42 @@ export function TopPerformersCard({ Professionals }: { Professionals: User[] }) 
     const lastMonthName = format(subMonths(new Date(), 1), 'MMMM yyyy');
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Top Performers ({lastMonthName})</CardTitle>
-                <CardDescription>Professionals with the highest reputation gain last month.</CardDescription>
+        <Card className="border-none bg-surface-container-low/40 backdrop-blur-3xl rounded-[3.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.15)] ring-1 ring-white/10 overflow-hidden h-full">
+            <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-sm font-black italic tracking-tighter uppercase text-primary">Hall of Valor // Top Performers</CardTitle>
+                <CardDescription className="text-[10px] font-bold uppercase tracking-widest opacity-50">Units with maximum reputation gain during {lastMonthName.toUpperCase()}.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Professional</TableHead>
-                            <TableHead className="text-right">Points Gained</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {rankedProfessionals.slice(0, 3).map((Professional, index) => (
-                            <TableRow key={Professional.id}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <span className="font-bold text-lg w-4">{index + 1}</span>
-                                        <Avatar className="h-9 w-9 hidden sm:flex">
-                                            <AnimatedAvatar svg={Professional.avatarUrl} />
-                                        </Avatar>
-                                        <div>
-                                            <Link href={`/dashboard/users/${Professional.id}`} className="font-medium hover:underline">{Professional.name}</Link>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                {tierIcons[Professional.professionalProfile?.tier || 'Bronze']}
-                                                <span>{Professional.professionalProfile?.tier} Tier</span>
-                                            </div>
-                                        </div>
+            <CardContent className="px-8 pb-8">
+                <div className="space-y-2">
+                    {rankedProfessionals.slice(0, 5).map((Professional, index) => (
+                        <div key={Professional.id} className="flex items-center justify-between p-6 rounded-[2rem] bg-background/50 border border-white/5 hover:bg-background hover:translate-x-1 transition-all group/performer shadow-inner">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-6 text-xl font-black italic tracking-tighter text-primary/40 group-hover/performer:text-primary transition-colors">
+                                    {index + 1}
+                                </div>
+                                <Avatar className="h-12 w-12 border border-white/10 shadow-lg">
+                                    <AnimatedAvatar svg={Professional.avatarUrl} />
+                                </Avatar>
+                                <div className="min-w-0">
+                                    <Link href={`/dashboard/users/${Professional.id}`} className="font-black italic tracking-tighter uppercase text-sm hover:text-primary transition-colors truncate block">
+                                        {Professional.name}
+                                    </Link>
+                                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-muted-foreground/60 uppercase">
+                                        {tierIcons[Professional.professionalProfile?.tier || 'Bronze']}
+                                        <span>{Professional.professionalProfile?.tier} Class Unit</span>
                                     </div>
-                                </TableCell>
-                                <TableCell className="text-right font-semibold text-green-600">+{Professional.monthlyPoints} pts</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                                </div>
+                            </div>
+                            <div className="text-right font-black italic tracking-tighter uppercase text-success bg-success/10 px-4 py-1.5 rounded-full border border-success/10 text-xs">
+                                +{Professional.monthlyPoints} PTS
+                            </div>
+                        </div>
+                    ))}
+                </div>
                 {rankedProfessionals.length === 0 && (
-                    <p className="text-center py-4 text-muted-foreground">Not enough data to rank performers.</p>
+                    <div className="text-center py-12 text-muted-foreground/40 font-black uppercase tracking-widest text-[10px] italic">
+                        Insufficient mission data to calculate rankings.
+                    </div>
                 )}
             </CardContent>
         </Card>

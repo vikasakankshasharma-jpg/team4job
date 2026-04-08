@@ -7,6 +7,7 @@ import { userService } from '../users/user.service';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { aiLearningService } from '@/ai/services/ai-learning.service';
+import { reputationService } from '../reputation/reputation.service';
 
 export class ReviewService {
     async submitReview(input: CreateReviewInput): Promise<string> {
@@ -24,31 +25,81 @@ export class ReviewService {
             throw new Error('Forbidden. You must be involved in the job to review.');
         }
 
-        // 3. Create Review
+        // 3. Create Review Document (for audit/history)
         const id = await reviewRepository.create(input);
 
-        // 4. Update Job Progress
-        const updateField = input.role === 'Client' ? 'isReviewedByGiver' : 'isReviewedByProfessional';
-        await jobService.updateJob(input.jobId, input.reviewerId, { [updateField]: true } as any);
+        // 4. Update Job Progress with Review Data
+        const reviewData = {
+            rating: input.rating,
+            review: input.comment,
+            createdAt: new Date(),
+            authorId: input.reviewerId,
+            authorName: input.reviewerName || 'Member'
+        };
 
-        // 5. Update Target User Stats
+        const updateField = input.role === 'Client' ? 'clientReview' : 'professionalReview';
+        const flagField = input.role === 'Client' ? 'isReviewedByGiver' : 'isReviewedByProfessional';
+        
+        await jobService.updateJob(input.jobId, input.reviewerId, { 
+            [updateField]: reviewData,
+            [flagField]: true
+        } as any);
+
+        // 5. Update Target User Stats & Reputation (only for Client reviewing Professional for now)
         if (input.role === 'Client') {
-            // Update Professional rating count
             const db = getAdminDb();
-            await db.collection('users').doc(input.targetUserId).update({
-                'professionalProfile.reviews': FieldValue.increment(1)
+            const userRef = db.collection('users').doc(input.targetUserId);
+            
+            await db.runTransaction(async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                if (!userDoc.exists) return;
+                
+                const userData = userDoc.data();
+                const currentRating = userData?.professionalProfile?.rating || 0;
+                const currentCount = userData?.professionalProfile?.reviews || 0;
+                
+                const newCount = currentCount + 1;
+                const newRating = ((currentRating * currentCount) + input.rating) / newCount;
+
+                transaction.update(userRef, {
+                    'professionalProfile.reviews': newCount,
+                    'professionalProfile.rating': Number(newRating.toFixed(1))
+                });
             });
+
+            // 6. Award Rating-based Reputation Points
+            try {
+                const bonusPoints = await reputationService.calculatePointsForJob(input.rating);
+                // Note: Completion points (+50) are handled by Cloud Function on status change.
+                // Here we only subtract the points that are ALREADY in completion.
+                // Actually calculatePointsForJob(rating) returns (completion + rating_bonus).
+                // Let's adjust calculatePointsForJob to only return a bonus or just hardcode the bonus here.
+                
+                // Let's just award the rating-specific bonus: 
+                // 5 star = 20, 4 star = 10, 1 star = -25.
+                let bonus = 0;
+                if (input.rating === 5) bonus = 20;
+                else if (input.rating === 4) bonus = 10;
+                else if (input.rating === 1) bonus = -25;
+
+                if (bonus !== 0) {
+                    await reputationService.awardPoints(input.targetUserId, bonus, `Rating Bonus (${input.rating} stars)`);
+                }
+            } catch (e) {
+                console.error("[ReviewService] Reputation update failed", e);
+            }
 
             // AI Learning: Rate the skill suggestions that defined this job
-            // If the job was defined using AI, this feedback helps learn "what makes a good job definition"
-            aiLearningService.updateOutcome(input.jobId, 'skill_suggestion', {
-                rating: input.rating,
-                feedback: input.comment,
-                success: input.rating >= 4
-            });
+            try {
+                aiLearningService.updateOutcome(input.jobId, 'skill_suggestion', {
+                    rating: input.rating,
+                    feedback: input.comment,
+                    success: input.rating >= 4
+                });
+            } catch (e) {
+                console.error("[ReviewService] AI Learning update failed", e);
+            }
         }
-
-
 
         return id;
     }

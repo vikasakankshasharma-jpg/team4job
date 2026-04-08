@@ -218,32 +218,37 @@ export default function ChatClient() {
     };
 
     return (
-        <div className="flex h-full font-sans selection:bg-blue-500 selection:text-white bg-surface-container-low dark:bg-slate-900 text-on-surface border-none rounded-[2.5rem] overflow-hidden shadow-xl shadow-black/5 max-w-full min-h-[70vh]">
+        <div className="flex h-full font-sans selection:bg-blue-500 selection:text-white bg-surface-container-low/40 dark:bg-slate-900/60 text-on-surface border-none rounded-[3.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 backdrop-blur-3xl max-w-full min-h-[75vh]">
             {/* Sidebar (Conversation List) */}
-            <div className="w-1/3 border-r border-slate-200 dark:border-slate-800 bg-surface-container dark:bg-slate-900/50 flex flex-col">
-                <div className="p-6 border-b border-slate-200 dark:border-slate-800 font-black tracking-tighter italic uppercase opacity-80 bg-surface-container-low dark:bg-slate-900">{t('title')}</div>
+            <div className="w-1/3 border-r border-white/5 bg-surface-container/20 dark:bg-slate-900/40 flex flex-col backdrop-blur-3xl">
+                <div className="p-10 border-b border-white/5">
+                    <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/40 bg-clip-text text-transparent leading-none">
+                        {t('title')}
+                    </h2>
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] opacity-40 italic mt-3">Intelligence Channel</p>
+                </div>
                 <ScrollArea className="flex-1">
                     <div className="space-y-1 p-2">
                         {conversations.map(conv => (
                             <button
                                 key={conv.id}
                                 onClick={() => setActiveConversationId(conv.id)}
-                                className={`w-full text-left p-3 rounded-md flex items-center space-x-3 transition-colors ${activeConversationId === conv.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                                className={`w-full text-left p-6 rounded-[2rem] flex items-center space-x-6 transition-all duration-500 ${activeConversationId === conv.id ? 'bg-primary/10 text-primary ring-1 ring-primary/20 shadow-2xl' : 'hover:bg-white/5 opacity-60 hover:opacity-100'
                                     }`}
                             >
-                                <Avatar className="h-10 w-10 border">
+                                <Avatar className="h-14 w-14 border border-white/10 shadow-xl ring-1 ring-white/5">
                                     <AvatarImage src={getOtherAvatar(conv)} />
-                                    <AvatarFallback><UserIcon className="h-4 w-4" /></AvatarFallback>
+                                    <AvatarFallback className="bg-primary/10 text-primary"><UserIcon className="h-6 w-6" /></AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 overflow-hidden">
-                                    <p className="font-medium truncate">{getOtherName(conv)}</p>
-                                    <p className="text-xs text-muted-foreground truncate">
+                                <div className="flex-1 overflow-hidden space-y-1">
+                                    <p className="font-black italic uppercase tracking-tight text-lg">{getOtherName(conv)}</p>
+                                    <p className="text-xs font-medium opacity-60 truncate italic">
                                         {conv.lastMessage?.senderId === user?.id ? t('you') : ''}
                                         {conv.lastMessage?.text}
                                     </p>
                                 </div>
                                 {conv.updatedAt && (
-                                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-30 whitespace-nowrap italic">
                                         {formatDistanceToNow(conv.updatedAt.toDate ? conv.updatedAt.toDate() : new Date(), { addSuffix: false })}
                                     </span>
                                 )}
@@ -270,11 +275,11 @@ export default function ChatClient() {
                             {messages.map(msg => {
                                 const isMe = msg.senderId === user?.id;
                                 return (
-                                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[70%] p-3 text-sm shadow-sm ${isMe ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' : 'bg-muted rounded-2xl rounded-tl-sm'
+                                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group/msg`}>
+                                        <div className={`max-w-[75%] p-5 text-sm ring-1 ring-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-500 group-hover/msg:translate-y-[-2px] ${isMe ? 'bg-primary text-primary-foreground rounded-[1.8rem] rounded-tr-[0.4rem]' : 'bg-surface-container-high/60 backdrop-blur-3xl rounded-[1.8rem] rounded-tl-[0.4rem]'
                                             }`}>
-                                            {msg.text}
-                                            <div className={`text-[10px] mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`}>
+                                            <p className="font-medium leading-relaxed italic opacity-90">{msg.text}</p>
+                                            <div className={`text-[9px] mt-3 font-black uppercase tracking-widest opacity-40 ${isMe ? 'text-right' : 'text-left'}`}>
                                                 {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(), { addSuffix: true }) : t('sending')}
                                             </div>
                                         </div>
@@ -285,33 +290,35 @@ export default function ChatClient() {
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-surface-container-low dark:bg-slate-900">
+                        <div className="p-8 border-t border-white/5 bg-surface-container/10 dark:bg-slate-900/40 backdrop-blur-3xl">
                             {moderationWarning && (
-                                <div className="mb-2 p-2 bg-red-50 text-red-600 text-xs rounded-md flex items-center">
-                                    <AlertTriangle className="h-3 w-3 mr-2" />
+                                <div className="mb-6 p-5 bg-destructive/10 text-destructive text-[11px] font-black uppercase tracking-widest rounded-[1.25rem] border border-destructive/20 flex items-center animate-pulse">
+                                    <AlertTriangle className="h-4 w-4 mr-3" />
                                     {moderationWarning}
                                 </div>
                             )}
-                            <div className="flex space-x-2">
+                            <div className="flex space-x-4">
                                 <Input
                                     value={inputText}
                                     onChange={(e) => setInputText(e.target.value)}
                                     placeholder={t('typeMessage')}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     disabled={isSending}
+                                    className="h-16 rounded-[1.5rem] border-white/5 bg-surface-container-high/40 text-sm font-medium italic px-8 focus-visible:ring-1 focus-visible:ring-primary transition-all shadow-inner"
                                 />
-                                <Button onClick={handleSend} disabled={isSending}>
-                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                <Button onClick={handleSend} disabled={isSending} className="h-16 w-16 rounded-[1.5rem] bg-primary text-primary-foreground shadow-2xl shadow-primary/20 hover:scale-105 transition-all active:scale-95 group">
+                                    {isSending ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}
                                 </Button>
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
-                        <div className="bg-muted p-4 rounded-full mb-4">
-                            <Send className="h-8 w-8 opacity-20" />
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-12 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+                        <div className="bg-surface-container/20 p-12 rounded-[3.5rem] border border-white/5 shadow-2xl backdrop-blur-3xl animate-pulse mb-8 relative z-10 ring-1 ring-white/5">
+                            <Send className="h-16 w-16 opacity-30 text-primary" />
                         </div>
-                        <p>{t('selectConversation')}</p>
+                        <p className="text-sm font-black italic uppercase tracking-[0.4em] opacity-30 relative z-10">{t('selectConversation')}</p>
                     </div>
                 )}
             </div>

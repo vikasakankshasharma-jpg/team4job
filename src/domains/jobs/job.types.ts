@@ -85,6 +85,7 @@ export interface Job {
     completionTimestamp?: Date | Timestamp;
     paymentReleasedAt?: Date | Timestamp;
     isUrgent?: boolean;
+    minTierPriority?: number;
     dateChangeProposal?: {
         newDate: Date | Timestamp;
         proposedBy: 'Client' | 'Professional';

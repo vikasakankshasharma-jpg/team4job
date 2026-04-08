@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Bell, Briefcase, Calendar, CheckCircle, AlertCircle, MessageSquare, CreditCard } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface NotificationListProps {
     notifications: Notification[];
@@ -40,26 +41,30 @@ const getIcon = (type: Notification['type']) => {
 export function NotificationList({ notifications, onMarkAsRead, onItemClick, className, emptyMessage = "No notifications" }: NotificationListProps) {
     if (notifications.length === 0) {
         return (
-            <div className={cn("p-8 text-center text-muted-foreground", className)}>
-                <Bell className="mx-auto h-8 w-8 mb-2 opacity-20" />
-                <p className="text-sm">{emptyMessage}</p>
+            <div className={cn("p-12", className)}>
+                <EmptyState 
+                    icon={Bell} 
+                    title={emptyMessage} 
+                    description="Intelligence Feed Idle // Standing by for incoming mission data or protocol updates."
+                    className="py-16 bg-surface-container-low/20"
+                />
             </div>
         );
     }
 
     return (
         <ScrollArea className={cn("h-[400px]", className)}>
-            <div className="flex flex-col gap-1 p-1" role="list">
+            <div className="flex flex-col gap-2 p-3" role="list">
                 {notifications.map((notification) => (
                     <div
                         key={notification.id}
                         role="button"
                         tabIndex={0}
                         className={cn(
-                            "flex items-start gap-4 p-4 rounded-lg transition-colors cursor-pointer border border-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            "flex items-start gap-6 p-8 rounded-[2.5rem] transition-all cursor-pointer border border-white/5 outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-sm hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] hover:translate-x-2 active:scale-[0.98] ring-1 ring-white/5",
                             notification.read
-                                ? "bg-background hover:bg-muted/50"
-                                : "bg-primary/5 hover:bg-primary/10 border-l-primary",
+                                ? "bg-background/20 backdrop-blur-md hover:bg-background/40 shadow-inner"
+                                : "bg-surface-container-low/60 backdrop-blur-3xl hover:bg-surface-container-high/60 border-l-[12px] border-l-primary shadow-2xl shadow-primary/10",
                             "group"
                         )}
                         onClick={() => {
@@ -74,33 +79,34 @@ export function NotificationList({ notifications, onMarkAsRead, onItemClick, cla
                             }
                         }}
                     >
-                        <div className="mt-1 flex-shrink-0">
+                        <div className="mt-1 flex-shrink-0 p-4 rounded-[1.5rem] bg-background/50 border border-white/5 shadow-inner group-hover:scale-110 transition-transform">
                             {getIcon(notification.type)}
                         </div>
                         <div className="flex-1 space-y-1">
                             <div className="flex items-center justify-between">
-                                <p className={cn("text-sm font-medium leading-none", !notification.read && "text-foreground")}>
+                                <p className={cn("text-sm font-black italic tracking-[0.3em] uppercase", !notification.read ? "text-primary" : "text-foreground/40")}>
                                     {notification.title}
                                 </p>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/20 whitespace-nowrap ml-4 leading-none italic">
                                     {(() => {
                                         const date = notification.createdAt;
                                         try {
                                             const d = date instanceof Date ? date : (date as any)?.toDate ? (date as any).toDate() : new Date(date as any);
-                                            return formatDistanceToNow(d, { addSuffix: true });
+                                            return formatDistanceToNow(d, { addSuffix: true }).toUpperCase();
                                         } catch (e) {
-                                            return 'Just now';
+                                            return 'JUST NOW';
                                         }
                                     })()}
                                 </span>
                             </div>
-                            <p className="text-sm text-muted-foreground line-clamp-2 overflow-wrap-anywhere">
+                            <p className="text-[11px] font-medium leading-relaxed text-muted-foreground/80 line-clamp-2 overflow-wrap-anywhere">
                                 {notification.message}
                             </p>
                             {notification.actionLabel && (
-                                <Button variant="link" className="p-0 h-auto min-h-[32px] text-xs mt-1 font-medium">
-                                    {notification.actionLabel}
-                                </Button>
+                                <div className="mt-4 text-[10px] font-black italic uppercase tracking-[0.4em] text-primary group-hover:translate-x-2 transition-transform duration-500 flex items-center gap-2">
+                                    <span className="h-px w-8 bg-primary/20" />
+                                    {notification.actionLabel} {"//"} INITIATE
+                                </div>
                             )}
                         </div>
                     </div>
@@ -109,4 +115,3 @@ export function NotificationList({ notifications, onMarkAsRead, onItemClick, cla
         </ScrollArea>
     );
 }
-

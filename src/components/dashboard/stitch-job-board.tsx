@@ -21,10 +21,10 @@ export function StitchProfessionalJobBoard() {
 </nav>
 </div>
 <div className="flex items-center gap-4">
-<button className="p-2 text-on-surface-variant hover:bg-[#222a3d] transition-all duration-200 rounded-lg">
+<button className="p-2 text-on-surface-variant hover:bg-[#222a3d] transition-all duration-200 rounded-[1rem]">
 <span className="material-symbols-outlined" data-icon="notifications">notifications</span>
 </button>
-<button className="p-2 text-on-surface-variant hover:bg-[#222a3d] transition-all duration-200 rounded-lg">
+<button className="p-2 text-on-surface-variant hover:bg-[#222a3d] transition-all duration-200 rounded-[1rem]">
 <span className="material-symbols-outlined" data-icon="settings">settings</span>
 </button>
 <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
@@ -70,7 +70,7 @@ export function StitchProfessionalJobBoard() {
 <span className="material-symbols-outlined text-sm" data-icon="description">description</span>
                     Documentation
                 </a>
-<button className="w-full mt-4 py-3 rounded-lg bg-gradient-to-br from-[#b4c5ff] to-[#2563eb] text-on-primary font-bold text-sm shadow-lg active:scale-95 transition-all">
+<button className="w-full mt-4 py-3 rounded-[1.5rem] bg-gradient-to-br from-[#b4c5ff] to-[#2563eb] text-on-primary font-bold text-sm shadow-lg active:scale-95 transition-all">
                     Post a Requirement
                 </button>
 </div>
@@ -81,14 +81,14 @@ export function StitchProfessionalJobBoard() {
 <section className="h-20 bg-surface-container border-b-0 flex items-center px-8 gap-6 z-40">
 <div className="flex flex-col min-w-[140px]">
 <span className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Radius</span>
-<div className="flex items-center bg-surface-container-high px-3 py-1.5 rounded-md">
+<div className="flex items-center bg-surface-container-high px-3 py-1.5 rounded-[1rem]">
 <span className="text-sm font-semibold">50 km</span>
 <span className="material-symbols-outlined text-sm ml-auto" data-icon="expand_more">expand_more</span>
 </div>
 </div>
 <div className="flex flex-col min-w-[200px]">
 <span className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Certifications</span>
-<div className="flex items-center bg-surface-container-high px-3 py-1.5 rounded-md">
+<div className="flex items-center bg-surface-container-high px-3 py-1.5 rounded-[1rem]">
 <span className="text-sm font-semibold">Cisco, CompTIA+</span>
 <span className="material-symbols-outlined text-sm ml-auto" data-icon="filter_list">filter_list</span>
 </div>
@@ -112,38 +112,41 @@ export function StitchProfessionalJobBoard() {
 {/* Job List (Left) */}
 <section className="w-full md:w-[400px] lg:w-[450px] overflow-y-auto no-scrollbar bg-surface-container-low p-6 space-y-6">
 {/* Job Card 1 (Active) */}
-<div className="group cursor-pointer bg-surface-container-high p-5 rounded-lg border-l-4 border-secondary shadow-lg transform -translate-y-0.5 transition-all">
-<div className="flex justify-between items-start mb-2">
-<span className="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-black tracking-widest uppercase">High Priority</span>
-<span className="text-sm font-mono text-secondary font-bold">$2,400</span>
-</div>
-<h3 className="text-lg font-bold font-headline text-on-surface mb-1">Data Center Rack Installation</h3>
-<div className="flex items-center gap-2 text-outline text-xs mb-4">
-<span className="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
-<span>Frankfurt, DE (On-site)</span>
-</div>
-<div className="flex flex-wrap gap-2">
-<span className="text-[10px] bg-surface-container-highest text-tertiary px-2 py-1 rounded">CCNA Required</span>
-<span className="text-[10px] bg-surface-container-highest text-tertiary px-2 py-1 rounded">Hardware</span>
-</div>
+<div className="group cursor-pointer bg-surface-container-low/60 backdrop-blur-3xl p-8 rounded-[3rem] border-l-8 border-secondary shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden ring-1 ring-white/5">
+    <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 group-hover:scale-[2] transition-transform duration-1000">
+        <span className="material-symbols-outlined text-4xl" data-icon="work">work</span>
+    </div>
+    <div className="flex justify-between items-start mb-4 relative z-10">
+        <span className="text-[9px] bg-secondary/10 text-secondary border border-secondary/20 px-3 py-1 rounded-full font-black tracking-[0.3em] uppercase italic">High Priority</span>
+        <span className="text-xl font-black italic tracking-tighter text-secondary">₹2,400</span>
+    </div>
+    <h3 className="text-2xl font-black italic tracking-tighter text-on-surface mb-2 relative z-10 leading-none">Data Center Rack Installation</h3>
+    <div className="flex items-center gap-2 text-muted-foreground text-xs mb-6 relative z-10 opacity-60 italic font-medium">
+        <span className="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+        <span>Frankfurt, DE (On-site)</span>
+    </div>
+    <div className="flex flex-wrap gap-2 relative z-10">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-container-highest/50 px-3 py-1 rounded-full border border-white/5 text-primary italic">CCNA Required</span>
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-container-highest/50 px-3 py-1 rounded-full border border-white/5 text-primary italic">Hardware</span>
+    </div>
 </div>
 {/* Job Card 2 */}
-<div className="group cursor-pointer bg-surface-container p-5 rounded-lg hover:bg-surface-container-high transition-all hover:-translate-y-0.5">
-<div className="flex justify-between items-start mb-2">
-<span className="text-[10px] bg-surface-container-highest text-outline-variant px-2 py-0.5 rounded font-black tracking-widest uppercase">New Posting</span>
-<span className="text-sm font-mono text-primary font-bold">$1,150</span>
-</div>
-<h3 className="text-lg font-bold font-headline text-on-surface mb-1">Fiber Optic Splicing - Phase 2</h3>
-<div className="flex items-center gap-2 text-outline text-xs mb-4">
-<span className="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
-<span>Amsterdam, NL (Field)</span>
-</div>
-<div className="flex flex-wrap gap-2">
-<span className="text-[10px] bg-surface-container-highest text-tertiary px-2 py-1 rounded">FOA Certified</span>
-</div>
+<div className="group cursor-pointer bg-surface-container-low/40 backdrop-blur-3xl p-8 rounded-[3rem] hover:bg-surface-container-low transition-all border border-white/5 ring-1 ring-white/5 shadow-xl">
+    <div className="flex justify-between items-start mb-4">
+        <span className="text-[9px] bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full font-black tracking-[0.3em] uppercase italic">New Recording</span>
+        <span className="text-xl font-black italic tracking-tighter text-primary">₹1,150</span>
+    </div>
+    <h3 className="text-2xl font-black italic tracking-tighter text-on-surface mb-2 leading-none">Fiber Optic Splicing - Phase 2</h3>
+    <div className="flex items-center gap-2 text-muted-foreground text-xs mb-6 opacity-60 italic font-medium">
+        <span className="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+        <span>Amsterdam, NL (Field)</span>
+    </div>
+    <div className="flex flex-wrap gap-2">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-surface-container-highest/50 px-3 py-1 rounded-full border border-white/5 text-primary italic">FOA Certified</span>
+    </div>
 </div>
 {/* Job Card 3 */}
-<div className="group cursor-pointer bg-surface-container p-5 rounded-lg hover:bg-surface-container-high transition-all hover:-translate-y-0.5">
+<div className="group cursor-pointer bg-surface-container p-5 rounded-[2rem] hover:bg-surface-container-high transition-all hover:-translate-y-0.5">
 <div className="flex justify-between items-start mb-2">
 <span className="text-[10px] bg-surface-container-highest text-outline-variant px-2 py-0.5 rounded font-black tracking-widest uppercase">3 Bids</span>
 <span className="text-sm font-mono text-primary font-bold">$4,800</span>
@@ -159,7 +162,7 @@ export function StitchProfessionalJobBoard() {
 </div>
 </div>
 {/* Job Card 4 */}
-<div className="group cursor-pointer bg-surface-container p-5 rounded-lg hover:bg-surface-container-high transition-all hover:-translate-y-0.5">
+<div className="group cursor-pointer bg-surface-container p-5 rounded-[2rem] hover:bg-surface-container-high transition-all hover:-translate-y-0.5">
 <div className="flex justify-between items-start mb-2">
 <span className="text-[10px] bg-surface-container-highest text-outline-variant px-2 py-0.5 rounded font-black tracking-widest uppercase">Verified</span>
 <span className="text-sm font-mono text-primary font-bold">$850</span>
@@ -177,13 +180,18 @@ export function StitchProfessionalJobBoard() {
 {/* Job Detail (Right) */}
 <section className="hidden md:flex flex-1 flex-col overflow-y-auto no-scrollbar bg-surface border-l-0 p-10">
 <div className="max-w-3xl">
-<header className="mb-10">
-<div className="flex items-center gap-4 mb-4">
-<span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-full">Contract • On-site</span>
-<span className="text-outline text-xs">Posted 4 hours ago</span>
-</div>
-<h1 className="text-4xl font-extrabold font-headline tracking-tighter mb-6 leading-tight">Data Center Rack Installation &amp; Network Pathing</h1>
-<div className="grid grid-cols-3 gap-8 p-6 bg-surface-container-low rounded-xl">
+<header className="mb-12">
+    <div className="flex items-center gap-6 mb-4">
+        <span className="px-6 py-2 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.5em] rounded-full backdrop-blur-3xl italic ring-1 ring-primary/20">
+            {/* CONTRACT // ON-SITE PROTOCAL */}
+            COMMAND // ON-SITE HUB
+        </span>
+        <span className="text-muted-foreground/40 text-[10px] font-black uppercase tracking-widest italic">Posted 4 hours ago</span>
+    </div>
+    <h1 className="text-5xl sm:text-7xl md:text-8xl font-black font-headline tracking-tighter mb-8 leading-[0.85] italic uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+        Job Board
+    </h1>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10 p-10 bg-surface-container-low/40 backdrop-blur-3xl rounded-[3rem] ring-1 ring-white/5 shadow-inner">
 <div>
 <p className="text-[10px] uppercase tracking-widest text-outline font-bold mb-1">Estimated Budget</p>
 <p className="text-2xl font-mono font-bold text-secondary">$2,400 - $3,200</p>
@@ -221,41 +229,44 @@ export function StitchProfessionalJobBoard() {
 </ul>
 </section>
 {/* Bid Form */}
-<section className="bg-surface-container p-8 rounded-xl border-0">
-<h3 className="text-xl font-bold font-headline mb-6 text-on-surface">Submit Your Proposal</h3>
-<div className="space-y-8">
-<div>
-<div className="flex justify-between items-end mb-4">
-<label className="text-sm font-bold text-outline uppercase tracking-widest">Your Bid Amount</label>
-<span className="text-3xl font-mono font-black text-secondary">$<span id="bid-value">2,850</span></span>
-</div>
-<div className="relative h-2 bg-surface-container-highest rounded-full overflow-hidden">
-<div className="absolute h-full bg-secondary w-3/4"></div>
-</div>
-<div className="flex justify-between mt-2 text-[10px] font-mono text-outline">
-<span>MIN $2,400</span>
-<span>MAX $3,200</span>
-</div>
-</div>
-<div className="grid grid-cols-2 gap-4">
-<div className="flex flex-col gap-2">
-<label className="text-xs font-bold text-outline">Estimated Start</label>
-<input className="bg-surface-container-low border-0 text-on-surface rounded-md p-3 focus:ring-2 focus:ring-primary" type="date" />
-</div>
-<div className="flex flex-col gap-2">
-<label className="text-xs font-bold text-outline">Duration (Days)</label>
-<input className="bg-surface-container-low border-0 text-on-surface rounded-md p-3 focus:ring-2 focus:ring-primary" placeholder="5" type="number" />
-</div>
-</div>
-<div className="flex flex-col gap-2">
-<label className="text-xs font-bold text-outline">Cover Letter / Technical Brief</label>
-<textarea className="bg-surface-container-low border-0 text-on-surface rounded-md p-4 focus:ring-2 focus:ring-primary resize-none" placeholder="Highlight your experience with similar rack installations..." rows="4"></textarea>
-</div>
-<button className="w-full py-4 bg-secondary-container hover:bg-[#ff7e1a] text-white font-black text-lg uppercase tracking-widest rounded-lg shadow-xl active:scale-95 transition-all">
-                                        Submit Bid
-                                    </button>
-<p className="text-center text-[10px] text-outline">Platform fee of 3% applies upon project successful payout.</p>
-</div>
+<section className="bg-surface-container-low/60 backdrop-blur-3xl p-12 rounded-[3.5rem] border border-white/5 ring-1 ring-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)]">
+    <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-8 text-on-surface leading-none">{t('submitProposal') || "Submit Your Proposal"}</h3>
+    <div className="space-y-10">
+        <div>
+            <div className="flex justify-between items-end mb-4">
+                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">Proposed Reward [INR]</label>
+                <div className="text-4xl font-black italic tracking-tighter text-secondary flex items-baseline gap-1">
+                    <span className="text-xl opacity-40">₹</span>
+                    <span id="bid-value">2,850</span>
+                </div>
+            </div>
+            <div className="relative h-2 bg-surface-container-highest rounded-full overflow-hidden shadow-inner">
+                <div className="absolute h-full bg-secondary w-3/4 shadow-[0_0_15px_rgba(var(--secondary),0.5)]"></div>
+            </div>
+            <div className="flex justify-between mt-4 text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/30 italic">
+                <span>Min ₹2,400</span>
+                <span>Max ₹3,200</span>
+            </div>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+            <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.4em] italic">Deployment Start</label>
+                <input className="bg-surface-container-high/40 border border-white/5 text-on-surface rounded-[1.25rem] p-4 focus:ring-2 focus:ring-primary transition-all shadow-inner font-medium italic" type="date" />
+            </div>
+            <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.4em] italic">Cycle Duration [Days]</label>
+                <input className="bg-surface-container-high/40 border border-white/5 text-on-surface rounded-[1.25rem] p-4 focus:ring-2 focus:ring-primary transition-all shadow-inner font-black italic" placeholder="5" type="number" />
+            </div>
+        </div>
+        <div className="flex flex-col gap-3">
+            <label className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.4em] italic">Technical Brief / Strategy</label>
+            <textarea className="bg-surface-container-high/40 border border-white/5 text-on-surface rounded-[1.5rem] p-6 focus:ring-2 focus:ring-primary resize-none transition-all shadow-inner font-medium italic" placeholder="Architect your approach..." rows={5}></textarea>
+        </div>
+        <button className="w-full py-6 bg-secondary text-white font-black text-xs uppercase tracking-[0.5em] rounded-[1.5rem] shadow-2xl shadow-secondary/20 hover:shadow-secondary/40 active:scale-[0.98] transition-all italic">
+            INITIATE PROPOSAL
+        </button>
+        <p className="text-center text-[9px] font-black uppercase tracking-widest text-muted-foreground/20 italic">Node security fee of 3% applied upon final production payout.</p>
+    </div>
 </section>
 </div>
 </div>
@@ -264,8 +275,8 @@ export function StitchProfessionalJobBoard() {
 </main>
 </div>
 {/* BottomNavBar */}
-<footer className="lg:hidden fixed bottom-0 w-full flex justify-around p-2 bg-[#0b1326]/80 backdrop-blur-xl z-50 rounded-t-lg border-t border-[#434655]/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-<a className="flex flex-col items-center justify-center bg-[#2563eb] text-white rounded-xl p-2 px-4 transition-transform active:scale-90" href="#">
+<footer className="lg:hidden fixed bottom-0 w-full flex justify-around p-2 bg-[#0b1326]/80 backdrop-blur-xl z-50 rounded-t-[2.5rem] border-t border-[#434655]/20 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+<a className="flex flex-col items-center justify-center bg-[#2563eb] text-white rounded-[1.25rem] p-2 px-4 transition-transform active:scale-90" href="#">
 <span className="material-symbols-outlined" data-icon="search">search</span>
 <span className="font-['Inter'] text-[10px] uppercase tracking-widest mt-1">Search</span>
 </a>

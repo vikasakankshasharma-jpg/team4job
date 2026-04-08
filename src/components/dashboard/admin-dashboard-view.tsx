@@ -24,11 +24,12 @@ import { format, subMonths, startOfMonth } from "date-fns";
 import dynamic from "next/dynamic";
 import { StatCard } from "@/components/dashboard/cards/stat-card";
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
 import { FinancialSummaryCard } from "@/components/dashboard/cards/financial-summary-card";
 import { TopPerformersCard } from "@/components/dashboard/cards/top-performers-card";
 import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
+import { Badge } from "@/components/ui/badge";
 
 const AdminRevenueChart = dynamic(() => import("@/components/dashboard/charts/admin-charts").then(mod => mod.AdminRevenueChart), { ssr: false });
 const AdminSystemHealthChart = dynamic(() => import("@/components/dashboard/charts/admin-charts").then(mod => mod.AdminSystemHealthChart), { ssr: false });
@@ -187,8 +188,15 @@ export function AdminDashboardView() {
     }
 
     return (
-        <div className="space-y-6 lg:space-y-8 w-full">
-            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter text-on-surface leading-none">{t('welcome')}</h1>
+        <div className="space-y-12 lg:space-y-16 w-full pb-16">
+            <header className="space-y-4">
+                <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
+                    {t('welcome').toUpperCase()} {"//"} PLATFORM COMMAND TERMINAL
+                </Badge>
+                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-headline tracking-tighter text-on-surface leading-[0.85] italic uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                    System Dashboard
+                </h1>
+            </header>
             <div className="space-y-6">
                 <FinancialSummaryCard transactions={transactions} />
 
@@ -208,14 +216,24 @@ export function AdminDashboardView() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="col-span-1">
                         {/* Recent Signups or Activity - simplified to Card structure for safety */}
-                        <Card className="bg-surface-container-low border border-outline-variant/10 rounded-xl overflow-hidden shadow-sm">
-                            <CardHeader className="pb-4"><CardTitle className="text-xl font-bold font-headline tracking-tight">{t('recentSignups')}</CardTitle></CardHeader>
-                            <CardContent>
+                        <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 group">
+                            <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                                <CardTitle className="text-sm font-black italic tracking-[0.3em] uppercase text-primary flex items-center gap-3">
+                                    <Users className="h-5 w-5" /> {t('recentSignups')}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-10">
                                 <div className="space-y-4">
                                     {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).filter(u => u.id).map((u, index) => (
-                                        <div key={u.id || `user-${index}`} className="flex items-center gap-4">
-                                            <Avatar className="h-8 w-8"><AnimatedAvatar svg={u.avatarUrl} /></Avatar>
-                                            <div><p className="text-sm font-medium">{u.name || t('unknownUser')}</p><p className="text-xs text-muted-foreground">{u.roles?.join(', ') || 'User'}</p></div>
+                                        <div key={u.id || `user-${index}`} className="flex items-center gap-5 p-4 rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 hover:bg-background/40 transition-all hover:translate-x-2 shadow-inner group/user ring-1 ring-white/5">
+                                            <Avatar className="h-12 w-12 border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                                                <AnimatedAvatar svg={u.avatarUrl} />
+                                                <AvatarFallback className="font-black italic text-xs">{u.name?.substring(0, 2).toUpperCase() || '??'}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-base font-black italic tracking-tighter uppercase truncate leading-none mb-1">{u.name || t('unknownUser')}</p>
+                                                <p className="text-[9px] font-black tracking-[0.3em] text-muted-foreground/40 uppercase italic">{u.roles?.join(' // ') || 'Standard Unit'}</p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

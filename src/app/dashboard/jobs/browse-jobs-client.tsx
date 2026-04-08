@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ListFilter, X, Loader2 } from "lucide-react";
+import { ListFilter, X, Loader2, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,9 +42,9 @@ import { useHelp } from "@/hooks/use-help";
 import { useUser } from "@/hooks/use-user";
 import { allSkills } from "@/lib/data";
 import type { Job, User } from "@/lib/types";
-import { useRouter, useSearchParams } from "next/navigation";
-import { MapPin, Bell } from "lucide-react";
+import { MapPin, Bell, Inbox, Bookmark, Navigation } from "lucide-react";
 import { useSearch } from "@/hooks/use-search";
+import { EmptyState, InlineEmptyState } from "@/components/ui/empty-state";
 import { JobCardSkeletonGrid } from "@/components/skeletons/job-card-skeleton";
 import { JobFilters } from "@/components/jobs/job-filters";
 import { listOpenJobsAction } from "@/app/actions/job.actions";
@@ -395,37 +395,45 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
   return (
     <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="space-y-10 pb-20 px-4 sm:px-6 lg:px-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-12 pb-20 px-4 sm:px-6 lg:px-8"
     >
-      <div className="flex flex-col gap-2 mb-4">
-          <h1 className="text-3xl font-black tracking-tight md:text-5xl bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
-              {tJob('availableJobs')}
-          </h1>
-          <p className="text-muted-foreground font-medium text-lg max-w-2xl">
-              {tJob('availableJobsDesc')}
-          </p>
-      </div>
+        {/* Top Gradient Accent */}
+        <div className="h-2 w-full bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x rounded-full opacity-50 mb-8" />
 
-      <div className="flex flex-col lg:flex-row gap-10 items-start">
+        <header className="mb-16 space-y-6">
+            <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
+                INTELLIGENCE FEED // ACTIVE DISCOVERY
+            </Badge>
+            <div className="flex items-center gap-6">
+                <h1 className="text-6xl sm:text-8xl md:text-[9.5rem] font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/40 bg-clip-text text-transparent leading-[0.85] italic">
+                    {tJob('availableJobs')}
+                </h1>
+                <Sparkles className="h-12 w-12 text-primary animate-pulse hidden md:block opacity-40" />
+            </div>
+            <p className="text-xl font-medium italic opacity-40 tracking-tight underline underline-offset-8 decoration-primary/20 max-w-3xl">
+                {tJob('availableJobsDesc')}
+            </p>
+        </header>
 
-        {/* DESKTOP SIDEBAR */}
-        <aside className="hidden lg:block w-80 flex-shrink-0 sticky top-24">
-          <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 to-primary/60" />
-            <CardHeader className="flex flex-row items-center justify-between pb-6 pt-8 px-8">
-              <CardTitle className="text-xl font-black tracking-tight uppercase">{tCommon('filters')}</CardTitle>
-              <SaveSearchDialog
-                currentFilters={{
-                  query: searchQuery,
-                  minPrice: budget[0],
-                  maxPrice: budget[1],
-                  skills: selectedSkills
-                }}
-              />
-            </CardHeader>
-            <CardContent className="px-8 pb-8">
+        <div className="flex flex-col lg:flex-row gap-12 items-start">
+            {/* DESKTOP SIDEBAR */}
+            <aside className="hidden lg:block w-96 flex-shrink-0 sticky top-24">
+                <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden group ring-1 ring-white/5 relative">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-transparent opacity-30" />
+                    <CardHeader className="flex flex-row items-center justify-between p-12 pb-6">
+                        <CardTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none">{tCommon('filters')}</CardTitle>
+                        <SaveSearchDialog
+                            currentFilters={{
+                                query: searchQuery,
+                                minPrice: budget[0],
+                                maxPrice: budget[1],
+                                skills: selectedSkills
+                            }}
+                        />
+                    </CardHeader>
+                    <CardContent className="px-12 pb-12">
               <JobFilters
                 budget={budget}
                 setBudget={setBudget}
@@ -441,26 +449,26 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
         {/* MAIN CONTENT AREA */}
         <div className="flex-1 w-full min-w-0">
           <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-8">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <TabsList className="w-full sm:w-auto h-auto p-2 bg-foreground/5 backdrop-blur-md rounded-2xl border border-foreground/5">
-                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-2 h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
+              <TabsList className="w-full sm:w-auto h-auto p-3 bg-foreground/[0.03] backdrop-blur-3xl rounded-[1.8rem] border border-white/5 ring-1 ring-white/5 shadow-inner">
+                <TabsTrigger value="nearby" className="flex-1 sm:flex-none gap-3 h-14 px-8 rounded-[1.2rem] data-[state=active]:shadow-2xl data-[state=active]:bg-background data-[state=active]:text-primary font-black text-[10px] uppercase tracking-[0.2em] transition-all italic border border-transparent data-[state=active]:border-white/5">
                   <MapPin className="h-4 w-4" />
                   {tJob('nearYou')}
                   {filteredRecommendedJobs.length > 0 && (
-                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[10px]">
+                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[9px] px-2">
                       {filteredRecommendedJobs.length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-2 h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">
+                <TabsTrigger value="saved" className="flex-1 sm:flex-none gap-3 h-14 px-8 rounded-[1.2rem] data-[state=active]:shadow-2xl data-[state=active]:bg-background data-[state=active]:text-primary font-black text-[10px] uppercase tracking-[0.2em] transition-all italic border border-transparent data-[state=active]:border-white/5">
                   {tJob('saved')}
                   {user?.bookmarks && user.bookmarks.length > 0 && (
-                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[10px]">
+                    <Badge variant="secondary" className="ml-2 rounded-full bg-primary/20 text-primary border-none font-black text-[9px] px-2">
                       {user.bookmarks.filter(id => jobs.find(j => j.id === id)).length}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="all" className="flex-1 sm:flex-none h-11 px-6 rounded-xl data-[state=active]:shadow-xl data-[state=active]:bg-background font-black text-xs uppercase tracking-widest transition-all">{tJob('browseAll')}</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 sm:flex-none h-14 px-8 rounded-[1.2rem] data-[state=active]:shadow-2xl data-[state=active]:bg-background data-[state=active]:text-primary font-black text-[10px] uppercase tracking-[0.2em] transition-all italic border border-transparent data-[state=active]:border-white/5">{tJob('browseAll')}</TabsTrigger>
               </TabsList>
 
               <div className="ml-auto flex items-center gap-2 lg:hidden">
@@ -518,9 +526,9 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
             <TabsContent value="all" className="m-0 focus-visible:outline-none focus-visible:ring-0">
               <Card className="max-w-full overflow-hidden border-0 shadow-none bg-transparent">
-                <CardHeader className="px-0 pb-6 pt-2">
-                  <CardTitle className="text-2xl font-bold tracking-tight">{tJob('availableJobs')}</CardTitle>
-                  <CardDescription className="text-base font-medium opacity-80">
+                <CardHeader className="px-0 pb-12 pt-4 space-y-4">
+                  <CardTitle className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase italic">{tJob('availableJobs')}</CardTitle>
+                  <CardDescription className="text-lg font-medium italic opacity-40 leading-relaxed tracking-tight">
                     {tJob('availableJobsDesc')}
                   </CardDescription>
                 </CardHeader>
@@ -544,11 +552,12 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                         ))}
                       </motion.div>
                       {filteredJobs.length === 0 && (
-                        <div className="text-center py-20 bg-foreground/[0.02] rounded-[3rem] border border-dashed border-foreground/10">
-                          <p className="text-muted-foreground font-bold italic">
-                            {tJob('noJobsFound')}
-                          </p>
-                        </div>
+                        <EmptyState 
+                          icon={Inbox} 
+                          title={tJob('noJobsFound')} 
+                          description="Marketplace Feed Idle // Your current deployment criteria yielded no active mission openings."
+                          className="py-20"
+                        />
                       )}
                     </>
                   )}
@@ -577,8 +586,8 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                 <CardHeader className="px-0 pb-6 pt-2">
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <MapPin className="h-6 w-6 text-primary" />
+                      <CardTitle className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase italic flex items-center gap-4">
+                        <MapPin className="h-8 w-8 text-primary opacity-40" />
                         {tJob('nearYou')}
                       </CardTitle>
                       <CardDescription className="text-base font-medium opacity-80 mt-1">
@@ -617,14 +626,15 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                         ))}
                       </div>
                       {filteredRecommendedJobs.length === 0 && (
-                        <div className="text-center py-10">
-                          <MapPin className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-lg font-semibold mb-2">{tJob('noNearbyJobs')}</p>
-                          <p className="text-muted-foreground overflow-wrap-anywhere px-4 mb-4">
-                            {tJob('noNearbyJobsDesc')}
-                          </p>
-                          <Button onClick={() => handleTabChange('all')} variant="outline">
-                            {tJob('browseAll')}
+                        <div className="flex flex-col items-center">
+                          <EmptyState 
+                            icon={Navigation} 
+                            title={tJob('noNearbyJobs')} 
+                            description={tJob('noNearbyJobsDesc')}
+                            className="w-full py-20 bg-surface-container-low/20"
+                          />
+                          <Button onClick={() => handleTabChange('all')} variant="outline" className="mt-8 h-12 rounded-[1.25rem] px-8 font-black uppercase text-[10px] tracking-widest italic">
+                            {tJob('browseAll')} COMMAND
                           </Button>
                         </div>
                       )}
@@ -641,9 +651,9 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
 
             <TabsContent value="saved" className="m-0 focus-visible:outline-none focus-visible:ring-0">
               <Card className="max-w-full overflow-hidden border-0 shadow-none bg-transparent">
-                <CardHeader className="px-0 pb-6 pt-2">
-                  <CardTitle className="text-2xl font-bold tracking-tight">{tJob('savedJobs')}</CardTitle>
-                  <CardDescription className="text-base font-medium opacity-80 mt-1">
+                <CardHeader className="px-0 pb-12 pt-4 space-y-4">
+                  <CardTitle className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase italic">{tJob('savedJobs')}</CardTitle>
+                  <CardDescription className="text-lg font-medium italic opacity-40 leading-relaxed tracking-tight">
                     {tJob('savedJobsDesc')}
                   </CardDescription>
                 </CardHeader>
@@ -658,11 +668,12 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                         ))}
                       </div>
                       {jobs.filter(job => user?.bookmarks?.includes(job.id)).length === 0 && (
-                        <div className="text-center py-10">
-                          <p className="text-muted-foreground overflow-wrap-anywhere px-4">
-                            {tJob('noSavedJobs')}
-                          </p>
-                        </div>
+                        <EmptyState 
+                            icon={Bookmark} 
+                            title={tJob('noSavedJobs')} 
+                            description="Intel Vault Empty // You have not yet archived any active mission deployments."
+                            className="py-20 bg-surface-container-low/20"
+                        />
                       )}
                     </>
                   )}

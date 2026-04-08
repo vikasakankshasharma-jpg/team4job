@@ -82,7 +82,7 @@ export function MobileJobCard({
     };
 
     return (
-        <div className={cn("relative overflow-hidden rounded-lg", className)}>
+        <div className={cn("relative overflow-hidden rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)]", className)}>
             {/* Background Actions Layer */}
             <div className="absolute inset-y-0 right-0 flex w-[140px]">
                 {onArchive && (
@@ -96,7 +96,7 @@ export function MobileJobCard({
                     >
                         <div className="flex flex-col items-center gap-1">
                             <Archive className="h-5 w-5" />
-                            <span className="text-[10px] font-medium">Archive</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest italic">Archive</span>
                         </div>
                     </Button>
                 )}
@@ -111,7 +111,7 @@ export function MobileJobCard({
                     >
                         <div className="flex flex-col items-center gap-1">
                             <Trash2 className="h-5 w-5" />
-                            <span className="text-[10px] font-medium">Delete</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest italic">Delete</span>
                         </div>
                     </Button>
                 )}
@@ -119,26 +119,26 @@ export function MobileJobCard({
 
             {/* Foreground Card Layer */}
             <Card
-                className={cn("relative z-10 transition-transform duration-200 ease-out bg-background")}
+                className={cn("relative z-10 transition-transform duration-200 ease-out bg-background border-none rounded-[3rem] shadow-inner")}
                 style={{ transform: `translateX(${translateX}px)` }}
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
             >
-                <CardContent className="p-4">
+                <CardContent className="p-5">
                     {/* Header */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-start justify-between gap-3 mb-4">
                         <div className="flex-1 min-w-0">
                             <Link
                                 href={`/dashboard/jobs/${job.id}`}
                                 className="block"
                             >
-                                <h4 className="font-semibold text-base line-clamp-2 hover:underline">
+                                <h4 className="font-black italic text-base line-clamp-2 uppercase tracking-tighter leading-tight hover:text-primary transition-colors">
                                     {job.title}
                                 </h4>
                             </Link>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {formatDistanceToNow(postedDate, { addSuffix: true })}
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mt-2">
+                                {formatDistanceToNow(postedDate, { addSuffix: true }).toUpperCase()}
                             </p>
                         </div>
 
@@ -149,32 +149,32 @@ export function MobileJobCard({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-11 w-11"
+                                        className="h-10 w-10 rounded-[1rem] border border-white/5 bg-muted/30"
                                     >
-                                        <MoreVertical className="h-5 w-5" />
+                                        <MoreVertical className="h-4 w-4" />
                                         <span className="sr-only">Actions</span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/dashboard/jobs/${job.id}`} className="min-h-[44px] flex items-center">
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            View Details
+                                <DropdownMenuContent align="end" className="rounded-[1.5rem] p-2 bg-surface-container-high/95 backdrop-blur-3xl border-white/10 shadow-2xl">
+                                    <DropdownMenuItem asChild className="rounded-[1rem] mb-1">
+                                        <Link href={`/dashboard/jobs/${job.id}`} className="min-h-[44px] flex items-center font-black italic tracking-tighter uppercase text-xs">
+                                            <ExternalLink className="mr-3 h-4 w-4 text-primary" />
+                                            View Mission
                                         </Link>
                                     </DropdownMenuItem>
                                     {onArchive && (
-                                        <DropdownMenuItem onClick={() => onArchive(job.id!)} className="min-h-[44px] flex items-center">
-                                            <Archive className="mr-2 h-4 w-4" />
-                                            Archive
+                                        <DropdownMenuItem onClick={() => onArchive(job.id!)} className="min-h-[44px] flex items-center rounded-[1rem] mb-1 font-black italic tracking-tighter uppercase text-xs">
+                                            <Archive className="mr-3 h-4 w-4 text-orange-500" />
+                                            Archive Data
                                         </DropdownMenuItem>
                                     )}
                                     {onDelete && (
                                         <DropdownMenuItem
                                             onClick={() => onDelete(job.id!)}
-                                            className="text-destructive min-h-[44px] flex items-center"
+                                            className="text-destructive min-h-[44px] flex items-center rounded-[1rem] font-black italic tracking-tighter uppercase text-xs"
                                         >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete
+                                            <Trash2 className="mr-3 h-4 w-4" />
+                                            Purge Entry
                                         </DropdownMenuItem>
                                     )}
                                 </DropdownMenuContent>
@@ -183,26 +183,26 @@ export function MobileJobCard({
                     </div>
 
                     {/* Metrics Grid */}
-                    <div className="grid grid-cols-3 gap-3 py-3 border-t">
+                    <div className="grid grid-cols-3 gap-3 py-4 border-t border-white/5">
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Bids</p>
-                            <p className="text-lg font-semibold mt-1">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">Bids</p>
+                            <p className="text-xl font-black italic tracking-tighter uppercase text-on-surface">
                                 {bidCount}
                             </p>
                         </div>
 
-                        <div className="text-center border-x">
-                            <p className="text-xs text-muted-foreground">Budget</p>
-                            <p className="text-lg font-semibold mt-1">
+                        <div className="text-center border-x border-white/5">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">Budget</p>
+                            <p className="text-xl font-black italic tracking-tighter uppercase text-on-surface">
                                 {job.priceEstimate
                                     ? `₹${Math.round((job.priceEstimate.min + job.priceEstimate.max) / 2).toLocaleString()}`
-                                    : 'N/A'}
+                                    : '---'}
                             </p>
                         </div>
 
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Category</p>
-                            <p className="text-sm font-medium mt-1 truncate">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-1">Class</p>
+                            <p className="text-xs font-black italic tracking-tighter uppercase text-primary truncate">
                                 {job.jobCategory || 'General'}
                             </p>
                         </div>
@@ -210,12 +210,12 @@ export function MobileJobCard({
 
                     {/* Action Button */}
                     <Button
-                        className="w-full mt-3 min-h-[44px]"
+                        className="w-full mt-2 min-h-[56px] rounded-[1.5rem] font-black italic tracking-tighter uppercase text-sm shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] border-none"
                         size="sm"
                         asChild
                     >
                         <Link href={`/dashboard/jobs/${job.id}`}>
-                            View Job
+                            Open Mission File
                         </Link>
                     </Button>
                 </CardContent>

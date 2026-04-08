@@ -902,21 +902,27 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   };
 
   return (
-    <div className="mx-auto grid max-w-4xl flex-1 auto-rows-max gap-4 px-4 max-w-full overflow-x-hidden font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface pb-16">
-      <div className="flex items-center gap-4 mt-8 mb-4">
-        <h1 className="text-3xl font-extrabold font-headline tracking-tighter break-words text-on-surface">
-          {isEditMode ? tJob('editJob') : (repostJobId ? tJob('repostJob') : tJob('postJob'))}
-        </h1>
-        {isProcessing && <Loader2 className="h-5 w-5 animate-spin" />}
-      </div>
+    <div className="mx-auto grid max-w-6xl flex-1 auto-rows-max gap-12 px-6 max-w-full overflow-x-hidden font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface pb-32">
+      <header className="mt-16 mb-8 space-y-4">
+        <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
+           MISSION ORIGINATION // SERIES 4.0
+        </Badge>
+        <div className="flex items-center gap-6">
+          <h1 className="text-6xl sm:text-8xl md:text-[9.5rem] font-black font-headline tracking-tighter break-words text-on-surface uppercase italic leading-[0.85] bg-gradient-to-br from-foreground to-foreground/40 bg-clip-text text-transparent">
+            {isEditMode ? tJob('editJob') : (repostJobId ? tJob('repostJob') : tJob('postJob'))}
+          </h1>
+          {isProcessing && <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />}
+        </div>
+        <p className="text-lg font-medium italic opacity-40 tracking-tight underline underline-offset-8 decoration-primary/20">Architect your requirement for global deployment.</p>
+      </header>
       <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
-          <Card className="border-0 shadow-lg shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-xl overflow-hidden">
-            <CardHeader className="bg-surface-container-highest dark:bg-slate-800/50 border-b border-outline-variant/10">
+          <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
+            <CardHeader className="p-12 bg-white/5 border-b border-white/5">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl font-bold font-headline">{tJob('jobDetails')}</CardTitle>
-                  <CardDescription className="text-sm text-on-surface-variant font-medium mt-1">
+                <div className="space-y-2">
+                  <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">{tJob('jobDetails')}</CardTitle>
+                  <CardDescription className="text-sm text-on-surface-variant font-medium italic opacity-60">
                     {isEditMode
                       ? tJob('editJobDesc')
                       : (repostJobId
@@ -950,7 +956,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-12 space-y-12">
               {/* Template Selector */}
               {!isEditMode && !repostJobId && (
                 <TemplateSelector
@@ -963,7 +969,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="jobCategory"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{tJob('category')}</FormLabel>
+                    <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('category')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="job-category-select" className="h-12 md:h-10 text-base md:text-sm">
@@ -990,7 +996,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="jobTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{tJob('title')}</FormLabel>
+                    <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('title')}</FormLabel>
                     <div className="flex gap-2">
                       <FormControl>
                         <Input
@@ -1012,8 +1018,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="jobDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>{tJob('description')}</FormLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('description')}</FormLabel>
                       <Button
                         type="button"
                         variant="outline"
@@ -1086,8 +1092,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 name="skills"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>{tJob('skills')}</FormLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('skills')}</FormLabel>
                       {isGenerating && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                     <FormControl>
@@ -1165,7 +1171,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="deadline"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tJob('deadline')}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('deadline')}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} min={new Date().toISOString().split("T")[0]} disabled={!!directAwardProfessionalId} data-testid="job-deadline-input" />
                       </FormControl>
@@ -1179,7 +1185,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="jobStartDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tJob('startDate')}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('startDate')}</FormLabel>
                       <FormControl>
                         {/* Phase 12: Upgrade to datetime-local to capture hour precision */}
                         <Input
@@ -1202,7 +1208,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="travelTip"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tJob('travelTip')}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('travelTip')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g., 500" {...field} />
                       </FormControl>
@@ -1218,7 +1224,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="preferredTimeSlot"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tJob('preferredTime') || "Preferred Time"}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('preferredTime') || "Preferred Time"}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -1243,12 +1249,12 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
+          <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
+            <CardHeader className="p-12 bg-white/5 border-b border-white/5">
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{tJob('budget')}</CardTitle>
-                  <CardDescription>
+                <div className="space-y-2">
+                  <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">{tJob('budget')}</CardTitle>
+                  <CardDescription className="text-sm text-on-surface-variant font-medium italic opacity-60">
                     {directAwardProfessionalId ? tJob('budgetDirectDesc') : tJob('budgetDesc')}
                   </CardDescription>
                 </div>
@@ -1258,14 +1264,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   size="sm"
                   onClick={() => setShowSmartEstimator(true)}
                   disabled={!canEstimatePrice}
-                  className="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  className="gap-2 text-amber-600 border-amber-200/40 bg-amber-500/5 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-full px-6 py-2 font-black text-[10px] uppercase tracking-widest italic"
                 >
                   <Sparkles className="h-4 w-4" />
                   {tJob('aiEstimate')}
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-12 space-y-12">
               {/* Budget Template Selector */}
               {!directAwardProfessionalId && (
                 <div className="flex justify-end">
@@ -1289,7 +1295,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="priceEstimate.min"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{directAwardProfessionalId ? tJob('offeredBudget') : tJob('minBudget')}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{directAwardProfessionalId ? tJob('offeredBudget') : tJob('minBudget')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 8000" {...field} data-testid="min-budget-input" />
                       </FormControl>
@@ -1302,7 +1308,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   name="priceEstimate.max"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{tJob('maxBudget')}</FormLabel>
+                      <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('maxBudget')}</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 12000" {...field} data-testid="max-budget-input" />
                       </FormControl>
@@ -1314,17 +1320,19 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             </CardContent>
           </Card>
           {!isEditMode && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5" />
-                  {tJob('directRequest')}
-                </CardTitle>
-                <CardDescription>
-                  {tJob('directRequestDesc')}
-                </CardDescription>
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
+              <CardHeader className="p-12 bg-white/5 border-b border-white/5">
+                <div className="space-y-2">
+                  <CardTitle className="flex items-center gap-4 text-4xl font-black italic tracking-tighter uppercase leading-none">
+                    <UserPlus className="h-8 w-8 text-primary" />
+                    {tJob('directRequest')}
+                  </CardTitle>
+                  <CardDescription className="text-sm text-on-surface-variant font-medium italic opacity-60">
+                    {tJob('directRequestDesc')}
+                  </CardDescription>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-12 space-y-4">
                 <DirectAwardInput control={form.control} />
               </CardContent>
             </Card>
@@ -1404,8 +1412,9 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     disabled={isProcessing || isGenerating}
                     onClick={handleSubmitClick}
                     data-testid="post-job-button"
+                    className="h-20 px-16 bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.5em] rounded-[1.8rem] shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all italic"
                   >
-                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isProcessing && <Loader2 className="mr-3 h-6 w-6 animate-spin" />}
                     {repostJobId ? tJob('repostJob') : tJob('postJob')}
                   </Button>
                   <AlertDialogContent>

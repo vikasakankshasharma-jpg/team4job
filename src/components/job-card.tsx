@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -8,8 +10,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import type { Job } from "@/lib/types";
-import { MapPin, IndianRupee, Clock, Users, User as UserIcon, Hash, ArrowRight } from "lucide-react";
+import type { Job, User } from "@/lib/types";
+import { 
+    MapPin, 
+    IndianRupee, 
+    Clock, 
+    Users, 
+    User as UserIcon, 
+    Hash, 
+    ArrowRight, 
+    Lock as LockIcon, 
+    Sparkles,
+    Zap,
+    TrendingUp
+} from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from 'date-fns';
 import { getStatusVariant, toDate, getMyBidStatus } from "@/lib/utils";
@@ -51,16 +65,23 @@ export function JobCard({ job }: JobCardProps) {
   const displayStatus = myBidStatus ? myBidStatus.text : job.status;
   const statusVariant = myBidStatus ? myBidStatus.variant : getStatusVariant(job.status);
 
+  const professionalId = user?.id;
+  const professionalTierPriority = user?.professionalProfile?.tierPriority || 1;
+  const isTierRestricted = job.minTierPriority && professionalTierPriority < job.minTierPriority;
+
   const getButtonText = () => {
     if (myBidStatus) {
-      if (myBidStatus.text === 'Awarded to You' || myBidStatus.text === 'In Progress' || myBidStatus.text === 'Pending Funding') return "View & Respond";
-      if (myBidStatus.text === 'Completed & Won') return 'View Completed';
+      const statusText = myBidStatus.text.toLowerCase();
+      if (statusText.includes('awarded') || statusText.includes('progress') || statusText.includes('funding')) return "Respond to Award";
+      if (statusText.includes('completed')) return 'View Accomplishment';
     }
-    switch (job.status) {
-      case 'Open for Bidding': return hasBidded ? 'Modify Bid' : 'View & Bid';
-      case 'Bidding Closed': return 'View Bids';
-      default: return 'View Details';
-    }
+    if (isTierRestricted) return 'Tier Restricted';
+    
+    const s = job.status?.toLowerCase() || '';
+    if (s === 'open for bidding' || s === 'open') return hasBidded ? 'Modify Bid' : 'Place Bid';
+    if (s === 'bidding closed') return 'Bidding Closed';
+    
+    return 'View Production';
   }
 
   const buttonText = getButtonText();
@@ -68,99 +89,142 @@ export function JobCard({ job }: JobCardProps) {
 
   return (
     <motion.div
-        whileHover={{ y: -8, scale: 1.02 }}
+        whileHover={{ y: -10 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="h-full"
     >
         <Card
-        className="flex flex-col h-full relative border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] group overflow-hidden transition-all duration-500 hover:bg-card/60"
-        data-job-id={job.id}
-        data-testid="job-card"
+            className="flex flex-col h-full relative border-none bg-surface-container-low/60 backdrop-blur-xl shadow-2xl rounded-[3rem] group overflow-hidden transition-all duration-500 ring-1 ring-white/5"
+            data-job-id={job.id}
+            data-testid="job-card"
         >
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/50 via-primary to-primary/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        <CardHeader className="p-8 pb-4">
-            <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={statusVariant} className="px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-wider shadow-lg">
-                        {displayStatus}
-                    </Badge>
-                    <DummyDataBadge isDummyData={job.isDummyData} />
-                    {isNearby && (
-                        <Badge className="px-3 py-1 rounded-full bg-success/20 text-success border-none font-black text-[9px] uppercase tracking-wider">
-                            <MapPin className="h-3 w-3 mr-1" /> Near You
-                        </Badge>
-                    )}
-                </div>
-                <div className="space-y-1">
-                    <CardTitle className="text-2xl font-black tracking-tight leading-tight line-clamp-2 bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent group-hover:from-primary group-hover:to-primary/60 transition-all duration-500">
-                        {job.title}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-                        <Hash className="h-3 w-3" /> {job.id.slice(-8)}
-                    </div>
-                </div>
-            </div>
-            <BookmarkButton jobId={job.id} className="opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
-            </div>
-        </CardHeader>
+            {/* Top Status Gradient Accent */}
+            <div className={cn(
+                "absolute top-0 left-0 w-full h-2 bg-gradient-to-r transition-all duration-500",
+                job.status === 'Open for Bidding' || job.status === 'open' ? "from-blue-500 to-primary" :
+                job.status === 'Awarded' ? "from-amber-500 to-amber-300" :
+                job.status === 'In Progress' ? "from-primary to-accent" :
+                job.status === 'Completed' ? "from-success to-green-400" :
+                "from-slate-500 to-slate-300"
+            )} />
 
-        <CardContent className="px-8 flex-grow">
-            <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-foreground/[0.03] p-4 rounded-3xl border border-foreground/[0.05] space-y-1">
-                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Bids</p>
-                        <div className="flex items-center gap-2 font-black text-lg">
-                            <Users className="h-4 w-4 text-primary" />
-                            {job.bids.length}
-                        </div>
-                    </div>
-                    <div className="bg-foreground/[0.03] p-4 rounded-3xl border border-foreground/[0.05] space-y-1">
-                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Budget</p>
-                        <div className="flex items-center gap-2 font-black text-lg text-primary">
-                            <IndianRupee className="h-4 w-4" />
-                            {job.priceEstimate ? (job.priceEstimate.min >= 1000 ? `${(job.priceEstimate.min/1000).toFixed(0)}k` : job.priceEstimate.min) : 'N/A'}
-                        </div>
-                    </div>
+            <CardHeader className="p-10 pb-6 relative">
+                <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 group-hover:scale-125 transition-transform duration-700 pointer-events-none">
+                    <Sparkles className="h-24 w-24 text-primary" />
                 </div>
 
-                <div className="flex items-center gap-4 bg-primary/5 p-4 rounded-[1.5rem] border border-primary/10 transition-colors group-hover:bg-primary/10">
-                    <div className="p-2 bg-background rounded-xl shadow-inner">
-                        <MapPin className="h-5 w-5 text-primary" />
+                <div className="flex items-start justify-between gap-4 relative z-10">
+                    <div className="flex-1 space-y-5">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <Badge variant={statusVariant} className="px-5 py-1.5 rounded-full font-black text-[10px] uppercase tracking-[0.15em] shadow-xl border-none">
+                                {displayStatus}
+                            </Badge>
+                            <DummyDataBadge isDummyData={job.isDummyData} />
+                            {isNearby && (
+                                <Badge className="px-5 py-1.5 rounded-full bg-success/20 text-success border-none font-black text-[10px] uppercase tracking-[0.15em] italic">
+                                    <MapPin className="h-3 w-3 mr-2" /> Nearby Node
+                                </Badge>
+                            )}
+                            {job.isUrgent && (
+                                <Badge className="px-5 py-1.5 rounded-full bg-destructive/20 text-destructive border-none font-black text-[10px] uppercase tracking-[0.15em] animate-pulse">
+                                    <Zap className="h-3 w-3 mr-2" /> High Urgency
+                                </Badge>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <CardTitle className="text-3xl font-black italic tracking-tighter leading-[1.1] line-clamp-2 bg-gradient-to-br from-foreground to-foreground/40 bg-clip-text text-transparent group-hover:from-primary group-hover:to-primary/60 transition-all duration-500">
+                                {job.title}
+                            </CardTitle>
+                            <div className="flex items-center gap-3 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.3em] font-mono">
+                                <Hash className="h-3 w-3" /> {job.id.slice(-8)}
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Location</p>
-                        <p className="font-bold text-sm line-clamp-1 italic">
-                        {job.status === 'In Progress' || job.status === 'Completed' ? job.location : job.location.split(',')[0]}
+                    <div className="flex-shrink-0">
+                        <BookmarkButton jobId={job.id} className="opacity-40 hover:opacity-100 hover:scale-110 transition-all" />
+                    </div>
+                </div>
+            </CardHeader>
+
+            <CardContent className="px-10 flex-grow relative z-10">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-5">
+                        <div className="bg-surface-container-high/40 p-5 rounded-[2rem] border border-white/5 space-y-1.5 group/stat shadow-inner transition-colors hover:bg-surface-container-high/60">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] italic opacity-60">Production Bids</p>
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover/stat:scale-110 transition-transform">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <span className="font-black italic text-2xl tracking-tighter">{job.bids?.length || 0}</span>
+                            </div>
+                        </div>
+                        <div className="bg-surface-container-high/40 p-5 rounded-[2rem] border border-white/5 space-y-1.5 group/stat shadow-inner transition-colors hover:bg-surface-container-high/60">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] italic opacity-60">Target Budget</p>
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 group-hover/stat:scale-110 transition-transform">
+                                    <TrendingUp className="h-5 w-5" />
+                                </div>
+                                <span className="font-black italic text-2xl tracking-tighter text-green-700 dark:text-green-400">
+                                    ₹{job.priceEstimate ? (job.priceEstimate.min >= 1000 ? `${(job.priceEstimate.min/1000).toFixed(0)}k` : job.priceEstimate.min) : '---'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-5 bg-foreground/[0.03] p-5 rounded-[2rem] border border-white/5 transition-all group-hover:bg-foreground/[0.06] shadow-inner">
+                        <div className="p-3 bg-background rounded-2xl shadow-xl ring-1 ring-white/5">
+                            <MapPin className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] italic opacity-60">Geo-Location Node</p>
+                            <p className="font-black text-sm line-clamp-1 italic tracking-tight text-on-surface">
+                                {job.status === 'In Progress' || job.status === 'Completed' ? job.location : job.location.split(',')[0]}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+
+            <CardFooter className="p-10 pt-6 flex flex-col gap-8 relative z-10">
+                <div className="flex items-center gap-4 w-full border-t border-white/5 pt-8">
+                    <Avatar className="h-12 w-12 border-2 border-background shadow-2xl ring-2 ring-primary/20">
+                        <div className="h-full w-full bg-gradient-to-br from-primary/10 to-primary/30 flex items-center justify-center">
+                            <UserIcon className="h-6 w-6 text-primary" />
+                        </div>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] opacity-40 italic">Log Entry: {postedAt}</p>
+                        <p className="text-[11px] font-black text-amber-500/80 flex items-center gap-2 uppercase tracking-widest mt-0.5">
+                            <Clock className="h-4 w-4" /> Closure: {timeRemaining}
                         </p>
                     </div>
                 </div>
-            </div>
-        </CardContent>
 
-        <CardFooter className="p-8 pt-4 flex flex-col gap-6">
-            <div className="flex items-center gap-3 w-full border-t border-foreground/5 pt-6">
-                <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
-                    <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                        <UserIcon className="h-5 w-5 text-primary" />
-                    </div>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Posted {postedAt}</p>
-                    <p className="text-xs font-bold text-amber-500 flex items-center gap-1.5 uppercase tracking-tighter">
-                        <Clock className="h-3.5 w-3.5" /> {timeRemaining}
-                    </p>
-                </div>
-            </div>
-
-            <Button asChild className="w-full h-14 rounded-[1.5rem] font-black text-base shadow-2xl transition-all duration-500 hover:shadow-primary/20 group/btn" variant={buttonVariant}>
-                <Link href={`/dashboard/jobs/${job.id}`} className="flex items-center justify-center gap-2">
-                    {buttonText} <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
-                </Link>
-            </Button>
-        </CardFooter>
+                <Button 
+                    asChild 
+                    className={cn(
+                        "w-full h-16 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all duration-500 active:scale-95 group/btn relative overflow-hidden",
+                        isTierRestricted ? "opacity-60 cursor-not-allowed" : "hover:shadow-primary/40 shadow-primary/20"
+                    )} 
+                    variant={isTierRestricted ? 'outline' : buttonVariant}
+                >
+                    <Link href={`/dashboard/jobs/${job.id}`} className="flex items-center justify-center gap-3">
+                        <span className="relative z-10 flex items-center gap-3">
+                            {isTierRestricted ? <LockIcon className="h-5 w-5" /> : <Zap className="h-5 w-5" />}
+                            {buttonText}
+                        </span>
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-2 relative z-10" />
+                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    </Link>
+                </Button>
+            </CardFooter>
         </Card>
     </motion.div>
   );
 }
 
+// Utility local since we can't edit utils.ts easily right now if it doesn't have cn
+function cn(...inputs: any[]) {
+    return inputs.filter(Boolean).join(' ');
+}

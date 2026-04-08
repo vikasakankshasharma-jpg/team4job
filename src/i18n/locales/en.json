@@ -844,6 +844,67 @@
         },
         "jobNotFound": "Job not found."
     },
+    "reviews": {
+        "rateExperience": "Rate Your Experience",
+        "doubleBlindDesc": "Reviews are double-blind. Neither party sees the review until both are submitted.",
+        "otherPartyReviewed": "The other party has already reviewed you! Submit yours to unlock and read it.",
+        "placeholder": "Share honest feedback. It won't be visible until they review you...",
+        "submitSealed": "Submit Sealed Review",
+        "selectRatingError": "Please select a rating",
+        "submittedTitle": "Review Submitted",
+        "lockedDesc": "Your review is locked until the other party reviews you.",
+        "unlockedDesc": "Reviews are now unlocked!",
+        "youRated": "You Rated Them",
+        "theyRated": "They Rated You",
+        "secureDesc": "Your review is secure. You will see their review once they rate you (Double-Blind Protection).",
+        "theyHaveSubmitted": "They have submitted a review! (Hidden)"
+    },
+    "reputation": {
+        "title": "Professional Reputation",
+        "points": "Reputation Points",
+        "currentPoints": "{count} Points",
+        "pointsToNext": "{count} points to {tier}",
+        "monthlyGain": "Monthly Gain",
+        "gainedThisMonth": "+{count} this month",
+        "tierBronze": "Bronze",
+        "tierSilver": "Silver",
+        "tierGold": "Gold",
+        "tierPlatinum": "Platinum",
+        "howItWorks": "How it Works",
+        "howItWorksDesc": "Earn points by completing jobs (+50) and receiving high ratings (5★: +20, 4★: +10). Penalties apply for poor ratings (1★: -25) or cancellations.",
+        "benefitsTitle": "Tier Benefits",
+        "benefitVisibility": "Increased visibility in search",
+        "benefitFees": "Lower platform service fees",
+        "benefitExclusive": "Access to premium & high-budget jobs",
+        "topPerformer": "Top Performer",
+        "errors": {
+            "insufficientTier": "This job is reserved for {tier} Professionals and above. Keep working hard to level up!",
+            "insufficientTierShort": "Higher tier required"
+        },
+        "notifications": {
+            "tierUpTitle": "Congratulations! Level Up!",
+            "tierUpDesc": "You have been promoted to the {tier} Tier due to your excellent performance!"
+        }
+    },
+    "invoice": {
+        "platformReceipt": "Platform Receipt",
+        "serviceInvoice": "Service Invoice",
+        "billedTo": "Billed To",
+        "billedToClient": "Billed To (Client)",
+        "payableTo": "Payable To (Professional)",
+        "date": "Date",
+        "description": "Description",
+        "amount": "Amount",
+        "totalPaid": "Total Paid",
+        "taxableValue": "Taxable Value",
+        "igst": "IGST @ 18%",
+        "printSave": "Print / Save as PDF",
+        "verifiedTransaction": "Verified Secure Transaction",
+        "sac": "SAC",
+        "invoiceNumber": "Invoice Number",
+        "jobTitle": "Job Title",
+        "txnId": "Transaction ID"
+    },
     "myBids": {
         "title": "My Bids",
         "titleFiltered": "{status} Bids",

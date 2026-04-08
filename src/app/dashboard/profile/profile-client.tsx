@@ -694,12 +694,12 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                 {user.emergencyContacts && user.emergencyContacts.length > 0 ? (
                     <div className="grid gap-3">
                         {user.emergencyContacts.map((contact, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-white border rounded-md shadow-sm">
+                            <div key={idx} className="flex items-center justify-between p-4 bg-white/40 border border-white/5 shadow-inner rounded-[1rem] backdrop-blur-sm group/contact">
                                 <div>
-                                    <p className="font-medium text-sm">{contact.name} <span className="text-muted-foreground text-xs">({contact.relation})</span></p>
-                                    <p className="text-xs text-muted-foreground font-mono">{contact.mobile}</p>
+                                    <p className="font-black italic tracking-tighter uppercase text-sm text-red-900/80">{contact.name} <span className="text-muted-foreground/50 text-[10px] lowercase tracking-normal">({contact.relation})</span></p>
+                                    <p className="text-[10px] font-bold tracking-widest text-muted-foreground/60 font-mono mt-0.5">{contact.mobile}</p>
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="h-10 px-4 text-red-500 hover:text-red-700 hover:bg-red-50">
+                                <Button variant="ghost" size="sm" onClick={() => handleRemoveContact(contact)} className="h-10 px-6 rounded-[1rem] text-red-500 hover:text-white hover:bg-red-500 transition-all font-black text-[10px] uppercase tracking-widest">
                                     {t('remove')}
                                 </Button>
                             </div>
@@ -711,8 +711,8 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
 
                 {isAdding ? (
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-3 p-3 border rounded-md bg-white">
-                            <h4 className="text-sm font-semibold">{t('newContact')}</h4>
+                        <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-4 p-6 border border-white/5 rounded-[1.5rem] bg-white/60 backdrop-blur-md">
+                            <h4 className="text-xs font-black italic tracking-tighter uppercase mb-4 text-red-900">{t('newContact')}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <FormField name="name" control={form.control} render={({ field }) => (
                                     <FormItem><FormControl><Input placeholder={t('name')} {...field} /></FormControl><FormMessage /></FormItem>
@@ -1048,11 +1048,11 @@ export default function ProfileClient() {
                                 <motion.div 
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3 text-amber-700 dark:text-amber-400 text-sm"
+                                    className="mt-6 p-5 bg-amber-500/10 border border-amber-500/20 rounded-[1.5rem] flex items-center gap-4 text-amber-700 dark:text-amber-400 text-sm shadow-lg shadow-amber-500/5"
                                 >
-                                    <AlertTriangle className="h-5 w-5 shrink-0" />
-                                    <p>
-                                        <strong>Security Cooling Period Active:</strong> Sensitive operations (like payouts) are restricted until {format(toDate(user.restrictedUntil), "MMM d, h:mm a")} due to recent contact info changes.
+                                    <AlertTriangle className="h-6 w-6 shrink-0 animate-pulse" />
+                                    <p className="font-medium leading-relaxed">
+                                        <strong className="font-black italic tracking-tighter uppercase mr-1">Security Cooling Period Active:</strong> Sensitive operations (like payouts) are restricted until {format(toDate(user.restrictedUntil), "MMM d, h:mm a")} due to recent contact info changes.
                                     </p>
                                 </motion.div>
                             )}
@@ -1154,7 +1154,7 @@ export default function ProfileClient() {
                                 onOpenChange={setIsReputationOpen}
                             >
                                 <CollapsibleTrigger asChild>
-                                    <div className="flex items-center justify-between p-5 rounded-xl bg-accent/10 border border-accent/20 cursor-pointer hover:bg-accent/20 transition-all duration-200">
+                                    <div className="flex items-center justify-between p-6 rounded-[1.5rem] bg-accent/10 border border-accent/20 cursor-pointer hover:bg-accent/20 transition-all duration-300 shadow-inner group/header">
                                         <div className="flex items-center gap-4">
                                             {tierIcons[professionalProfile.tier]}
                                             <div>
@@ -1248,28 +1248,28 @@ export default function ProfileClient() {
                             </Collapsible>
 
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mt-2">
-                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
-                                    <div className="p-3 bg-primary/10 rounded-full mb-3">
-                                        <Star className="h-6 w-6 text-primary" />
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center mt-4">
+                                <div className="p-8 rounded-[2rem] border border-border/50 bg-background/50 shadow-inner hover:bg-background transition-colors flex flex-col items-center justify-center group/stat">
+                                    <div className="p-4 bg-primary/10 rounded-[1rem] mb-4 transition-all group-hover/stat:bg-primary group-hover/stat:text-white group-hover/stat:scale-110 shadow-lg shadow-primary/5">
+                                        <Star className="h-7 w-7 text-primary transition-colors group-hover/stat:text-white" />
                                     </div>
-                                    <p className="text-3xl font-extrabold">{professionalProfile.rating}/5.0</p>
-                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('fromReviews', { count: professionalProfile.reviews })}</p>
+                                    <p className="text-4xl font-black italic tracking-tighter uppercase">{professionalProfile.rating}/5.0</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1">{t('fromReviews', { count: professionalProfile.reviews })}</p>
                                 </div>
                                 <CompletedJobsStat />
-                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
-                                    <div className="p-3 bg-success/10 rounded-full mb-3">
-                                        <ShieldCheck className="h-6 w-6 text-success" />
+                                <div className="p-8 rounded-[2rem] border border-border/50 bg-background/50 shadow-inner hover:bg-background transition-colors flex flex-col items-center justify-center group/stat">
+                                    <div className="p-4 bg-success/10 rounded-[1rem] mb-4 transition-all group-hover/stat:bg-success group-hover/stat:text-white group-hover/stat:scale-110 shadow-lg shadow-success/5">
+                                        <ShieldCheck className="h-7 w-7 text-success transition-colors group-hover/stat:text-white" />
                                     </div>
-                                    <p className="text-2xl font-bold">{professionalProfile.verified ? "Verified" : "Pending"}</p>
-                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('verifiedStatus')}</p>
+                                    <p className="text-2xl font-black italic tracking-tighter uppercase">{professionalProfile.verified ? "Verified" : "Pending"}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1">{t('verifiedStatus')}</p>
                                 </div>
-                                <div className="p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm flex flex-col items-center justify-center">
-                                    <div className="p-3 bg-secondary rounded-full mb-3">
-                                        <Briefcase className="h-6 w-6 text-primary" />
+                                <div className="p-8 rounded-[2rem] border border-border/50 bg-background/50 shadow-inner hover:bg-background transition-colors flex flex-col items-center justify-center group/stat">
+                                    <div className="p-4 bg-secondary/10 rounded-[1rem] mb-4 transition-all group-hover/stat:bg-secondary group-hover/stat:text-primary group-hover/stat:scale-110 shadow-lg shadow-secondary/5">
+                                        <Briefcase className="h-7 w-7 text-primary" />
                                     </div>
-                                    <p className="text-3xl font-extrabold">{professionalProfile.skills.length}</p>
-                                    <p className="text-sm font-medium text-muted-foreground mt-1">{t('skillsLabel')}</p>
+                                    <p className="text-4xl font-black italic tracking-tighter uppercase">{professionalProfile.skills.length}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1">{t('skillsLabel')}</p>
                                 </div>
                             </div>
                         </CardContent>

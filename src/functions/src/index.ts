@@ -55,7 +55,7 @@ app.post("/cashfree-webhook", async (req, res) => {
 
           // Notify Professional
           if (transactionData.payeeId) {
-            await sendNotification(transactionData.payeeId, "Payment Secured!", "The Client has funded the escrow. You can start the work.", "/dashboard/my-bids");
+            await sendNotification(transactionData.payeeId, "FUNDING SECURED // ESCROW CLEARANCE", "The Client has successfully funded the project escrow. Production phase is now authorized.", "/dashboard/my-bids");
           }
         } else {
         }
@@ -181,9 +181,9 @@ export const onBidCreated = functions.firestore
 
           await sendNotification(
             clientId,
-            "New Bid on Your Job!",
-            `${ProfessionalName} placed a bid of ₹${newBid.amount} ` +
-            `on your job: "${afterData.title}"`,
+            "NEW BID PROTOCOL // ACTION REQUIRED",
+            `${ProfessionalName} has placed a bid of ₹${newBid.amount} ` +
+            `on your project: "${afterData.title.toUpperCase()}"`,
             `/dashboard/jobs/${context.params.jobId}`
           );
         } catch (e) {
@@ -261,25 +261,9 @@ export const onJobCompleted = functions.firestore
 
       // Default reputation values
       const pointsForCompletion = settings.pointsForJobCompletion || 50;
-      const pointsFor5Star = settings.pointsFor5StarRating || 20;
-      const pointsFor4Star = settings.pointsFor4StarRating || 10;
-      const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
-
       const silverTierPoints = settings.silverTierPoints || 500;
       const goldTierPoints = settings.goldTierPoints || 1000;
       const platinumTierPoints = settings.platinumTierPoints || 2000;
-
-      let pointsEarned = pointsForCompletion;
-      if (afterData.rating === 5) {
-        pointsEarned += pointsFor5Star;
-      } else if (afterData.rating === 4) {
-        pointsEarned += pointsFor4Star;
-      } else if (afterData.rating === 1) {
-        pointsEarned += penaltyFor1Star;
-      }
-
-      let finalAverageRating = 0;
-      let finalReviewCount = 0;
 
       try {
         await db.runTransaction(async (transaction) => {
@@ -289,7 +273,7 @@ export const onJobCompleted = functions.firestore
           if (!ProfessionalData || !ProfessionalData.professionalProfile) throw new Error("Professional profile data is missing.");
 
           const currentPoints = ProfessionalData.professionalProfile.points || 0;
-          const newPoints = currentPoints + pointsEarned;
+          const newPoints = currentPoints + pointsForCompletion;
 
           let newTier = ProfessionalData.professionalProfile.tier || "Bronze";
           if (newPoints >= platinumTierPoints) newTier = "Platinum";
@@ -301,48 +285,21 @@ export const onJobCompleted = functions.firestore
           const monthIndex = history.findIndex((h: { month: string; }) => h.month === monthYear);
 
           if (monthIndex > -1) {
-            history[monthIndex].points += pointsEarned;
+            history[monthIndex].points += pointsForCompletion;
           } else {
-            const lastMonth = history.length > 0 ? history[history.length - 1] : { points: 0 };
-            history.push({ month: monthYear, points: lastMonth.points + pointsEarned });
+            history.push({ month: monthYear, points: pointsForCompletion });
           }
           if (history.length > 12) history.shift();
-
-          const currentReviews = ProfessionalData.professionalProfile.reviews || 0;
-          const newReviewCount = currentReviews + 1;
-          const currentTotalRating = (ProfessionalData.professionalProfile.rating || 0) * currentReviews;
-          const newAverageRating = (currentTotalRating + afterData.rating) / newReviewCount;
-
-          finalAverageRating = newAverageRating;
-          finalReviewCount = newReviewCount;
 
           transaction.update(ProfessionalRef, {
             "professionalProfile.points": newPoints,
             "professionalProfile.tier": newTier,
-            "professionalProfile.reputationHistory": history,
-            "professionalProfile.reviews": newReviewCount,
-            "professionalProfile.rating": newAverageRating,
+            "professionalProfile.reputationHistory": history
           });
         });
 
-
         // Fire and forget notification
-        sendNotification(ProfessionalRef.id, "Reputation Updated!", `You earned ${pointsEarned} points for completing the job: "${afterData.title}"`, "/dashboard/profile").catch(() => {});
-
-        // --- Pro Professional Promotion Logic ---
-        // Re-fetch the document AFTER the transaction to get the latest data.
-        const ProfessionalDoc = await ProfessionalRef.get();
-        const ProfessionalData = ProfessionalDoc.data();
-        if (ProfessionalData && ProfessionalData.professionalProfile.tier === "Bronze") {
-          const disputesQuery = db.collection("disputes").where("parties.professionalId", "==", ProfessionalRef.id).where("status", "!=", "Resolved");
-          const disputesSnap = await disputesQuery.get();
-
-          if (finalReviewCount >= 5 && finalAverageRating >= 4.5 && disputesSnap.empty) {
-            await ProfessionalRef.update({ "professionalProfile.tier": "Silver" });
-            sendNotification(ProfessionalRef.id, "Congratulations! You're a Pro Professional!", "You have been promoted to a Pro Professional for your excellent performance.", "/dashboard/profile").catch(() => {});
-          }
-        }
-
+        sendNotification(ProfessionalRef.id, "REPUTATION ACCRUED // AWARD TIER SYNC", `You earned ${pointsForCompletion} points for the successful completion of project: "${afterData.title.toUpperCase()}"`, "/dashboard/profile").catch(() => {});
       } catch (error) {
         // Silent failure
       }
@@ -430,8 +387,8 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
     // Notify the Client that their job needs attention and present recovery options.
     sendNotification(
       job.client.id,
-      "Your Job Needs Attention",
-      `Your job "${job.title}" did not receive any bids. You can now re-post or promote it from the job page.`,
+      "RESCUE PROTOCOL // ATTENTION REQUIRED",
+      `Project "${job.title.toUpperCase()}" has not received bids. Activation of recovery procedures is recommended.`,
       `/dashboard/jobs/${doc.id}`
     ).catch(() => {});
   });

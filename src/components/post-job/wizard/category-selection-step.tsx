@@ -27,47 +27,47 @@ const IconMap: Record<string, any> = {
 export function CategorySelectionStep({ categories, onSelect }: CategorySelectionStepProps) {
     return (
         <div className="space-y-8 max-w-4xl mx-auto p-4">
-            <div className="text-center space-y-2 mb-8">
-                <h2 className="text-3xl font-bold tracking-tight">What do you need help with?</h2>
-                <p className="text-muted-foreground text-lg">
-                    Select a category to get started with our smart job assistant.
+            <div className="text-center space-y-4 mb-20">
+                <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-none">Mission Orientation</h2>
+                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-50 italic">
+                    Establish your operational sector to begin the intelligence-guided job creation.
                 </p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-10 md:grid-cols-3">
                 {categories.map((category) => {
                     const Icon = IconMap[category.icon] || Globe;
                     return (
                         <motion.div
                             key={category.id}
-                            whileHover={{ y: -8 }}
+                            whileHover={{ y: -12 }}
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                             <Card
-                                className="p-8 cursor-pointer border-0 shadow-sm hover:shadow-xl transition-all h-full flex flex-col group relative overflow-hidden bg-card z-10 active:scale-[0.98]"
+                                className="p-10 cursor-pointer border-none shadow-[0_45px_120px_rgba(0,0,0,0.2)] hover:shadow-[0_60px_150px_rgba(var(--primary),0.2)] transition-all h-full flex flex-col group relative overflow-hidden bg-card/40 backdrop-blur-3xl z-10 active:scale-[0.98] rounded-[3.5rem] ring-1 ring-white/5"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     onSelect(category.id);
                                 }}
                                 data-testid={`${category.id}-category-card`}
                             >
-                                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ArrowRight className="h-6 w-6 text-primary" />
+                                <div className="absolute top-0 right-0 p-10 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
+                                    <ArrowRight className="h-8 w-8 text-primary shadow-[0_0_20px_rgba(var(--primary),0.5)]" />
                                 </div>
                                 
-                                <div className="h-16 w-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-8 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-                                    <Icon className="h-8 w-8 text-primary" />
+                                <div className="h-24 w-24 rounded-[1.75rem] bg-primary/10 flex items-center justify-center mb-10 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-500 shadow-inner ring-1 ring-primary/20">
+                                    <Icon className="h-10 w-10 text-primary transition-transform duration-500 group-hover:rotate-6" />
                                 </div>
                                 
-                                <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors tracking-tight">
+                                <h3 className="text-3xl font-black italic uppercase tracking-tighter mb-4 group-hover:text-primary transition-colors leading-none">
                                     {category.id}
                                 </h3>
-                                <p className="text-muted-foreground text-sm leading-relaxed font-medium">
+                                <p className="text-muted-foreground text-xs leading-relaxed font-black uppercase tracking-widest opacity-60 italic mb-8">
                                     {category.description}
                                 </p>
                                 
-                                <div className="mt-8 flex items-center text-primary font-bold text-sm opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
-                                    Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                                <div className="mt-auto pt-8 flex items-center text-primary font-black italic uppercase tracking-[0.4em] text-[10px] opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0">
+                                    Operationalize <ArrowRight className="ml-3 h-4 w-4" />
                                 </div>
                             </Card>
                         </motion.div>

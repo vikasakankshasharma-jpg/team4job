@@ -1,5 +1,12 @@
 'use client';
 
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import dynamic from 'next/dynamic';
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useTranslations } from 'next-intl';
+import { HelpCircle, Loader2 } from "lucide-react";
+
 import {
   Card,
   CardContent,
@@ -8,25 +15,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+
 import { LoginForm } from "@/components/auth/login-form";
-import dynamic from 'next/dynamic';
 import { Logo } from "@/components/icons";
+import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { HelpDialog } from "@/components/help-dialog";
+import { useHelp } from "@/hooks/use-help";
+import { LanguageToggle } from "@/components/layout/language-toggle";
 
 const SignUpWrapper = dynamic(() => import('@/components/auth/signup-wrapper').then(mod => mod.SignUpWrapper), {
   loading: () => <div className="h-96 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>,
   ssr: false
 });
-
-import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import { HelpDialog } from "@/components/help-dialog";
-import { Button } from "@/components/ui/button";
-import { HelpCircle, Loader2 } from "lucide-react";
-import { useHelp } from "@/hooks/use-help";
-import { useTranslations } from 'next-intl';
-import { LanguageToggle } from "@/components/layout/language-toggle";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -76,9 +78,9 @@ export default function LoginClient() {
 
       <header className="w-full max-w-5xl flex items-center p-8 relative z-10">
         <div className="flex-1 flex justify-start">
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Logo className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{t('brandName')}</span>
+          <Link href="/" className="flex items-center gap-4 hover:opacity-80 transition-all group">
+            <Logo className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-2xl font-black italic tracking-[0.4em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{t('brandName')}</span>
           </Link>
         </div>
         <div className="flex-1 flex justify-end items-center gap-4">
@@ -95,37 +97,40 @@ export default function LoginClient() {
         </div>
       </header>
 
-      <main id="main-content" className="flex-grow flex items-center justify-center w-full relative z-10 py-12">
-        <div className="w-full max-w-[450px]">
+      <main id="main-content" className="flex-grow flex items-center justify-center w-full relative z-10 py-12 px-4">
+        <div className={cn(
+          "w-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]", 
+          activeTab === 'signup' ? "max-w-4xl" : "max-w-[450px]"
+        )}>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-2xl p-1 mb-8 border border-border/50 backdrop-blur-sm h-14">
-              <TabsTrigger value="login" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300 data-[state=inactive]:hover:bg-background/20">{t('loginTab')}</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-xl text-lg font-semibold data-[state=active]:shadow-lg data-[state=active]:bg-background data-[state=active]:text-primary transition-all duration-300 data-[state=inactive]:hover:bg-background/20">{t('signupTab')}</TabsTrigger>
-            </TabsList>
+            <div className="flex justify-center w-full mb-10">
+              <TabsList className="grid w-full max-w-[450px] grid-cols-2 bg-surface-container-low/40 rounded-[3rem] p-2 border border-white/5 backdrop-blur-3xl h-20 shadow-2xl ring-1 ring-white/5">
+                <TabsTrigger value="login" className="rounded-[2.5rem] text-[10px] font-black italic tracking-[0.3em] uppercase data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-500 data-[state=inactive]:hover:bg-white/5 h-full">{t('loginTab')}</TabsTrigger>
+                <TabsTrigger value="signup" className="rounded-[2.5rem] text-[10px] font-black italic tracking-[0.3em] uppercase data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-500 data-[state=inactive]:hover:bg-white/5 h-full">{t('signupTab')}</TabsTrigger>
+              </TabsList>
+            </div>
             
             <TabsContent value="login" className="mt-0 outline-none">
-              <Card className="border border-border/50 shadow-2xl shadow-primary/5 bg-background/60 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="pt-10 px-10">
-                  <CardTitle className="text-4xl font-black tracking-tight mb-3">{t('loginTitle')}</CardTitle>
-                  <CardDescription className="text-lg text-muted-foreground/70">
+              <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10">
+                <CardHeader className="pt-12 px-12 pb-8 border-b border-white/5 bg-white/5">
+                  <CardTitle className="text-4xl sm:text-6xl font-black italic tracking-tighter uppercase mb-4 leading-none">{t('loginTitle')}</CardTitle>
+                  <CardDescription className="text-sm font-medium opacity-60 uppercase tracking-[0.1em]">
                     {t('loginDescription')}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="px-10 pb-10">
+                <CardContent className="p-12">
                   <LoginForm />
                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="signup" className="mt-0 outline-none">
-              <Card className="border border-border/50 shadow-2xl shadow-primary/5 bg-background/60 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="pt-10 px-10">
-                  <CardTitle className="text-4xl font-black tracking-tight mb-3">{t('signupTitle')}</CardTitle>
-                  <CardDescription className="text-lg text-muted-foreground/70">
-                    {t('signupDescription')}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-10 pb-10">
+              <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden relative ring-1 ring-white/10">
+                {/* Immersive gradient orb decoration */}
+                <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[150px] pointer-events-none animate-pulse" />
+                <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[150px] pointer-events-none animate-pulse" />
+
+                <CardContent className="p-8 md:p-12 relative z-10">
                   <SignUpWrapper referredBy={searchParams?.get("ref") ?? undefined} />
                 </CardContent>
               </Card>

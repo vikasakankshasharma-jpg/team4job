@@ -20,4 +20,5 @@ export interface CreateReviewInput {
     rating: number;
     comment?: string;
     role: 'Client' | 'Professional';
+    reviewerName?: string;
 }

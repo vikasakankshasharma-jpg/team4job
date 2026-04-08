@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Award, ThumbsDown, Medal, Gem } from "lucide-react";
+import { Award, ThumbsDown, Medal, Gem, AlertOctagon, ShieldCheck } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Job, User } from "@/lib/types";
@@ -16,6 +16,8 @@ import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { getAuth } from "firebase/auth";
 import axios from "axios";
 import { acceptJobAction } from "@/app/actions/job.actions";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 import {
     AlertDialog,
@@ -202,71 +204,145 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
     const timeRemaining = job.acceptanceDeadline ? formatDistanceToNow(toDate(job.acceptanceDeadline), { addSuffix: true }) : '';
 
     return (
-        <>
-            <Card className="bg-primary/5 border-primary/20">
-                <CardHeader>
-                    <CardTitle>You&apos;ve Been Selected!</CardTitle>
-                    <CardDescription>
-                        The Client has sent you an offer for this project. Please respond before the offer expires.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-primary font-semibold mb-4">Offer expires: {timeRemaining}</p>
-                    <div className="flex gap-4">
-                        <Button onClick={handleAcceptClick} className="flex-1" disabled={isLoading} data-testid="accept-job-button">
-                            <Award className="mr-2 h-4 w-4" /> Accept Job
-                        </Button>
-                        <Button onClick={handleDecline} variant="destructive" className="flex-1" disabled={isLoading} data-testid="decline-job-button">
-                            <ThumbsDown className="mr-2 h-4 w-4" /> Decline Offer
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+        <AnimatePresence mode="wait">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="relative group"
+            >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-accent/10 blur-3xl opacity-20 -z-10" />
+                
+                <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.2)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5 relative">
+                    <div className="h-2 w-full bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x opacity-30" />
+                    
+                    <CardHeader className="p-10 pb-6 text-center sm:text-left relative z-10">
+                        <div className="flex flex-col sm:flex-row items-center gap-10">
+                            <div className="h-24 w-24 rounded-[2.5rem] bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-700 relative shrink-0">
+                                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Award className="h-12 w-12 relative z-10" />
+                            </div>
+                            <div className="flex-1">
+                                <CardTitle className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85] mb-4">
+                                    Selection Authorized
+                                </CardTitle>
+                                <CardDescription className="text-lg font-medium opacity-70 leading-relaxed max-w-xl italic">
+                                    Strategic engagement established. The initiator has prioritized your profile for this production mission.
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="p-10 pt-0 space-y-12 relative z-10">
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-6">
+                            <div className="bg-primary/5 px-8 py-4 rounded-[1.5rem] flex items-center gap-4 border border-white/5 backdrop-blur-md shadow-xl">
+                                <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.6)]" />
+                                <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary italic">
+                                    WINDOW EXPIRES {timeRemaining}
+                                </span>
+                            </div>
+                            
+                            <div className="bg-success/5 px-8 py-4 rounded-[1.5rem] flex items-center gap-4 border border-white/5 backdrop-blur-md shadow-xl">
+                                <ShieldCheck className="h-5 w-5 text-success" />
+                                <span className="text-[11px] font-black uppercase tracking-[0.4em] text-success italic">
+                                    ESCROW PROTECTION ACTIVE
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-6">
+                            <Button 
+                                onClick={handleAcceptClick} 
+                                className="h-20 flex-1 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all active:scale-95 group overflow-hidden relative" 
+                                disabled={isLoading} 
+                                data-testid="accept-job-button"
+                            >
+                                <span className="relative z-10 flex items-center justify-center italic">
+                                    Authorize Engagement
+                                </span>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                            </Button>
+                            
+                            <Button 
+                                onClick={handleDecline} 
+                                variant="ghost" 
+                                className="h-20 flex-1 sm:flex-none px-12 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all active:scale-95 italic" 
+                                disabled={isLoading} 
+                                data-testid="decline-job-button"
+                            >
+                                Decline Role
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
 
             <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
-                <AlertDialogContent className="max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full rounded-lg">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Schedule Conflict Warning</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-sm">
-                            You have {conflictingJobs.length} other active/pending jobs for this date range.
-                            Accepting this job will result in overlapping schedules.
-                            <br /><br />
-                            <strong>It is your responsibility to manage your time effectively.</strong>
-                            Failure to complete jobs on time may result in negative reputation points.
-                        </AlertDialogDescription>
-                        <div className="text-sm text-muted-foreground mt-4">
-                            <strong>Conflicting Jobs:</strong>
-                            <ul className="list-disc pl-5 mt-2">
+                <AlertDialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-[3.5rem] bg-background font-sans shadow-2xl ring-1 ring-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-background to-destructive/10 pointer-events-none" />
+                    <div className="relative p-12 space-y-12">
+                        <header className="space-y-6">
+                            <div className="inline-flex items-center justify-center h-20 w-20 rounded-[2.5rem] bg-amber-500/10 text-amber-500 shadow-inner mb-2 animate-pulse border border-amber-500/20 relative">
+                                <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full" />
+                                <AlertOctagon className="h-10 w-10 relative z-10" />
+                            </div>
+                            <AlertDialogTitle className="text-4xl font-black tracking-tighter italic uppercase text-amber-500 leading-none">
+                                Schedule Overlap Detected
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-500/60 italic leading-none">
+                                Temporal redundancy: {conflictingJobs.length} active engagements in window
+                            </AlertDialogDescription>
+                        </header>
+
+                        <div className="bg-surface-container-low/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-inner space-y-8">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground opacity-30 italic">Active Mission Overlap Log</h4>
+                            <ul className="space-y-6">
                                 {conflictingJobs.slice(0, 3).map(j => {
                                     const range = getJobRange(j);
                                     const rangeText = range ? `${range.start.toLocaleDateString()} - ${range.end.toLocaleDateString()}` : 'Unknown Date';
                                     return (
-                                        <li key={j.id}>
-                                            <span className="font-medium">{j.title}</span>
-                                            <span className="text-xs text-muted-foreground ml-2">({rangeText})</span>
+                                        <li key={j.id} className="flex items-center justify-between group">
+                                            <div className="space-y-1">
+                                                <p className="font-black italic uppercase text-sm tracking-tight group-hover:text-amber-500 transition-colors leading-none">{j.title}</p>
+                                                <p className="text-[9px] font-bold uppercase tracking-[0.3em] opacity-30 leading-none">{rangeText}</p>
+                                            </div>
+                                            <div className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.6)]" />
                                         </li>
                                     );
                                 })}
                                 {conflictingJobs.length > 3 && (
-                                    <li className="text-muted-foreground italic text-xs mt-1">
-                                        ...and {conflictingJobs.length - 3} others
+                                    <li className="text-[10px] font-black uppercase tracking-[0.3em] opacity-20 italic pt-6 border-t border-white/5 text-center">
+                                        + {conflictingJobs.length - 3} auxiliary overlaps identified
                                     </li>
                                 )}
                             </ul>
                         </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto mt-2 sm:mt-0">Cancel</AlertDialogCancel>
-                        <Button onClick={() => {
-                            setIsConflictDialogOpen(false);
-                            processAcceptance();
-                        }} className="bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto">
-                            I Understand, Proceed & Accept
-                        </Button>
-                    </AlertDialogFooter>
+
+                        <div className="p-8 rounded-[2rem] bg-destructive/5 border border-destructive/10">
+                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-destructive mb-3 leading-none italic">Protocol Risk Notice</p>
+                            <p className="text-[11px] text-destructive/70 font-bold italic uppercase tracking-tight leading-relaxed">
+                                Conflict resolution is mandatory. Failure to deliver may compromise platform trust metrics and account authorization.
+                            </p>
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-col sm:flex-row gap-6 pt-4">
+                            <AlertDialogCancel className="h-16 flex-1 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.3em] border border-white/10 bg-background/50 hover:bg-muted transition-all opacity-60">
+                                Review Timeline
+                            </AlertDialogCancel>
+                            <Button 
+                                onClick={() => {
+                                    setIsConflictDialogOpen(false);
+                                    processAcceptance();
+                                }} 
+                                className="h-16 flex-[2] rounded-[1.5rem] bg-amber-500 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-amber-500/30 hover:bg-amber-600 transition-all active:scale-95 italic"
+                            >
+                                Bypass & Authorize
+                            </Button>
+                        </AlertDialogFooter>
+                    </div>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </AnimatePresence>
     );
 }
 

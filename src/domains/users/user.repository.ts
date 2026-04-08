@@ -81,6 +81,10 @@ export class UserRepository {
                 query = query.where('professionalProfile.rating', '>=', filters.minRating);
             }
 
+            // Apply visibility boost (Tier Priority)
+            query = query.orderBy('professionalProfile.tierPriority', 'desc');
+            query = query.orderBy('professionalProfile.rating', 'desc');
+
             const snapshot = await query.limit(limit).get();
             const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 
@@ -115,6 +119,8 @@ export class UserRepository {
                 query = query.where('professionalProfile.verified', '==', true);
             }
 
+            // Apply Visibility Boost first, then memberSince
+            query = query.orderBy('professionalProfile.tierPriority', 'desc');
             query = query.orderBy('memberSince', 'desc');
 
             if (lastMemberSince) {

@@ -61,7 +61,7 @@ function FileUploader({
                         >
                             <input {...getInputProps()} />
                             <div className={cn(
-                                "w-16 h-16 rounded-2xl bg-background flex items-center justify-center mb-4 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3",
+                                "w-20 h-20 rounded-[1.5rem] bg-background/40 backdrop-blur-3xl flex items-center justify-center mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-white/10",
                                 isDragActive ? "bg-primary text-white" : "text-muted-foreground"
                             )}>
                                 <Icon className="h-8 w-8" />
@@ -84,7 +84,7 @@ function FileUploader({
                         className="relative flex items-center justify-between p-5 border-2 rounded-[2rem] bg-primary/5 border-primary/20 shadow-lg shadow-primary/5 group/card overflow-hidden"
                     >
                         <div className="flex items-center gap-4 relative z-10">
-                            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                            <div className="w-14 h-14 rounded-[1.25rem] bg-primary flex items-center justify-center text-white shadow-2xl shadow-primary/40 ring-1 ring-white/10">
                                 <CheckCircle className="h-6 w-6" />
                             </div>
                             <div className="text-sm truncate max-w-[180px] md:max-w-[300px]">
@@ -127,7 +127,7 @@ export function Documents({ data, updateData }: DocumentsProps) {
         <div className="space-y-10">
             <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-2xl">
+                    <div className="p-4 bg-primary/10 rounded-[1.25rem] ring-1 ring-primary/20 shadow-inner">
                         <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
                     <div>

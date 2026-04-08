@@ -121,7 +121,7 @@ export function SidebarNav() {
                     <motion.div 
                         whileHover={{ scale: 1.1, rotate: 5 }}
                         whileTap={{ scale: 0.9 }}
-                        className="flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30 text-lg font-semibold text-primary-foreground md:h-10 md:w-10"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-[1rem] bg-gradient-to-br from-primary to-primary/80 shadow-[0_10px_30px_rgba(var(--primary),0.3)] text-lg font-semibold text-primary-foreground md:h-10 md:w-10 ring-1 ring-white/10"
                     >
                         <Logo className="h-6 w-6" />
                     </motion.div>
@@ -140,8 +140,8 @@ export function SidebarNav() {
                                 <Link
                                     href={linkPath}
                                     className={cn(
-                                        "flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
-                                        isActive && "bg-primary/10 text-primary shadow-inner"
+                                        "flex h-12 w-12 items-center justify-center rounded-[1.25rem] text-muted-foreground transition-all duration-500 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                        isActive && "bg-primary/15 text-primary shadow-inner ring-1 ring-primary/20"
                                     )}
                                     data-tour={item.tourId}
                                     data-testid={`nav-link-${item.labelKey}`}
@@ -167,7 +167,7 @@ export function SidebarNav() {
                                     <span className="sr-only">{label}</span>
                                 </Link>
                             </TooltipTrigger>
-                            <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
+                            <TooltipContent side="right" className="font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(0,0,0,0.2)] bg-surface-container-low/80 backdrop-blur-3xl text-foreground border-none ring-1 ring-white/10 rounded-[2rem] px-6 py-3 italic">{label}{item.premium && !isSubscribed && " (Upgrade)"}</TooltipContent>
                         </Tooltip>
                     );
                 })}
@@ -177,8 +177,8 @@ export function SidebarNav() {
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/profile"
-                            className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
-                                pathname.startsWith('/dashboard/profile') && "bg-primary/10 text-primary shadow-inner"
+                            className={cn("flex h-12 w-12 items-center justify-center rounded-[1.25rem] text-muted-foreground transition-all duration-500 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                pathname.startsWith('/dashboard/profile') && "bg-primary/15 text-primary shadow-inner ring-1 ring-primary/20"
                             )}
                         >
                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -187,15 +187,15 @@ export function SidebarNav() {
                             <span className="sr-only">{tNav('profile')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{tNav('profile')}</TooltipContent>
+                    <TooltipContent side="right" className="font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(0,0,0,0.2)] bg-surface-container-low/80 backdrop-blur-3xl text-foreground border-none ring-1 ring-white/10 rounded-[2rem] px-6 py-3 italic">{tNav('profile')}</TooltipContent>
                 </Tooltip>
                 
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/settings"
-                            className={cn("flex h-12 w-12 items-center justify-center rounded-2xl text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
-                                pathname.startsWith('/dashboard/settings') && 'bg-primary/10 text-primary shadow-inner'
+                            className={cn("flex h-12 w-12 items-center justify-center rounded-[1.25rem] text-muted-foreground transition-all duration-500 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 relative group/nav",
+                                pathname.startsWith('/dashboard/settings') && 'bg-primary/15 text-primary shadow-inner ring-1 ring-primary/20'
                             )}
                         >
                             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
@@ -204,7 +204,7 @@ export function SidebarNav() {
                             <span className="sr-only">{tNav('settings')}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="font-semibold shadow-lg bg-popover text-popover-foreground border border-border rounded-xl px-4 py-2">{tNav('settings')}</TooltipContent>
+                    <TooltipContent side="right" className="font-black text-[10px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(0,0,0,0.2)] bg-surface-container-low/80 backdrop-blur-3xl text-foreground border-none ring-1 ring-white/10 rounded-[2rem] px-6 py-3 italic">{tNav('settings')}</TooltipContent>
                 </Tooltip>
 
                 <SupportDialog />

@@ -139,9 +139,16 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
                                     <div className="p-3 bg-white dark:bg-slate-950 rounded-lg border shadow-sm hover:shadow-md transition-all cursor-pointer">
                                         <div className="flex justify-between items-start mb-1">
                                             <h4 className="font-semibold text-sm line-clamp-1">{job.title}</h4>
-                                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                                                {t('matchScore', { score: rec.score })}
-                                            </Badge>
+                                            <div className="flex gap-1 items-center">
+                                                {job.minTierPriority && (user.professionalProfile?.tierPriority || 1) < job.minTierPriority && (
+                                                    <Badge variant="outline" className="bg-destructive/5 text-destructive border-destructive/20 text-[10px] flex items-center gap-1">
+                                                        <Lock className="h-3 w-3" /> {t('reputationRequired', { defaultValue: 'Restricted' })}
+                                                    </Badge>
+                                                )}
+                                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                                    {t('matchScore', { score: rec.score })}
+                                                </Badge>
+                                            </div>
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                                             {rec.reason}

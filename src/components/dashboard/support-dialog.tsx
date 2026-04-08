@@ -29,7 +29,7 @@ export function SupportDialog() {
                 <TooltipTrigger asChild>
                     <DialogTrigger asChild>
                         <button
-                            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                            className="flex h-12 w-12 items-center justify-center rounded-[1rem] text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 ring-1 ring-white/5 active:scale-95 shadow-inner"
                         >
                             <Headphones className="h-5 w-5" />
                             <span className="sr-only">{t('srOnly')}</span>
@@ -54,8 +54,8 @@ export function SupportDialog() {
                         <SupportChatbot />
                     </div>
 
-                    <div className="flex items-center gap-4 rounded-md border p-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    <div className="flex items-center gap-6 rounded-[1.5rem] border border-white/5 p-6 bg-surface-container-low/40 shadow-inner">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-primary/10 ring-1 ring-primary/20 shadow-lg shadow-primary/5">
                             <Phone className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
@@ -66,8 +66,8 @@ export function SupportDialog() {
                             9587980007
                         </a>
                     </div>
-                    <div className="flex items-center gap-4 rounded-md border p-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    <div className="flex items-center gap-6 rounded-[1.5rem] border border-white/5 p-6 bg-surface-container-low/40 shadow-inner">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-primary/10 ring-1 ring-primary/20 shadow-lg shadow-primary/5">
                             <Mail className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">

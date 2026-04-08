@@ -71,11 +71,11 @@ export function FixedQuestionStep({
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
             >
-                <Card className="p-8 shadow-2xl border-0 bg-card overflow-hidden relative">
+                <Card className="p-12 shadow-[0_45px_120px_rgba(0,0,0,0.2)] border-none bg-card/40 backdrop-blur-3xl overflow-hidden relative rounded-[3.5rem] ring-1 ring-white/5">
                     {/* Subtle Top Accent */}
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-primary/10" />
+                    <div className="absolute top-0 left-0 w-full h-2 bg-primary/20" />
                     
-                    <h2 className="text-2xl font-extrabold text-center mb-8 tracking-tight">
+                    <h2 className="text-4xl font-black italic tracking-tighter uppercase mb-10 leading-none">
                         {question.label}
                     </h2>
  
@@ -88,19 +88,19 @@ export function FixedQuestionStep({
                                     onClick={() => {
                                         onAnswer(option.value);
                                     }}
-                                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group active:scale-[0.99]
+                                    className={`w-full text-left p-6 rounded-[2rem] border-2 transition-all duration-500 flex items-center justify-between group active:scale-[0.99] font-black italic uppercase tracking-[0.2em] text-[11px]
                     ${isSelected
-                                            ? "border-primary bg-primary/5 shadow-md shadow-primary/5 ring-1 ring-primary/20"
-                                            : "border-muted bg-card hover:border-primary/30 hover:bg-accent/50 hover:shadow-sm"
+                                            ? "border-primary bg-primary/10 shadow-[0_20px_50px_rgba(var(--primary),0.2)] ring-2 ring-primary/20"
+                                            : "border-white/5 bg-background/20 hover:border-primary/40 hover:bg-background/40 shadow-inner"
                                         }
                    `}
                                     data-test-id={`question-option-${option.value}`}
                                 >
-                                    <span className={`text-base font-bold transition-colors ${isSelected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
+                                    <span className={`transition-colors ${isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}>
                                         {option.label}
                                     </span>
-                                    <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-primary bg-primary shadow-sm" : "border-muted group-hover:border-primary/50"}`}>
-                                        {isSelected && <div className="h-2 w-2 rounded-full bg-primary-foreground" />}
+                                    <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-primary bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]" : "border-white/10 group-hover:border-primary/50 shadow-inner"}`}>
+                                        {isSelected && <div className="h-3 w-3 rounded-full bg-primary-foreground shadow-sm" />}
                                     </div>
                                 </button>
                             );

@@ -28,8 +28,23 @@ export class PaymentService {
             // Generate unique order ID
             const orderId = `order_${data.jobId}_${Date.now()}`;
 
+            const { jobRepository } = await import('../jobs/job.repository');
+            const job = await jobRepository.fetchById(data.jobId);
+            
+            let commissionRate = 0.05; // Default 5% for Bronze/Missing
+            
+            if (job?.awardedProfessionalId) {
+                const professional = await userRepository.fetchById(job.awardedProfessionalId);
+                const tierPriority = professional?.professionalProfile?.tierPriority || 1;
+                
+                // Tier mapping: 4=Platinum (2%), 3=Gold (3%), 2=Silver (4%), 1=Bronze (5%)
+                if (tierPriority === 4) commissionRate = 0.02;
+                else if (tierPriority === 3) commissionRate = 0.03;
+                else if (tierPriority === 2) commissionRate = 0.04;
+            }
+
             // Calculate fees
-            const commission = data.amount * 0.05; // 5% platform commission
+            const commission = data.amount * commissionRate;
             const clientFee = data.amount * 0.02; // 2% client fee
             const totalPaidByClient = data.amount + clientFee + (data.travelTip || 0);
 

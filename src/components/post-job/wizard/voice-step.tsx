@@ -35,28 +35,28 @@ export function VoiceStep({ onAnalyze, onBack, category }: VoiceStepProps) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
             >
-                <Card className="p-8 shadow-2xl border-0 overflow-hidden relative bg-card group">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-accent" />
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
-                        <Mic className="h-32 w-32" />
+                <Card className="p-12 shadow-[0_45px_120px_rgba(0,0,0,0.2)] border-none overflow-hidden relative bg-card/40 backdrop-blur-3xl group rounded-[3.5rem] ring-1 ring-white/5">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-accent" />
+                    <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-all duration-700 pointer-events-none transform group-hover:rotate-12">
+                        <Mic className="h-48 w-48" />
                     </div>
  
-                    <h2 className="text-3xl font-extrabold tracking-tight mb-3">Speak your requirements</h2>
-                    <p className="text-muted-foreground text-lg font-medium opacity-80 mb-10 max-w-sm mx-auto">
-                        Describe what needs to be done for your <span className="text-primary font-bold">{category}</span> job. We&apos;ll use AI to generate the full post.
+                    <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none mb-4">Voice Intake</h2>
+                    <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-50 italic mb-12 max-w-sm">
+                        Describe what needs to be done for your <span className="text-primary">{category}</span> job. We&apos;ll use AI to generate the full post.
                     </p>
 
-                    <div className="flex flex-col items-center justify-center gap-8 py-10 relative">
+                    <div className="flex flex-col items-center justify-center gap-10 py-12 relative">
                         {isProcessing && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="h-32 w-32 rounded-full bg-primary/20 animate-ping opacity-75" />
-                                <div className="absolute h-40 w-40 rounded-full border-2 border-primary/30 animate-spin-slow opacity-50" />
+                                <div className="h-40 w-40 rounded-full bg-primary/20 animate-ping opacity-75" />
+                                <div className="absolute h-48 w-48 rounded-full border-2 border-primary/30 animate-spin-slow opacity-50" />
                             </div>
                         )}
                         <VoiceInput 
                             onTranscript={handleTranscript} 
                             isProcessing={isProcessing}
-                            className="h-24 w-24 shadow-xl shadow-primary/20 relative z-10"
+                            className="h-28 w-28 shadow-[0_20px_60px_rgba(var(--primary),0.3)] relative z-10 rounded-[1.5rem]"
                         />
                         
                         <div className="space-y-4 max-w-sm w-full relative z-10 text-center">
@@ -64,7 +64,7 @@ export function VoiceStep({ onAnalyze, onBack, category }: VoiceStepProps) {
                                 {isProcessing ? "Analyzing your voice..." : "Click the mic and start talking"}
                             </p>
                             {transcript && (
-                                <div className="p-4 rounded-xl bg-muted/30 border border-muted-foreground/20 italic text-sm text-foreground/90 font-medium">
+                                <div className="p-8 rounded-[1.5rem] bg-muted/30 border border-muted-foreground/20 italic text-sm text-foreground/90 font-black tracking-wide uppercase shadow-inner opacity-70">
                                     &quot;{transcript}&quot;
                                 </div>
                             )}

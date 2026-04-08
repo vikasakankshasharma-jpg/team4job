@@ -42,7 +42,7 @@ export async function clientServerView({ user }: { user: User }) {
             </Suspense>
 
             <div className="mt-8 grid gap-6 lg:grid-cols-3">
-                <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg" />}>
+                <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-[1.5rem]" />}>
                     <ClientChartsWidget userId={user.id} />
                 </Suspense>
 
@@ -69,7 +69,7 @@ export async function clientServerView({ user }: { user: User }) {
                     </CardContent>
                 </Card>
 
-                <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-lg" />}>
+                <Suspense fallback={<div className="h-64 bg-muted/20 animate-pulse rounded-[1.5rem]" />}>
                     <RecentActivityWidget userId={user.id} />
                 </Suspense>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,7 @@ export function AdvancedFilters({
     categories,
 }: AdvancedFiltersProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const t = useTranslations('dashboard');
     const [localFilters, setLocalFilters] = useState<JobFilters>(appliedFilters);
 
     const handleFilterUpdate = (key: keyof JobFilters, value: any) => {
@@ -88,18 +90,18 @@ export function AdvancedFilters({
                 <Collapsible open={isOpen} onOpenChange={setIsOpen}>
                     <div className="flex items-center justify-between">
                         <CollapsibleTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2">
-                                <Filter className="h-4 w-4" />
-                                Advanced Filters
+                            <Button variant="outline" size="sm" className="gap-2 rounded-[1rem] border-white/10 bg-surface-container-low/40 backdrop-blur-xl font-black italic tracking-tighter uppercase px-5 h-10 shadow-xl shadow-primary/5 hover:bg-surface-container-high transition-all">
+                                <Filter className="h-4 w-4 text-primary" />
+                                {t('advancedFilters')}
                                 {activeFilterCount > 0 && (
-                                    <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                                    <Badge variant="secondary" className="ml-1 h-5 px-1.5 rounded-full bg-primary text-primary-foreground font-black text-[10px]">
                                         {activeFilterCount}
                                     </Badge>
                                 )}
                                 {isOpen ? (
-                                    <ChevronUp className="h-4 w-4" />
+                                    <ChevronUp className="h-4 w-4 opacity-50" />
                                 ) : (
-                                    <ChevronDown className="h-4 w-4" />
+                                    <ChevronDown className="h-4 w-4 opacity-50" />
                                 )}
                             </Button>
                         </CollapsibleTrigger>
@@ -109,24 +111,24 @@ export function AdvancedFilters({
                                 variant="ghost"
                                 size="sm"
                                 onClick={clearAllFilters}
-                                className="text-muted-foreground hover:text-foreground"
+                                className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 hover:text-destructive hover:bg-destructive/5 transition-all rounded-full"
                             >
-                                Clear all
+                                Purge All Filters
                             </Button>
                         )}
                     </div>
 
-                    <CollapsibleContent className="mt-4">
-                        <div className="rounded-lg border bg-card p-4 space-y-4">
+                    <CollapsibleContent className="mt-6">
+                        <div className="rounded-[3.5rem] border-none bg-surface-container-low/60 backdrop-blur-3xl p-10 space-y-10 shadow-[0_40px_100px_rgba(0,0,0,0.2)] ring-1 ring-white/5 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
                             <FilterFormFields
                                 localFilters={localFilters}
                                 handleFilterUpdate={handleFilterUpdate}
                                 categories={categories}
                             />
-
-                            <div className="flex justify-end">
-                                <Button onClick={applyFilters} size="sm">
-                                    Apply Filters
+                            <div className="flex justify-end pt-8 border-t border-white/5 relative z-10">
+                                <Button onClick={applyFilters} size="sm" className="rounded-[1.5rem] font-black italic tracking-tighter uppercase px-10 h-12 shadow-2xl shadow-primary/20 hover:scale-105 transition-all">
+                                    Execute Filter Scan
                                 </Button>
                             </div>
                         </div>
@@ -148,11 +150,11 @@ export function AdvancedFilters({
                             )}
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
-                        <SheetHeader className="px-4 py-3 border-b">
-                            <SheetTitle>Filter Jobs</SheetTitle>
-                            <SheetDescription>
-                                Narrow down your job list
+                    <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0 rounded-t-[2.5rem] bg-surface-container-high/95 backdrop-blur-3xl border-t border-white/10">
+                        <SheetHeader className="px-6 py-6 border-b border-white/5">
+                            <SheetTitle className="text-xl font-black italic tracking-tighter uppercase">Filter Parameters</SheetTitle>
+                            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest opacity-50">
+                                Calibrate mission discovery parameters.
                             </SheetDescription>
                         </SheetHeader>
 

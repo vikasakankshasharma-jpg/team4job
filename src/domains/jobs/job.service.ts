@@ -240,19 +240,36 @@ export class JobService {
     /**
      * Get bids for a specific job
      */
-    async getBidsForJob(jobId: string, userId: string): Promise<any[]> { // Using any[] for now, should be Bid[]
+    async getBidsForJob(jobId: string, userId: string): Promise<any[]> {
         const job = await this.getJobById(jobId, userId);
 
         // Fetch bids from the new subcollection architecture
         const bids = await bidRepository.fetchByJob(jobId);
 
-        // Filter bids based on visibility rules
-        // Client sees all bids
-        // Admin sees all bids
-        // Professional sees only their own bid? Or open bidding platform?
-        // Assuming open bidding for now or restricted visibility
+        // Enhance bids with professional profiles
+        const enhancedBids = await Promise.all(bids.map(async (bid) => {
+            const profId = typeof bid.professional === 'string' 
+                ? bid.professional 
+                : bid.professionalId || (bid.professional as any)?.id;
+            
+            if (profId) {
+                const profUser = await userRepository.fetchById(profId);
+                if (profUser) {
+                    return {
+                        ...bid,
+                        professional: {
+                            id: profUser.id,
+                            name: profUser.name,
+                            avatarUrl: profUser.avatarUrl,
+                            professionalProfile: profUser.professionalProfile
+                        }
+                    };
+                }
+            }
+            return bid;
+        }));
 
-        return bids || [];
+        return enhancedBids || [];
     }
 
     /**

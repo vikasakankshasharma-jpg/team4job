@@ -91,96 +91,98 @@ function PersonalSettingsCard() {
     const { toast } = useToast()
     const { role } = useUser()
     const t = useTranslations('settings')
+    const tCommon = useTranslations('common')
     const [deleteConfirmation, setDeleteConfirmation] = React.useState("")
-    const isDeleteDisabled = deleteConfirmation !== "Delete"
+    const isDeleteDisabled = deleteConfirmation !== "TERMINATE"
     const isTeamMember = role === 'Admin' || role === 'Support Team';
 
     return (
-        <div className="space-y-6">
-            <Card className="border-0 shadow-md shadow-primary/5">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-bold tracking-tight">{t('appearance')}</CardTitle>
-                    <CardDescription>{t('appearanceDesc')}</CardDescription>
+        <div className="space-y-10 group/settings">
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                    <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">VISUAL INTERFACE // PROTOCOLS</CardTitle>
+                    <CardDescription className="text-sm font-black italic tracking-tighter uppercase opacity-60">Appearance & Sensory Synchronization</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-10 pt-10">
                     <ThemeSelector />
                 </CardContent>
             </Card>
-            <Card className="border-0 shadow-md shadow-primary/5">
-                <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><Bell className="h-5 w-5 text-primary" /> {t('notifications')}</CardTitle>
-                    <CardDescription>{t('notificationsDesc')}</CardDescription>
+
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                    <CardTitle className="flex items-center gap-4 text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">
+                        <Bell className="h-6 w-6" /> COMM // TELEMETRY
+                    </CardTitle>
+                    <CardDescription className="text-sm font-black italic tracking-tighter uppercase opacity-60">Status Alerts & Real-time Signal Protocol</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <Label>{t('pushNotifications')}</Label>
-                            <p className="text-xs text-muted-foreground">
+                <CardContent className="p-10 pt-10 space-y-6">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
+                        <div className="space-y-1">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('pushNotifications')}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('pushNotificationsDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="data-[state=checked]:bg-primary" />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <Label>{t('newBids')}</Label>
-                            <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
+                        <div className="space-y-1">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('newBids')}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('newBidsDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Client'} />
+                        <Switch defaultChecked disabled={role !== 'Client'} className="data-[state=checked]:bg-primary" />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <Label>{t('jobAwarded')}</Label>
-                            <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
+                        <div className="space-y-1">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('jobAwarded')}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('jobAwardedDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked disabled={role !== 'Professional'} />
+                        <Switch defaultChecked disabled={role !== 'Professional'} className="data-[state=checked]:bg-primary" />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                            <Label>{t('disputeUpdates')}</Label>
-                            <p className="text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
+                        <div className="space-y-1">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('disputeUpdates')}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('disputeUpdatesDesc')}
                             </p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked className="data-[state=checked]:bg-primary" />
                     </div>
                 </CardContent>
-                <CardFooter>
-                    <p className="text-xs text-muted-foreground">
-                        {t('moreControlsSoon')}
-                    </p>
+                <CardFooter className="px-10 pb-10 pt-0">
+                        {t('moreControlsSoon')} {"//"} FUTURE PROTOCOLS PENDING
                 </CardFooter>
             </Card>
-            <Card className="border-0 shadow-md shadow-primary/5">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-bold tracking-tight">{t('accountManagement')}</CardTitle>
-                    <CardDescription>
-                        {t('accountManagementDesc')}
-                    </CardDescription>
+
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                    <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">ACCOUNT // CORE MANAGEMENT</CardTitle>
+                    <CardDescription className="text-sm font-black italic tracking-tighter uppercase opacity-60">Credentials & Data Sovereignty</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg border p-3">
+                <CardContent className="p-10 pt-10 space-y-6">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
                         <div>
-                            <Label>{t('changePassword')}</Label>
-                            <p className="text-xs text-muted-foreground">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('changePassword')}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('changePasswordDesc')}
                             </p>
                         </div>
-                        <Button variant="outline">{t('changePassword')}</Button>
+                        <Button variant="outline" className="h-12 px-8 rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] italic border-white/10 hover:bg-primary/10 hover:text-primary transition-all">{t('changePassword')}</Button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center justify-between rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 p-6 shadow-inner ring-1 ring-white/5 group/item hover:bg-background/40 transition-all">
                         <div>
-                            <Label>{t('exportData') || 'Export My Data'}</Label>
-                            <p className="text-xs text-muted-foreground">
+                            <Label className="text-sm font-black italic tracking-tight uppercase">{t('exportData') || 'Export My Data'}</Label>
+                            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">
                                 {t('exportDataDesc') || 'Download all your personal data in JSON format.'}
                             </p>
                         </div>
                         <Button
                             variant="outline"
+                            className="h-12 px-8 rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.3em] italic border-white/10 hover:bg-primary/10 hover:text-primary transition-all"
                             onClick={async () => {
                                 try {
                                     window.location.href = '/api/user/export';
@@ -201,36 +203,38 @@ function PersonalSettingsCard() {
                         </Button>
                     </div>
                     {!isTeamMember && (
-                        <div className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 p-4 shadow-sm">
+                        <div className="flex items-center justify-between rounded-[2rem] border border-destructive/20 bg-destructive/5 p-8 shadow-2xl ring-1 ring-destructive/10">
                             <div>
-                                <Label className="text-destructive font-semibold text-base">{t('deleteAccount')}</Label>
-                                <p className="text-sm text-destructive/80 mt-1">
-                                    {t('deleteAccountDesc')}
+                                <Label className="text-destructive font-black text-lg italic tracking-tighter uppercase mb-2 block">{t('deleteAccount')}</Label>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-destructive/60">
+                                    {t('deleteAccountDesc')} {"//"} PERMANENT TERMINAL ERASE
                                 </p>
                             </div>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="destructive">{t('deleteAccount')}</Button>
+                                    <Button variant="destructive" className="h-14 px-10 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-destructive/20">{t('deleteAccount')}</Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>{t('deleteAccount')}</AlertDialogTitle>
-                                        <AlertDialogDescription>
+                                <AlertDialogContent className="rounded-[3.5rem] bg-surface-container-low backdrop-blur-3xl border-none p-12 shadow-[0_40px_100px_rgba(0,0,0,0.4)]">
+                                    <AlertDialogHeader className="space-y-6">
+                                        <AlertDialogTitle className="text-4xl font-black italic tracking-tighter uppercase text-destructive">{t('deleteAccount') || 'Termination Protocol'}</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-sm font-medium opacity-60">
                                             {t('deleteConfirmPrompt')}
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
-                                    <div className="py-2">
+                                    <div className="py-10">
                                         <Input
                                             id="delete-confirm"
-                                            placeholder={t('deleteConfirmPlaceholder')}
+                                            placeholder={t('deleteConfirmPlaceholder') || 'TERMINATE'}
                                             value={deleteConfirmation}
                                             onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                            className="h-20 rounded-[1.5rem] bg-destructive/5 text-center border-none ring-1 ring-destructive/20 font-black text-2xl text-destructive"
                                         />
                                     </div>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>Cancel</AlertDialogCancel>
+                                    <AlertDialogFooter className="gap-4">
+                                        <AlertDialogCancel onClick={() => setDeleteConfirmation("")} className="h-16 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em]">{tCommon('cancel') || 'Abort'}</AlertDialogCancel>
                                         <AlertDialogAction
                                             disabled={isDeleteDisabled}
+                                            className="h-16 px-12 rounded-[1.5rem] bg-destructive text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-destructive/40"
                                             onClick={async () => {
                                                 if (isDeleteDisabled) return;
                                                 try {
@@ -692,37 +696,43 @@ export default function SettingsClient() {
     }
 
     return (
-        <div className="grid gap-6 max-w-full overflow-x-hidden px-4">
-            <h1 className="text-3xl font-bold">{t('title')}</h1>
+        <div className="grid gap-12 max-w-full overflow-x-hidden px-4 mb-20">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8]">
+                    {t('title')}
+                </h1>
+                <div className="h-2 w-48 bg-primary rounded-full" />
+            </div>
+
             <Tabs defaultValue="monetization" className="w-full">
-                <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1.5 bg-muted/40 rounded-xl mb-6 shadow-sm">
-                    <TabsTrigger value="monetization" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
-                        <Package className="mr-2 h-4 w-4" />
+                <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-20 p-2 bg-surface-container-low/40 backdrop-blur-3xl rounded-[2rem] mb-10 shadow-2xl border border-white/5 ring-1 ring-white/5">
+                    <TabsTrigger value="monetization" className="flex-shrink-0 rounded-[1.25rem] data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] py-4 px-8 transition-all h-full italic">
+                        <Package className="mr-3 h-4 w-4" />
                         <span>{t('tabMonetization')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="reputation" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
-                        <Gem className="mr-2 h-4 w-4" />
+                    <TabsTrigger value="reputation" className="flex-shrink-0 rounded-[1.25rem] data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] py-4 px-8 transition-all h-full italic">
+                        <Gem className="mr-3 h-4 w-4" />
                         <span>{t('tabReputation')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="platform" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
-                        <Ban className="mr-2 h-4 w-4" />
+                    <TabsTrigger value="platform" className="flex-shrink-0 rounded-[1.25rem] data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] py-4 px-8 transition-all h-full italic">
+                        <Ban className="mr-3 h-4 w-4" />
                         <span>{t('tabPlatform')}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="general" className="flex-shrink-0 rounded-lg data-[state=active]:shadow-sm data-[state=active]:bg-background font-medium py-2 px-4 transition-all">
-                        <SettingsIcon className="mr-2 h-4 w-4" />
+                    <TabsTrigger value="general" className="flex-shrink-0 rounded-[1.25rem] data-[state=active]:shadow-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black text-[10px] uppercase tracking-[0.3em] py-4 px-8 transition-all h-full italic">
+                        <SettingsIcon className="mr-3 h-4 w-4" />
                         <span>{t('tabGeneral')}</span>
                     </TabsTrigger>
                 </TabsList>
-                <TabsContent value="monetization">
+                <TabsContent value="monetization" className="focus-visible:ring-0">
                     <MonetizationSettings plans={plans} coupons={coupons} onDataChange={fetchData} />
                 </TabsContent>
-                <TabsContent value="reputation">
+                <TabsContent value="reputation" className="focus-visible:ring-0">
                     <UserReputationSettings />
                 </TabsContent>
-                <TabsContent value="platform">
+                <TabsContent value="platform" className="focus-visible:ring-0">
                     <PlatformRulesSettings blacklist={blacklist} onDataChange={fetchData} />
                 </TabsContent>
-                <TabsContent value="general">
+                <TabsContent value="general" className="focus-visible:ring-0">
                     <PersonalSettingsCard />
                 </TabsContent>
             </Tabs>

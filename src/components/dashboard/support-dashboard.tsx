@@ -27,6 +27,7 @@ import { StatCard } from "@/components/dashboard/cards/stat-card";
 import { DISPUTE_STATUS } from "@/lib/constants/statuses";
 
 const DisputePerformanceCard = dynamic(() => import("@/components/dashboard/cards/dispute-performance-card").then(mod => mod.DisputePerformanceCard), { ssr: false });
+import { Badge } from "@/components/ui/badge";
 
 export function SupportTeamDashboard() {
     const { user } = useUser();
@@ -101,9 +102,12 @@ export function SupportTeamDashboard() {
 
     return (
         <>
-            <div className="flex items-center mb-8">
-                <h1 className="text-lg font-semibold md:text-2xl">{t('welcome')}</h1>
-            </div>
+            <header className="space-y-4 mb-12">
+                <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
+                    SUPPORT // ACTIVE COMMAND HUB
+                </Badge>
+                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85]">{t('welcome')}</h1>
+            </header>
             <div className="grid gap-4 md:grid-cols-2">
                 <StatCard
                     title={t('openDisputes')}
@@ -124,19 +128,19 @@ export function SupportTeamDashboard() {
                     iconColor="text-yellow-600 dark:text-yellow-300"
                 />
             </div>
-            <div className="mt-8 grid gap-8">
+            <div className="mt-12 grid gap-10">
                 {disputes.length > 0 && <DisputePerformanceCard disputes={disputes} />}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('disputeCenter')}</CardTitle>
-                        <CardDescription>
+                <Card className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 group">
+                    <CardHeader className="p-12 pb-6">
+                        <CardTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-3">{t('disputeCenter')}</CardTitle>
+                        <CardDescription className="text-lg font-medium opacity-60 leading-relaxed italic">
                             {t('disputeCenterDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild>
+                    <CardContent className="px-12 pb-12">
+                        <Button asChild className="h-16 px-12 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all italic">
                             <Link href="/dashboard/disputes">
-                                {t('goToDisputes')} <ArrowRight className="ml-2 h-4 w-4" />
+                                {t('goToDisputes')} <ArrowRight className="ml-4 h-6 w-6 transition-transform group-hover:translate-x-2" />
                             </Link>
                         </Button>
                     </CardContent>

@@ -16,8 +16,15 @@ import {
     AlertOctagon,
     Ban,
     PlusCircle,
-    Zap
+    Zap,
+    ShieldCheck,
+    Trophy,
+    KeyRound,
+    Copy,
+    ArrowRight
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import {
     Dialog,
     DialogContent,
@@ -158,162 +165,254 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
     };
 
     return (
-        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <CardHeader>
-                <CardTitle>{t('confirmCompletion')}</CardTitle>
-                <CardDescription>{t('confirmDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {/* Job Cancellation (Pre-Work only) */}
-                {isclient && job.status === 'In Progress' && !job.workStartedAt && (
-                    <div className="space-y-4">
-                        <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" onClick={onCancel}>
-                            <Ban className="mr-2 h-4 w-4" />
-                            {t('cancelJob')}
-                        </Button>
-                        <Button variant="secondary" className="w-full" onClick={onAddFunds}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            {t('addFunds')}
-                        </Button>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative group/hub"
+        >
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5 blur-3xl opacity-30 -z-10" />
+            
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5 relative">
+                <div className="h-2 w-full bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x opacity-30" />
+                
+                <CardHeader className="p-10 pb-6 text-center sm:text-left relative z-10">
+                    <div className="flex flex-col sm:flex-row items-center gap-10">
+                        <div className="h-24 w-24 rounded-[2rem] bg-primary/10 text-primary flex items-center justify-center shadow-inner group-hover/hub:scale-110 transition-transform duration-700 relative shrink-0">
+                            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover/hub:opacity-100 transition-opacity" />
+                            {job.status === 'Pending Confirmation' ? <CheckCircle2 className="h-12 w-12 relative z-10" /> : <ShieldCheck className="h-12 w-12 relative z-10" />}
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent leading-[0.85] mb-4">
+                                {job.status === 'Pending Confirmation' ? 'Review Protocol' : 'Mission Control'}
+                            </CardTitle>
+                            <CardDescription className="text-lg font-medium opacity-70 leading-relaxed max-w-xl italic">
+                                {job.status === 'Pending Confirmation' 
+                                    ? 'Validation hub active. Perform a terminal quality assessment before authorizing the final escrow release.'
+                                    : 'Production engagement management center. Monitor mission parameters and secure the collaboration handshake.'}
+                            </CardDescription>
+                        </div>
                     </div>
-                )}
+                </CardHeader>
 
-                {isclient && (job.status === 'In Progress' || job.status === 'Pending Funding') && !job.workStartedAt && job.startOtp && (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center space-y-2" data-testid="start-otp-display">
-                        <h4 className="text-sm font-semibold text-yellow-800">{t('startCode')}</h4>
-                        <p className="text-3xl font-mono font-bold tracking-wider text-yellow-900" data-testid="start-otp-value">{job.startOtp}</p>
-                        <p className="text-xs text-yellow-700">{t('startCodeHelper')}</p>
-                    </div>
-                )}
-
-                {/* Start Work OTP Input (Professional) */}
-                {!isclient && job.status === 'In Progress' && !job.workStartedAt && (
-                    <StartWorkInput job={job} user={user!} onJobUpdate={onJobUpdate} />
-                )}
-
-                {/* Work Started Indicator */}
-                {job.workStartedAt && job.status === 'In Progress' && (
-                    <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm flex items-center justify-center">
-                        <Zap className="h-4 w-4 mr-2" />
-                        {t('workStartedAt', { time: toDate(job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
-                    </div>
-                )}
-
-                {/* Completion Action (Professional) - Only after start */}
-                {!isclient && job.status === 'In Progress' && job.workStartedAt && (
-                    <div className="space-y-4">
-                        <p className="text-sm">Submit your work to get paid.</p>
-                        <Button className="w-full" onClick={() => {
-                            const el = document.getElementById('completion-section');
-                            if (el) el.scrollIntoView({ behavior: 'smooth' });
-                        }}>Submit Work for Completion</Button>
-                    </div>
-                )}
-                {job.status === 'Pending Confirmation' && (
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <Button onClick={handleApproveAndPay} disabled={isLoading} className="flex-1" data-testid="approve-release-button">
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            {t('approveAndPay')}
-                        </Button>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="secondary" className="flex-1 bg-amber-500 hover:bg-amber-600 text-white">
-                                    <RefreshCcw className="mr-2 h-4 w-4" />
-                                    {t('requestRevision')}
+                <CardContent className="p-10 pt-0 space-y-10">
+                    <AnimatePresence mode="wait">
+                        {/* Job Cancellation/Funding (Pre-Work) */}
+                        {isclient && (job.status === 'In Progress' || job.status === 'Pending Funding') && !job.workStartedAt && (
+                            <motion.div 
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex flex-col sm:flex-row gap-6"
+                            >
+                                <Button 
+                                    variant="ghost" 
+                                    className="h-20 flex-1 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] text-muted-foreground/60 hover:bg-destructive/10 hover:text-destructive transition-all italic" 
+                                    onClick={onCancel}
+                                >
+                                    Abort Mission
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{t('requestRevision')}</DialogTitle>
-                                    <DialogDescription>{t('revisionDesc')}</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>{t('revisionReason')}</Label>
-                                        <Textarea
-                                            value={disputeReason}
-                                            onChange={e => setDisputeReason(e.target.value)}
-                                            placeholder={t('revisionPlaceholder')}
-                                        />
+                                <Button 
+                                    className="h-20 flex-1 rounded-[1.5rem] bg-accent text-accent-foreground font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-1 transition-all active:scale-95 group overflow-hidden relative italic" 
+                                    onClick={onAddFunds}
+                                >
+                                    <span className="relative z-10 flex items-center justify-center">
+                                        Inject Capital
+                                    </span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                </Button>
+                            </motion.div>
+                        )}
+
+                        {/* Start Code Secure Token */}
+                        {isclient && (job.status === 'In Progress' || job.status === 'Pending Funding') && !job.workStartedAt && job.startOtp && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="p-10 bg-surface-container-low/60 backdrop-blur-md rounded-[2.5rem] border border-white/5 text-center space-y-6 group/otp relative overflow-hidden shadow-inner ring-1 ring-amber-500/10"
+                            >
+                                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover/otp:scale-150 group-hover/otp:rotate-12 transition-transform duration-700">
+                                    <KeyRound className="h-40 w-40 text-amber-500" />
+                                </div>
+                                <div className="relative z-10 space-y-6">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-amber-500/60 italic">Handshake Authorization Token</h4>
+                                    <div className="flex items-center justify-center gap-6">
+                                        <p className="text-6xl font-black font-mono tracking-[0.5em] text-amber-500 pl-[0.5em] drop-shadow-[0_0_15px_rgba(245,158,11,0.3)]" data-testid="start-otp-value">{job.startOtp}</p>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-14 w-14 rounded-2xl hover:bg-amber-500/10 text-amber-500 transition-all active:scale-90"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(job.startOtp || '');
+                                                toast({ title: "TOKEN CAPTURED", description: "Authorization handshake code copied to secure buffer." });
+                                            }}
+                                        >
+                                            <Copy className="h-6 w-6" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-[11px] text-amber-500/50 font-black uppercase tracking-[0.2em] italic">Communicate this sequence to the technical liaison to initiate work</p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Work Started Active Indicator */}
+                        {job.workStartedAt && job.status === 'In Progress' && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="p-8 bg-primary/5 text-primary rounded-[2.5rem] border border-white/5 flex items-center justify-center gap-6 group/active backdrop-blur-md shadow-xl"
+                            >
+                                <div className="relative shrink-0">
+                                    <Zap className="h-8 w-8 fill-current animate-pulse" />
+                                    <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full animate-ping" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 italic">Production Engine Active</p>
+                                    <p className="text-xl font-black italic tracking-tighter uppercase">
+                                        {t('workStartedAt', { time: toDate(job.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Approval Action Hub */}
+                        {job.status === 'Pending Confirmation' && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-6"
+                            >
+                                <div className="flex flex-col sm:flex-row gap-6">
+                                    <Button 
+                                        onClick={handleApproveAndPay} 
+                                        disabled={isLoading} 
+                                        className="h-24 flex-[2.5] rounded-[3rem] bg-success text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-success/30 hover:shadow-success/50 hover:-translate-y-1 transition-all active:scale-95 group overflow-hidden relative italic" 
+                                        data-testid="approve-release-button"
+                                    >
+                                        <span className="relative z-10 flex items-center justify-center">
+                                            {isLoading ? <Loader2 className="mr-3 h-8 w-8 animate-spin" /> : <Trophy className="mr-4 h-6 w-6" />}
+                                            Authorize Final Release
+                                        </span>
+                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                    </Button>
+
+                                    <div className="flex flex-1 gap-6">
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" className="h-24 flex-1 rounded-[2.5rem] font-black text-[11px] uppercase tracking-[0.2em] text-amber-500 border-white/5 bg-background shadow-xl hover:bg-amber-500/10 transition-all italic">
+                                                    Revision
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-[3rem] bg-background font-sans shadow-2xl leading-none">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+                                                <div className="relative p-10 space-y-8 leading-none">
+                                                    <header className="space-y-6">
+                                                        <div className="inline-flex items-center justify-center h-20 w-20 rounded-[2rem] bg-amber-500/10 text-amber-500 shadow-inner mb-2 relative">
+                                                            <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full" />
+                                                            <RefreshCcw className="h-10 w-10 relative z-10" />
+                                                        </div>
+                                                        <DialogTitle className="text-4xl font-black tracking-tighter italic uppercase text-amber-500 leading-none">
+                                                            Request Adjustment
+                                                        </DialogTitle>
+                                                        <DialogDescription className="text-lg font-medium opacity-70 italic">
+                                                            Production quality mismatch detected. Specify required corrections for the liaison.
+                                                        </DialogDescription>
+                                                    </header>
+                                                    <div className="space-y-6">
+                                                        <Label className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground ml-4 opacity-30 italic">Adjustment Parameters</Label>
+                                                        <Textarea
+                                                            value={disputeReason}
+                                                            onChange={e => setDisputeReason(e.target.value)}
+                                                            placeholder="Describe specific modifications required..."
+                                                            className="min-h-[180px] rounded-[2rem] border-none bg-muted/40 p-8 text-lg font-medium resize-none focus-visible:ring-4 focus-visible:ring-amber-500/10 transition-all placeholder:opacity-20 shadow-inner leading-relaxed"
+                                                        />
+                                                    </div>
+                                                    <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-4">
+                                                        <DialogClose asChild>
+                                                            <Button variant="ghost" className="h-14 flex-1 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-muted" onClick={() => setDisputeReason("")}>Cancel</Button>
+                                                        </DialogClose>
+                                                        <Button 
+                                                            onClick={async () => {
+                                                                if (!user) return;
+                                                                if (!disputeReason.trim()) {
+                                                                    toast({ title: t('reasonRequired'), description: t('reasonRequiredDesc'), variant: "destructive" });
+                                                                    return;
+                                                                }
+                                                                setIsLoading(true);
+                                                                try {
+                                                                    const newComment: Comment = {
+                                                                        id: `COMMENT-${Date.now()}`,
+                                                                        author: user,
+                                                                        timestamp: new Date(),
+                                                                        content: `🔴 REVISION REQUESTED: ${disputeReason}`
+                                                                    };
+                                                                    await onJobUpdate({ status: 'In Progress' as any, comments: [...(job.comments || []), newComment] });
+                                                                    toast({ title: t('revisionSuccess'), description: t('revisionSuccessDesc') });
+                                                                    setDisputeReason("");
+                                                                } catch (e) {
+                                                                    toast({ title: t('errorTitle'), description: t('genericError'), variant: "destructive" });
+                                                                } finally {
+                                                                    setIsLoading(false);
+                                                                }
+                                                            }} 
+                                                            disabled={isLoading} 
+                                                            className="h-14 flex-[2] rounded-2xl bg-amber-500 text-white font-black text-xs uppercase tracking-[0.15em] shadow-xl shadow-amber-500/20 hover:bg-amber-600"
+                                                        >
+                                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                            Submit Revision Request
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="ghost" className="h-24 w-16 px-0 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                                    <AlertOctagon className="h-7 w-7" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-[3rem] bg-background font-sans shadow-2xl leading-none">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent pointer-events-none" />
+                                                <div className="relative p-10 space-y-8 leading-none">
+                                                    <header className="space-y-6">
+                                                        <div className="inline-flex items-center justify-center h-20 w-20 rounded-[2rem] bg-destructive/10 text-destructive shadow-inner mb-2 relative">
+                                                            <div className="absolute inset-0 bg-destructive/20 blur-xl rounded-full" />
+                                                            <AlertOctagon className="h-10 w-10 relative z-10" />
+                                                        </div>
+                                                        <DialogTitle className="text-4xl font-black tracking-tighter italic uppercase text-destructive leading-none">
+                                                            Initialize Dispute
+                                                        </DialogTitle>
+                                                        <DialogDescription className="text-lg font-medium opacity-70 italic">
+                                                            Arbitration protocol engaged. This action requires official platform intervention.
+                                                        </DialogDescription>
+                                                    </header>
+                                                    <div className="space-y-6">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">{t('disputeReason')}</Label>
+                                                            <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder={t('disputePlaceholder')} className="min-h-[120px] rounded-2xl border-none bg-muted/40 p-5 font-medium focus-visible:ring-2 focus-visible:ring-destructive/20" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">{t('disputeEvidence')}</Label>
+                                                            <div className="rounded-2xl border-2 border-dashed border-muted/50 p-2">
+                                                                <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter className="mt-4">
+                                                        <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive" className="h-16 w-full rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-destructive/20 active:scale-95">
+                                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                            Submit Final Dispute
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
                                     </div>
                                 </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline" onClick={() => setDisputeReason("")}>Cancel</Button>
-                                    </DialogClose>
-                                    <Button onClick={async () => {
-                                        if (!user) return;
-                                        if (!disputeReason.trim()) {
-                                            toast({ 
-                                                title: t('reasonRequired'), 
-                                                description: t('reasonRequiredDesc'), 
-                                                variant: "destructive" 
-                                            });
-                                            return;
-                                        }
-                                        setIsLoading(true);
-                                        try {
-                                            const newComment: Comment = {
-                                                id: `COMMENT-${Date.now()}`,
-                                                author: user,
-                                                timestamp: new Date(),
-                                                content: `🔴 REVISION REQUESTED: ${disputeReason}`
-                                            };
-
-                                            await onJobUpdate({
-                                                status: 'In Progress' as any,
-                                                comments: [...(job.comments || []), newComment]
-                                            });
-
-                                            toast({ title: t('revisionSuccess'), description: t('revisionSuccessDesc') });
-                                            setDisputeReason("");
-                                        } catch (e) {
-                                            toast({ title: t('errorTitle'), description: t('genericError'), variant: "destructive" });
-                                        } finally {
-                                            setIsLoading(false);
-                                        }
-                                    }} disabled={isLoading} variant="secondary" className="bg-amber-500 hover:bg-amber-600 text-white">
-                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {t('requestRevision')}
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="destructive" className="flex-1">
-                                    <AlertOctagon className="mr-2 h-4 w-4" />
-                                    {t('raiseDispute')}
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{t('raiseDispute')}</DialogTitle>
-                                    <DialogDescription>{t('disputeDesc')}</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>{t('disputeReason')}</Label>
-                                        <Textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} placeholder={t('disputePlaceholder')} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>{t('disputeEvidence')}</Label>
-                                        <FileUpload onFilesChange={setDisputeFiles} maxFiles={5} />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button onClick={handleRaiseDispute} disabled={isLoading} variant="destructive">
-                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Submit Dispute
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }

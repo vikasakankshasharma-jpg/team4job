@@ -32,6 +32,16 @@ export class BidService {
             throw new Error('Cannot place bid on this job');
         }
 
+        // Reputation Tier Exclusivity Check
+        if (job.minTierPriority && job.minTierPriority > 1) {
+            const professional = await userRepository.fetchById(userId);
+            const professionalTierPriority = professional?.professionalProfile?.tierPriority || 1;
+            
+            if (professionalTierPriority < job.minTierPriority) {
+                throw new Error('INSUFFICIENT_REPUTATION_TIER');
+            }
+        }
+
         // Validate bid data
         const validation = bidRules.validateBidData(data, job.priceEstimate);
         if (!validation.valid) {
