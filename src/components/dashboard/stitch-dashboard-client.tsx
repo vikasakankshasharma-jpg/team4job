@@ -49,7 +49,7 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <div className="space-y-2">
                 <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
-                    {t('workspace')} // ACTIVE COMMAND HUB
+                    {t('workspace')} {/* ACTIVE COMMAND HUB */}
                 </Badge>
                 <h2 className="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85] mb-4">
                     {t('overview')}

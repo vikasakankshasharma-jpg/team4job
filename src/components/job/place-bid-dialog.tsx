@@ -189,7 +189,7 @@ export function PlaceBidDialog({
                                 <div>
                                     <DialogTitle className="text-2xl font-black tracking-tight">{t("placeBid") || "Place a Bid"}</DialogTitle>
                                     <DialogDescription className="mt-1">
-                                        Submit your proposal for <span className="font-semibold text-foreground">"{job.title}"</span>
+                                        Submit your proposal for <span className="font-semibold text-foreground">&quot;{job.title}&quot;</span>
                                     </DialogDescription>
                                 </div>
                                 {job.minTierPriority && job.minTierPriority > 1 && (

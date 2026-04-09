@@ -66,7 +66,7 @@ export function MilestoneList({ job, user, isClient, onRelease }: MilestoneListP
                                         {milestone.status}
                                     </Badge>
                                 </div>
-                                <p className="text-sm font-medium opacity-70 leading-relaxed max-w-xl italic">"{milestone.description}"</p>
+                                <p className="text-sm font-medium opacity-70 leading-relaxed max-w-xl italic">&quot;{milestone.description}&quot;</p>
                                 <div className="pt-4">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black uppercase tracking-widest opacity-30 mb-1">Terminal Value</span>

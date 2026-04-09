@@ -95,7 +95,7 @@ export function VariationOrderList({ job, user, isClient, onPayForTask, onQuoteT
                                 
                                 {task.quoteDetails && (
                                     <p className="text-sm font-medium opacity-80 leading-relaxed max-w-2xl bg-background/40 p-10 rounded-[3rem] border border-white/5 shadow-inner italic ring-1 ring-white/5">
-                                        "{task.quoteDetails}"
+                                        &quot;{task.quoteDetails}&quot;
                                     </p>
                                 )}
                             </div>

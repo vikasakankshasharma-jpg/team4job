@@ -92,7 +92,7 @@ export function MissionTourAnchor() {
             >
                 <div className="flex justify-between items-start mb-4">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">
-                        Step {currentStep + 1} of {activeTour.steps.length} // Intel Briefing
+                        Step {currentStep + 1} of {activeTour.steps.length} {/* Intel Briefing */}
                     </span>
                     <button onClick={endTour} className="text-muted-foreground hover:text-foreground transition-colors">
                         <X className="h-4 w-4" />
