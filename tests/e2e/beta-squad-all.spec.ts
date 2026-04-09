@@ -135,7 +135,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await sendOfferBtn.waitFor({ state: 'visible', timeout: 30000 });
         } catch {
             console.log('[Test] send-offer-button not visible after 30s, reloading page to fetch recent bids...');
-            await page.reload({ waitUntil: 'networkidle' });
+            await page.reload({ waitUntil: 'domcontentloaded' });
             await sendOfferBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await sendOfferBtn.click();
@@ -154,7 +154,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await acceptBtn.waitFor({ state: 'visible', timeout: 30000 });
         } catch {
             console.log('[Test] accept-job-button not visible after 30s, reloading page...');
-            await page.reload({ waitUntil: 'networkidle' });
+            await page.reload({ waitUntil: 'domcontentloaded' });
             await acceptBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await acceptBtn.click();
@@ -174,7 +174,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await proceedBtn.waitFor({ state: 'visible', timeout: 30000 });
         } catch {
             console.log('[Test] proceed-payment-button not visible after 30s, reloading page...');
-            await page.reload({ waitUntil: 'networkidle' });
+            await page.reload({ waitUntil: 'domcontentloaded' });
             await proceedBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await proceedBtn.click();
@@ -213,7 +213,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await releaseBtn.waitFor({ state: 'visible', timeout: 30000 });
         } catch {
             console.log('[Test] approve-release-button not visible after 30s, reloading page...');
-            await page.reload({ waitUntil: 'networkidle' });
+            await page.reload({ waitUntil: 'domcontentloaded' });
             await releaseBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await releaseBtn.click();

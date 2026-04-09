@@ -70,7 +70,7 @@ test.describe('Mobile Responsiveness', () => {
 
         // 5. Handle "Resume your draft?" dialog if present
         // Wait for potential draft check network request
-        await page.waitForLoadState('networkidle').catch(() => { });
+        await page.waitForLoadState('domcontentloaded').catch(() => { });
 
         const resumeDialog = page.getByRole('dialog', { name: 'Resume your draft?' });
         if (await resumeDialog.isVisible({ timeout: 15000 })) {

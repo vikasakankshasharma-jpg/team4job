@@ -18,7 +18,7 @@ test.describe('Core Web Vitals Assertions', () => {
         await page.goto('/');
 
         // Wait for the page to be fully stable
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Evaluate LCP 
         const lcp = await page.evaluate(() => {

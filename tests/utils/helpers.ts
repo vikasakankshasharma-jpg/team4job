@@ -73,7 +73,7 @@ export class AuthHelper {
 
     async waitForStability() {
         console.log('[TestHelper] Waiting for page stability (quiescence)...');
-        await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => { });
+        await this.page.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => { });
         await this.page.waitForTimeout(1000); // Buffer for hydration
     }
 
@@ -261,11 +261,11 @@ export class AuthHelper {
                     inject();
                 });
 
-                // Navigation to login - wait for networkidle to ensure hydration is complete
+                // Navigation to login - wait for domcontentloaded to ensure hydration is complete
                 // This prevents the "white screen" and input clearing issues on slow dev servers
-                await this.page.goto(ROUTES.login, { waitUntil: 'networkidle', timeout: 120000 }).catch(async (e) => {
-                    console.warn(`[AuthHelper] initial goto networkidle timed out. Forcing stop and reload...`);
-                    await this.page.reload({ waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 120000 }).catch(async (e) => {
+                    console.warn(`[AuthHelper] initial goto domcontentloaded timed out. Forcing stop and reload...`);
+                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
                 });
                 
                 await this.page.waitForTimeout(2000); // Strict buffer for Next.js hydration

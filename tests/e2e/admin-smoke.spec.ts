@@ -75,7 +75,7 @@ test.describe('Admin System Smoke Tests @smoke', () => {
             await page.goto(path);
             
             // Wait for page to stabilize after potential Fast Refresh
-            await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+            await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
             await page.waitForTimeout(2000);
 
             // Verify no redirect to login or 403

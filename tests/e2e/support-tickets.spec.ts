@@ -13,7 +13,7 @@ test.describe('Support Tickets', () => {
 
         // Navigate to dashboard where support dialog is available
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
 
         // Locate and click the support button
         const supportBtn = page.locator('button:has(svg.lucide-headphones)').first();

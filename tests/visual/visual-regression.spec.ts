@@ -13,7 +13,8 @@ test.describe('Visual Regression Tests', () => {
         const helper = new TestHelper(page);
         await page.goto('/');
         await helper.nav.injectCookieHide();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         // Take screenshot and compare
         await expect(page).toHaveScreenshot('landing-page.png', {
@@ -24,7 +25,8 @@ test.describe('Visual Regression Tests', () => {
 
     test('Login page should match baseline', async ({ page }) => {
         await page.goto('/login');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('login-page.png', {
             maxDiffPixels: 50,
@@ -33,7 +35,8 @@ test.describe('Visual Regression Tests', () => {
 
     test('Signup page should match baseline', async ({ page }) => {
         await page.goto('/signup');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('signup-page.png', {
             maxDiffPixels: 50,
@@ -44,7 +47,8 @@ test.describe('Visual Regression Tests', () => {
         const helper = new TestHelper(page);
         await helper.auth.loginAsProfessional();
         await helper.nav.injectCookieHide();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         // Wait for charts to render
         await page.waitForTimeout(2000);
@@ -59,7 +63,8 @@ test.describe('Visual Regression Tests', () => {
         const helper = new TestHelper(page);
         await helper.auth.loginAsClient();
         await helper.nav.injectCookieHide();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         // Wait for charts to render
         await page.waitForTimeout(2000);
@@ -77,7 +82,8 @@ test.describe('Visual Regression Tests', () => {
         await helper.nav.injectCookieHide();
 
         await page.goto('/dashboard/jobs');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('job-listing.png', {
             fullPage: true,
@@ -88,7 +94,8 @@ test.describe('Visual Regression Tests', () => {
     test('Mobile view - Landing page should match baseline', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
         await page.goto('/');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('landing-page-mobile.png', {
             fullPage: true,
@@ -102,7 +109,8 @@ test.describe('Visual Regression Tests', () => {
         const helper = new TestHelper(page);
         await helper.auth.loginAsProfessional();
         await helper.nav.injectCookieHide();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
         await page.waitForTimeout(2000);
 
         await expect(page).toHaveScreenshot('dashboard-mobile.png', {

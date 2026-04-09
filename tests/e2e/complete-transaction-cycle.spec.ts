@@ -282,7 +282,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             if (!isVisible) {
                 console.log('[Phase 5] OTP not visible, reloading...');
                 await page.reload();
-                await page.waitForLoadState('networkidle');
+                await page.waitForLoadState('domcontentloaded');
             }
             await expect(otpLocator).toBeVisible({ timeout: 5000 });
         }).toPass({ timeout: 30000 });
