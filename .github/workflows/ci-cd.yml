@@ -95,11 +95,11 @@ jobs:
     name: Smoke Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 25
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     
     steps:
       - name: Checkout code
@@ -148,7 +148,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          npx firebase emulators:exec "npm run test:smoke -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
+          npx firebase emulators:exec "npm run test:smoke -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=1" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -468,11 +468,11 @@ jobs:
     name: Visual Regression Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 25
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     
     steps:
       - name: Checkout code
@@ -523,7 +523,7 @@ jobs:
 
       - name: Run Visual Regression Tests
         run: |
-          npx firebase emulators:exec "npm run test:visual -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
+          npx firebase emulators:exec "npm run test:visual -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=1" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
