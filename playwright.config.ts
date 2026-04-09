@@ -114,7 +114,7 @@ export default defineConfig({
     webServer: {
         command: process.env.CI ? 'npm run start -- -p 3000' : 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
         url: 'http://127.0.0.1:3000',
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: true,
         stdout: 'pipe',
         stderr: 'pipe',
         env: getWebServerEnv(),
