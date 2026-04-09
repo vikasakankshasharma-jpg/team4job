@@ -8,6 +8,7 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
  */
 
 test.describe('Visual Regression Tests', () => {
+    test.describe.configure({ mode: 'parallel' });
     test('Landing page should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
         await page.goto('/');
