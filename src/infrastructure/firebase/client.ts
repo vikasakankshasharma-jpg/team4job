@@ -180,7 +180,9 @@ if (isClient && shouldUseClientEmulators && isNewApp) {
     const DB_HOST = '127.0.0.1';
     const STORAGE_HOST = '127.0.0.1';
 
-    try { connectAuthEmulator(auth, `http://${AUTH_HOST}`); } catch(e) {}
+    // disableWarnings: true prevents the emulator from injecting a <div> warning banner
+    // into the DOM which was crashing MutationObserver on the login page and aborting POST requests.
+    try { connectAuthEmulator(auth, `http://${AUTH_HOST}`, { disableWarnings: true }); } catch(e) {}
     try { if (db) connectFirestoreEmulator(db, DB_HOST, 8080); } catch(e) {}
     try { connectStorageEmulator(storage, STORAGE_HOST, 9199); } catch(e) {}
 }

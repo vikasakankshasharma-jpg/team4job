@@ -315,6 +315,12 @@ export class AuthHelper {
                     .or(this.page.getByLabel(/Email|Mobile/i))
                     .or(this.page.locator('input[name="identifier"]'))
                     .first();
+
+                // Extra wait to let the Auth emulator connection settle before interacting.
+                // Without this, the emulator warning banner can inject a <div> mid-flight
+                // causing a MutationObserver crash that aborts the login POST request.
+                await this.page.waitForTimeout(2000);
+
                 await emailInput.waitFor({ state: 'visible', timeout: 30000 });
                 await emailInput.scrollIntoViewIfNeeded();
 

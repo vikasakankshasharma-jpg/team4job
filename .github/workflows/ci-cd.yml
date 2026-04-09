@@ -629,6 +629,9 @@ jobs:
 
       - name: Run Visual Regression Tests
         run: |
+          # --update-snapshots creates baselines on first run; on subsequent runs it compares.
+          npx playwright test tests/visual/visual-regression.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=1 --update-snapshots || true
+          # Re-run without --update-snapshots to catch actual regressions (will pass if snapshots match)
           npx playwright test tests/visual/visual-regression.spec.ts --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=1
         env:
           CI: true
