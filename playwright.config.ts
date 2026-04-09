@@ -112,7 +112,7 @@ export default defineConfig({
 
     /* Run your local dev server before starting the tests */
     webServer: {
-        command: 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
+        command: process.env.CI ? 'npm run start -- -p 3000' : 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
         url: 'http://127.0.0.1:3000',
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
