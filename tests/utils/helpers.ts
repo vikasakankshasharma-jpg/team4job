@@ -4,8 +4,29 @@ import { TEST_ACCOUNTS, ROUTES, TIMEOUTS } from '../fixtures/test-data';
 /**
  * Authentication Helper Functions
  */
-export class AuthHelper {
-    constructor(private page: Page) { }
+    constructor(private page: Page) { 
+        this.setupDiagnostics();
+    }
+
+    private setupDiagnostics() {
+        // Only set up once per page instance to avoid duplicate listeners
+        if ((this.page as any)._diagnosticsEnabled) return;
+        (this.page as any)._diagnosticsEnabled = true;
+
+        this.page.on('console', msg => {
+            const text = msg.text();
+            const type = msg.type();
+            if (type === 'error' || text.includes('FirebaseError') || text.includes('auth/') || text.includes('firestore/')) {
+                console.log(`[Browser Console ${type.toUpperCase()}] ${text}`);
+            }
+        });
+        this.page.on('pageerror', err => {
+            console.log(`[Browser PageError] ${err.message}\n${err.stack}`);
+        });
+        this.page.on('requestfailed', request => {
+            console.log(`[Browser Request Failed] ${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
+        });
+    }
 
     private static seeded = false;
 
@@ -391,7 +412,17 @@ export class AuthHelper {
                         console.log('[AuthHelper] Stuck on redirect splash screen. Forcing navigation to /dashboard...');
                         await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' }).catch(() => {});
                     } else {
-                        throw new Error(`[AuthHelper] Login failed: No redirect and no splash screen. Current URL: ${this.page.url()}`);
+                        // Diagnostic: Check for validation messages or visible errors on the page
+                        const bodyText = await this.page.innerText('body').catch(() => 'Could not read body');
+                        const url = this.page.url();
+                        console.log(`[AuthHelper] DIAGNOSTIC: Stuck on page. URL: ${url}`);
+                        if (bodyText.length > 500) {
+                            console.log(`[AuthHelper] DIAGNOSTIC: Page text snippet: ${bodyText.substring(0, 500)}...`);
+                        } else {
+                            console.log(`[AuthHelper] DIAGNOSTIC: Page text: ${bodyText}`);
+                        }
+                        
+                        throw new Error(`[AuthHelper] Login failed: No redirect and no splash screen. Current URL: ${url}`);
                     }
                 }
 
