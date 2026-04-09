@@ -4,6 +4,7 @@ import { TEST_ACCOUNTS, ROUTES, TIMEOUTS } from '../fixtures/test-data';
 /**
  * Authentication Helper Functions
  */
+export class AuthHelper {
     constructor(private page: Page) { 
         this.setupDiagnostics();
     }
