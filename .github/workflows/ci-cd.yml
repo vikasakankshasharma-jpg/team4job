@@ -146,6 +146,9 @@ jobs:
           echo "NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_USE_EMULATOR=true" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
+          echo "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099" >> $GITHUB_ENV
+          echo "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080" >> $GITHUB_ENV
+          echo "FIREBASE_STORAGE_EMULATOR_HOST=127.0.0.1:9199" >> $GITHUB_ENV
 
       - name: Start Firebase Emulators in background
         run: |
@@ -175,6 +178,11 @@ jobs:
           DO_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           DO_FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           DO_FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          NEXT_PUBLIC_USE_EMULATOR: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
 
       - name: Wait for services to be ready
         run: |
@@ -216,6 +224,9 @@ jobs:
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
           NEXT_PUBLIC_USE_EMULATOR: true
           NEXT_PUBLIC_E2E: true
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
 
       - name: Upload smoke test report
         uses: actions/upload-artifact@v4

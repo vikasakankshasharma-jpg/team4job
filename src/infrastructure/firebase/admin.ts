@@ -35,6 +35,7 @@ export function getAdminApp(): App {
     if (useEmulator) {
         console.log('[FirebaseAdmin] INITIALIZING WITH EMULATOR CONFIG (No Cert)');
         const projectId = (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'team4job-test').trim();
+        console.log(`[FirebaseAdmin] Using Project ID: ${projectId}`);
         appInstance = initializeApp({ projectId }, 'admin-emulator');
         return appInstance;
     }
