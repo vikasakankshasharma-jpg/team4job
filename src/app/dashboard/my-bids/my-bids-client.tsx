@@ -491,9 +491,11 @@ export default function MyBidsClient() {
                               icon={Search}
                               title={t('noBidsFound')}
                               description={statusFilter !== 'All' ? t('noBidsStatus', { status: statusFilter }) : t('noBidsYet')}
-                              action={<Button asChild className="rounded-2xl font-black h-12 px-8"><Link href="/dashboard/jobs">{t('browseOpenJobs')}</Link></Button>}
                               className="border-none shadow-none"
                             />
+                            <div className="mt-4 flex justify-center">
+                              <Button asChild className="rounded-2xl font-black h-12 px-8"><Link href="/dashboard/jobs">{t('browseOpenJobs')}</Link></Button>
+                            </div>
                           </TableCell>
                         </motion.tr>
                       )}
@@ -521,9 +523,11 @@ export default function MyBidsClient() {
                         icon={Search}
                         title={t('noBidsFound')}
                         description={statusFilter !== 'All' ? t('noBidsStatus', { status: statusFilter }) : t('noBidsYet')}
-                        action={<Button asChild className="rounded-2xl font-black h-12 px-8"><Link href="/dashboard/jobs">{t('browseOpenJobs')}</Link></Button>}
                         className="border-none shadow-none"
                       />
+                      <div className="mt-4 flex justify-center">
+                        <Button asChild className="rounded-2xl font-black h-12 px-8"><Link href="/dashboard/jobs">{t('browseOpenJobs')}</Link></Button>
+                      </div>
                     </motion.div>
                   )}
                 </motion.div>

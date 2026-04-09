@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { User, PortfolioItem, Job } from "@/lib/types";
-import { toDate } from "@/lib/utils";
+import { toDate, cn } from "@/lib/utils";
 import {
     Star,
     ShieldCheck,

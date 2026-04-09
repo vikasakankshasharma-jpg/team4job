@@ -52,6 +52,7 @@ import dynamic from "next/dynamic";
 import { useTranslations } from 'next-intl';
 import { toDate } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const SaveSearchDialog = dynamic(
   () => import("@/components/jobs/save-search-dialog").then((mod) => mod.SaveSearchDialog),

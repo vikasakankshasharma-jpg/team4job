@@ -20,7 +20,17 @@ export async function getUserIdFromSession() {
         ]);
         return decodedToken.uid;
     } catch (error: any) {
-        console.error(`[AuthServer] Error verifying token: ${error.message}`);
+        const isSessionError = 
+            error.code === 'auth/id-token-revoked' || 
+            error.code === 'auth/id-token-expired' ||
+            error.message?.includes('revoked') ||
+            error.message?.includes('expired');
+
+        if (isSessionError) {
+            console.warn(`[AuthServer] Session invalid: ${error.message}`);
+        } else {
+            console.error(`[AuthServer] Error verifying token: ${error.message}`);
+        }
         return null;
     }
 }

@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, MapPin, Building2 } from "lucide-react";
+import { User, MapPin, Building2, Store } from "lucide-react";
 
 interface BasicInfoProps {
     data: any;
