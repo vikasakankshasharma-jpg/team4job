@@ -19,6 +19,7 @@ export function getAdminApp(): App {
 
     const isE2E = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
     const useEmulator = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || 
+                       process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
                        (process.env.FIREBASE_AUTH_EMULATOR_HOST !== undefined && process.env.FIREBASE_AUTH_EMULATOR_HOST !== '');
 
 
