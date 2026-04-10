@@ -1731,7 +1731,12 @@ export class TestHelper {
                         injectStyles();
                         hideFeedback();
                     });
-                    observer.observe(document.documentElement, { childList: true, subtree: true });
+                    // Guard: document.documentElement can be null during very early navigation
+                    // which causes "parameter 1 is not of type 'Node'" crash and aborts POST requests.
+                    const rootNode = document.documentElement || document.body;
+                    if (rootNode) {
+                        observer.observe(rootNode, { childList: true, subtree: true });
+                    }
                 }
             }).catch(e => console.warn('[TestHelper] addInitScript failed (potentially CSP blocked):', e.message));
         }
