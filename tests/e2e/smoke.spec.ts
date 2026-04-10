@@ -7,7 +7,7 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
  */
 
 test.describe('Smoke Tests @smoke', () => {
-    test.describe.configure({ mode: 'parallel' });
+    // Serial mode: tests share a single Firebase emulator instance.
     test('User can login as Client', async ({ page }) => {
         const helper = new TestHelper(page);
 

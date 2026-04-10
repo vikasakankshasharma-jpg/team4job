@@ -8,7 +8,7 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
  */
 
 test.describe('Visual Regression Tests', () => {
-    test.describe.configure({ mode: 'parallel' });
+    // Serial mode: login tests share the Firebase emulator — parallel runs cause auth race conditions.
     test('Landing page should match baseline', async ({ page }) => {
         const helper = new TestHelper(page);
         await page.goto('/');

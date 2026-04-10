@@ -66,13 +66,15 @@ export default defineConfig({
     testMatch: '**/*.spec.ts',
 
     /* Beta Squad tests share a single mutable Firebase emulator — run serially */
+    /* Each shard runs sequentially to prevent emulator state collisions */
     fullyParallel: false,
 
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
     /* Retry flaky tests caused by emulator timing (CI: 2, local: 1) */
-    retries: process.env.CI ? 2 : 1,
+    /* In CI, retry once only — 2 retries × 180s timeout = massive queue buildup */
+    retries: process.env.CI ? 1 : 1,
 
     /* Single worker to prevent emulator state collisions */
     workers: 1,
@@ -95,11 +97,11 @@ export default defineConfig({
         /* Video on failure */
         video: 'retain-on-failure',
 
-        /* Maximum time each action can take */
-        actionTimeout: 180 * 1000,
+        /* Maximum time each action can take — keep under CI job timeout of 60min */
+        actionTimeout: 60 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 180 * 1000,
+        navigationTimeout: 90 * 1000,
     },
 
     /* Configure projects for major browsers */
@@ -110,11 +112,16 @@ export default defineConfig({
         },
     ],
 
-    /* Run your local dev server before starting the tests */
+    /* Run your local dev server before starting the tests.
+     * CRITICAL: reuseExistingServer MUST be true in CI because the workflow
+     * manually starts the production server before Playwright runs.
+     * Setting it to false causes Playwright to attempt to start a second
+     * process on port 3000, which fails with EADDRINUSE.
+     */
     webServer: {
         command: process.env.CI ? 'npm run start -- -p 3000' : 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
         url: 'http://127.0.0.1:3000',
-        reuseExistingServer: true,
+        reuseExistingServer: true, // Always reuse — CI starts server manually
         stdout: 'pipe',
         stderr: 'pipe',
         env: getWebServerEnv(),
@@ -122,7 +129,13 @@ export default defineConfig({
     },
 
     /* Global timeout for each test */
-    timeout: 2100000, // 35 mins per test (Beta Squad tests are complex and EXTREMELY slow in local dev)
+    /* Per-test timeout:
+     * - CI job timeout is 60 min total for the shard
+     * - With retries=1, each test can run at most 2x
+     * - Keep at 8 min per test so a shard with 3-4 tests stays well within 60 min
+     * - @slow tests (beta-squad, milestones) are excluded from the regression shard
+     */
+    timeout: process.env.CI ? 8 * 60 * 1000 : 35 * 60 * 1000,
 
     /* Expect timeout */
     expect: {
