@@ -150,7 +150,7 @@ const TEST_USERS = [
     },
     {
         name: 'Vikram Singh',
-        email: 'vikasakankshasharma@gmail.com',
+        email: 'vikasakankshasharma_v3@gmail.com',
         password: getAdminPassword(),
         roles: ['Admin'],
         mobile: '9772699395',
