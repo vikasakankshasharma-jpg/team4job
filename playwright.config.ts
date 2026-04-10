@@ -71,8 +71,8 @@ export default defineConfig({
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
-    /* Retry flaky tests caused by emulator timing (CI: 2, local: 3) */
-    retries: 3,
+    /* Retry flaky tests caused by emulator timing (CI: 2, local: 1) */
+    retries: process.env.CI ? 2 : 1,
 
     /* Single worker to prevent emulator state collisions */
     workers: 1,
@@ -118,7 +118,7 @@ export default defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
         env: getWebServerEnv(),
-        timeout: 600000,
+        timeout: process.env.CI ? 120000 : 600000,
     },
 
     /* Global timeout for each test */
