@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('audit post job wizard', async ({ page }) => {
   // 1. Login
-  await page.goto('https://www.team4job.com/login');
+  await page.goto('/login');
   await page.fill('input[type="email"]', 'rajesh.client@team4job.com');
   await page.fill('input[type="password"]', 'TestUser_2026!');
   await page.click('button[type="submit"]');
@@ -11,7 +11,7 @@ test('audit post job wizard', async ({ page }) => {
   await page.waitForURL('**/dashboard**');
   
   // 2. Go to Post Job
-  await page.goto('https://www.team4job.com/dashboard/post-job');
+  await page.goto('/dashboard/post-job');
   await page.waitForSelector('text=Job Details');
   await page.screenshot({ path: 'audit_wizard_step1.png' });
 

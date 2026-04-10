@@ -53,7 +53,7 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic leading-relaxed max-w-sm">Join the growing community of professionals and clients building a better, more secure future through high-authority signal verification.</p>
                  </div>
                  <div>
-                     <h4 className="text-[10px] font-black italic uppercase tracking-[0.4em] text-primary mb-6">Platform</h4>
+                     <h4 className="text-[10px] font-black italic uppercase tracking-[0.4em] text-blue-600 dark:text-blue-400 mb-6">Platform</h4>
                      <ul className="space-y-4 text-[10px] font-black uppercase tracking-[0.2em] opacity-60 italic">
                          <li><Link href="/login?tab=signup" className="hover:text-primary transition-colors hover:translate-x-1 inline-block">Post a Job</Link></li>
                          <li><Link href="/jobs" className="hover:text-primary transition-colors hover:translate-x-1 inline-block">Browse Jobs</Link></li>
@@ -61,7 +61,7 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
                      </ul>
                  </div>
                  <div>
-                     <h4 className="text-[10px] font-black italic uppercase tracking-[0.4em] text-primary mb-6">Company</h4>
+                     <h4 className="text-[10px] font-black italic uppercase tracking-[0.4em] text-blue-600 dark:text-blue-400 mb-6">Company</h4>
                      <ul className="space-y-4 text-[10px] font-black uppercase tracking-[0.2em] opacity-60 italic">
                          <li><Link href="/terms-of-service" className="hover:text-primary transition-colors hover:translate-x-1 inline-block">{t('footerTerms')}</Link></li>
                          <li><Link href="/privacy-policy" className="hover:text-primary transition-colors hover:translate-x-1 inline-block">{t('footerPrivacy')}</Link></li>
@@ -69,7 +69,7 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
                      </ul>
                  </div>
              </div>
-             <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] opacity-20 italic gap-4">
+             <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] text-foreground/50 italic gap-4">
                  <p>&copy; {new Date().getFullYear()} {t('footerRights')}</p>
              </div>
         </div>
