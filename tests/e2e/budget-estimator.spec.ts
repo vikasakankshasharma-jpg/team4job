@@ -143,7 +143,7 @@ test.describe('Budget Estimator & Templates', () => {
         await page.waitForTimeout(500);
 
         await page.locator('[data-testid="job-category-select"]').click();
-        await page.locator('[role="option"]').filter({ hasText: /New Installation/i }).click();
+        await page.locator('[role="option"]').filter({ hasText: /Security/i }).click();
         await page.waitForTimeout(500);
 
         const descInput = page.locator('[data-testid="job-description-input"]');

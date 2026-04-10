@@ -26,7 +26,7 @@ test.describe('Secured Variation Orders', () => {
         await helper.form.fillInput('Job Title', 'Variation Test Job ' + Date.now());
         await page.locator('textarea[name="jobDescription"]').fill('A simple job for testing variations. Must be at least 50 chars long to pass validation.');
         await helper.form.fillPincodeAndSelectPO('110001'); // Delhi
-        await helper.form.selectDropdown('Category', 'New Installation'); // Valid category
+        await helper.form.selectDropdown('Category', 'Security'); // Valid category
         await page.waitForTimeout(500);
 
         // Use simpler labels and clear first

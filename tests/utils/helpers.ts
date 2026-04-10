@@ -818,7 +818,7 @@ export class FormHelper {
         try {
             const byRole = this.page.getByRole('button', { name: optionValue, exact: true });
             await byRole.first().waitFor({ state: 'visible', timeout: 8000 });
-            await byRole.first().dispatchEvent('click');
+            await byRole.first().click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via getByRole exact: ${optionValue}`);
             return;
@@ -828,7 +828,7 @@ export class FormHelper {
         try {
             const byText = this.page.locator(`button:has-text("${optionValue}")`).first();
             await byText.waitFor({ state: 'visible', timeout: 8000 });
-            await byText.dispatchEvent('click');
+            await byText.click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via has-text: ${optionValue}`);
             return;
@@ -840,7 +840,7 @@ export class FormHelper {
             const cleanVal = optionValue.replace(/[^a-z0-9]/gi, '');
             const byId = this.page.locator(`[data-test-id*="${slug}"], [data-test-id*="${cleanVal}"]`).first();
             await byId.waitFor({ state: 'visible', timeout: 8000 });
-            await byId.dispatchEvent('click');
+            await byId.click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via data-test-id: ${optionValue}`);
             return;
