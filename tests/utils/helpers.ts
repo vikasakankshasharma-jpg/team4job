@@ -45,7 +45,7 @@ export class AuthHelper {
             return;
         }
 
-        const maxRetries = 3;
+        const maxRetries = 5;
         let attempts = 0;
 
         while (attempts < maxRetries) {
@@ -57,7 +57,7 @@ export class AuthHelper {
                 const baseURL = process.env.BASE_URL || 'http://127.0.0.1:3000';
                 const targetURL = baseURL.replace('localhost', '127.0.0.1') + '/api/e2e/seed-users';
                 
-                const response = await this.page.request.post(targetURL);
+                const response = await this.page.request.post(targetURL, { timeout: 60000 });
 
                 if (response.ok()) {
                     AuthHelper.seeded = true;

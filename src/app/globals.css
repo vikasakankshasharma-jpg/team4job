@@ -205,3 +205,13 @@
 [data-nextjs-bottom-right-toast] {
   display: none !important;
 }
+
+/* Hide Firebase Emulator UI warning banner to prevent MutationObserver crashes in CI */
+.firebase-emulator-warning,
+#__firebase_emulator_warning,
+div[style*="pointer-events: none; position: fixed; bottom: 0px; box-sizing: border-box;"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

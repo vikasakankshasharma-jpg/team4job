@@ -370,7 +370,7 @@ jobs:
           done
           echo "Seeding test users via API..."
           SEED_SUCCESS=false
-          for i in $(seq 1 5); do
+          for i in $(seq 1 12); do
             STATUS=$(curl -s -o /tmp/seed_response.json -w "%{http_code}" -X POST http://127.0.0.1:3000/api/e2e/seed-users)
             if [ "$STATUS" = "200" ]; then
               echo "Seeding successful!"
@@ -525,7 +525,7 @@ jobs:
             sleep 5
           done
           SEED_SUCCESS=false
-          for i in $(seq 1 5); do
+          for i in $(seq 1 12); do
             STATUS=$(curl -s -o /tmp/seed_response.json -w "%{http_code}" -X POST http://127.0.0.1:3000/api/e2e/seed-users)
             if [ "$STATUS" = "200" ]; then SEED_SUCCESS=true; break; fi
             echo "Seed attempt $i failed (status $STATUS)"; cat /tmp/seed_response.json || true; sleep 10
