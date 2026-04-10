@@ -47,7 +47,7 @@ test.describe('Smoke Tests @smoke', () => {
         await expect(page).toHaveURL(/\/wizard/);
         
         // Verify wizard starts with category selection
-        await expect(page.getByText('What do you need help with?')).toBeVisible();
+        await expect(page.getByText('Mission Orientation')).toBeVisible();
         await expect(page.locator('[data-testid*="-category-card"]').first()).toBeVisible();
     });
 
