@@ -244,6 +244,51 @@ const TEST_USERS = [
         },
         pincodes: { residential: '560035' },
     },
+    // ── PRIMARY E2E ACCOUNTS ──────────────────────────────────────────────────
+    // These are the accounts used by TEST_ACCOUNTS.professional and .client
+    // in tests/fixtures/test-data.ts. They MUST be seeded for any login to work.
+    {
+        name: 'Rajesh Pro Installer',
+        email: 'installer_pro_v3@team4job.com',
+        password: getTestPassword(),
+        roles: ['Professional'],
+        mobile: '9100000011',
+        status: 'active',
+        professionalProfile: {
+            verified: true,
+            tier: 'Silver',
+            rating: 4.7,
+            reviews: 12,
+            points: 500,
+            skills: ['Security & Surveillance', 'CCTV Installation', 'Wiring'],
+            reputationHistory: [],
+        },
+        address: {
+            house: '10, Tech Enclave',
+            street: 'Koramangala 5th Block',
+            landmark: 'Near Forum Mall',
+            cityPincode: '560095',
+        },
+        pincodes: { residential: '560095' },
+        aadharLast4: '1234',
+        panNumber: 'PRSTU1234V',
+        isPanVerified: true,
+    },
+    {
+        name: 'Priya VIP Giver',
+        email: 'giver_vip_v3@team4job.com',
+        password: getTestPassword(),
+        roles: ['Client'],
+        mobile: '9100000012',
+        status: 'active',
+        address: {
+            house: '5, Green Valley',
+            street: 'Indiranagar 100ft Road',
+            landmark: 'Near ETA Mall',
+            cityPincode: '560038',
+        },
+        pincodes: { residential: '560038' },
+    },
 ];
 
 export async function POST(req: NextRequest) {
