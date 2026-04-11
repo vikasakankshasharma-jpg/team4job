@@ -119,7 +119,9 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
-
+        
+        // Wait for bids to load via Firestore real-time subscription
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
         // Wait for either the toast or the page state to reflect the offer was sent
         await Promise.race([

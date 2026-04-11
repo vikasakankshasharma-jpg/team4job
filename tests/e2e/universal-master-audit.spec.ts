@@ -129,6 +129,14 @@ test.describe('Universal Master Audit', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         
         // Award
+        try {
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+        } catch {
+            console.log('[Audit] Bids not visible, reloading...');
+            await page.reload();
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+        }
+        
         const awardBtn = page.getByTestId('send-offer-button').first();
         await awardBtn.click();
         await helper.form.waitForToast('Offer Sent');

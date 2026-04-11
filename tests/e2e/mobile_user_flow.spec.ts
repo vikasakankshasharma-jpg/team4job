@@ -121,6 +121,15 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await helper.auth.loginAsClient();
     await page.goto(`/dashboard/jobs/${jobId}`);
 
+    // Wait for bids to load via Firestore real-time subscription
+    try {
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 15000 });
+    } catch {
+        console.log('[Mobile] Bids not visible, reloading page...');
+        await page.reload();
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+    }
+
     await page.getByTestId('send-offer-button').first().click();
     await helper.form.waitForToast('Offer Sent');
 

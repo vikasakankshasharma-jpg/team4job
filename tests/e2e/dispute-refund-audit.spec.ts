@@ -47,7 +47,23 @@ test.describe('Dispute & Refund Master Audit', () => {
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Job Created: ${jobId}`);
 
-        // Award to Amit Pro
+        // Professional Bidding (Amit Pro)
+        await helper.auth.logout();
+        await helper.auth.loginAsProfessional();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await page.getByTestId('place-bid-button').click();
+        await page.locator('input[name="amount"]').fill('5000');
+        await page.fill('textarea[name="coverLetter"]', 'I will do a "great" job.');
+        await page.getByRole('button', { name: /Place Bid/i }).click();
+        await helper.form.waitForToast('Bid Placed!');
+
+        // Client Awards Offer
+        await helper.auth.logout();
+        await helper.auth.loginAsClient();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        
+        // Wait for bids to load via Firestore real-time subscription
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
         await helper.form.waitForToast('Offer Sent');
         await page.waitForTimeout(2000); // Wait for background triggers

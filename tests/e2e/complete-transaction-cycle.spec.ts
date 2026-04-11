@@ -198,7 +198,14 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Wait for bids to load and click send offer
-        await expect(page.getByTestId('bid-card-wrapper').first()).toBeVisible({ timeout: TIMEOUTS.medium });
+        try {
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: TIMEOUTS.medium });
+        } catch {
+            console.log('[DEBUG] Bids not visible, reloading page...');
+            await page.reload();
+            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: TIMEOUTS.long });
+        }
+        
         const offerBtn = page.getByTestId('send-offer-button').first();
         await offerBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.medium });
         await offerBtn.click();

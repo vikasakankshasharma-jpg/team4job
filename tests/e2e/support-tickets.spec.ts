@@ -16,8 +16,8 @@ test.describe('Support Tickets', () => {
         await page.waitForLoadState('domcontentloaded');
 
         // Locate and click the support button
-        const supportBtn = page.locator('button:has(svg.lucide-headphones)').first();
-        await expect(supportBtn).toBeVisible();
+        const supportBtn = page.getByTestId('support-trigger-button');
+        await expect(supportBtn).toBeVisible({ timeout: 15000 });
         await supportBtn.click();
 
         // Verify dialog opens

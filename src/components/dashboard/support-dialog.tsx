@@ -29,6 +29,7 @@ export function SupportDialog() {
                 <TooltipTrigger asChild>
                     <DialogTrigger asChild>
                         <button
+                            data-testid="support-trigger-button"
                             className="flex h-12 w-12 items-center justify-center rounded-[1rem] text-muted-foreground transition-all duration-300 hover:text-primary hover:bg-primary/5 md:h-10 md:w-10 ring-1 ring-white/5 active:scale-95 shadow-inner"
                         >
                             <Headphones className="h-5 w-5" />
