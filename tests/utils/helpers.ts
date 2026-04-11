@@ -290,7 +290,7 @@ export class AuthHelper {
                     await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
                 });
                 
-                await this.page.waitForTimeout(2000); // Strict buffer for Next.js hydration
+                await this.page.waitForTimeout(5000); // Increased buffer for Next.js hydration and stability
                 
                 // Set cookie via Playwright API as well for redundancy
                 await this.page.context().addCookies([{
