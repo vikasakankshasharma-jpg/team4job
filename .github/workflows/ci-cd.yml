@@ -238,18 +238,20 @@ jobs:
             test-results/
           retention-days: 7
 
-  # Job 4: Full E2E Tests
+  # Job 4: Full E2E Tests — 7 Explicit Load-Balanced Groups
+  # Groups are assigned by weight (lines/10 + tests*5) so each CI job
+  # finishes within the 60-minute timeout without server crashes.
   e2e-tests:
-    name: Full E2E Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    name: Full E2E Tests (Group ${{ matrix.group }}/7)
     runs-on: ubuntu-latest
     needs: smoke-tests
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        # 6 shards handle ~30 regression tests efficiently on GitHub runners.
-        # 15 shards caused most shards to be empty (0 tests), wasting runner time.
-        shard: [1, 2, 3, 4, 5, 6]
+        # 7 explicit groups — each maps to a specific set of test files below.
+        # Distribution is weight-balanced so no single group exceeds ~170 units.
+        group: [1, 2, 3, 4, 5, 6, 7]
     
     steps:
       - name: Checkout code
@@ -382,14 +384,51 @@ jobs:
             sleep 10
           done
           if [ "$SEED_SUCCESS" = "false" ]; then
-            echo "ERROR: Failed to seed test users after 5 attempts. Aborting shard."
+            echo "ERROR: Failed to seed test users after 12 attempts. Aborting shard."
             cat /tmp/seed_response.json || true
             exit 1
           fi
 
-      - name: Run Regression Suite
+      - name: Resolve test files for this group
+        # Each group maps to a balanced set of spec files.
+        # Weights: lines/10 + tests*5. Target ~130-170 per group.
+        # Group 1 (~147): edge-cases alone — it has 20 tests and needs its own slot.
+        # Group 2 (~146): beta-squad-1 (93) + beta-squad-5 (53)
+        # Group 3 (~130): beta-squad-3 (91) + dashboard-financials (18) + role-switching (21)
+        # Group 4 (~157): beta-squad-4 (81) + beta-squad-2 (76)
+        # Group 5 (~140): complete-transaction-cycle (64) + universal-master-audit (58) + data-fetch-audit (46) [minus edge/smoke]
+        # Group 6 (~168): dispute-refund (43) + admin-smoke (36) + ui-audit-all-roles (35) + beta-squad-case-1 (28) + budget-estimator (27)
+        # Group 7 (~130): All remaining lighter files
         run: |
-          npx playwright test tests/e2e --grep-invert '@smoke|@edge|@slow' --shard=${{ matrix.shard }}/${{ strategy.job-total }} --workers=1 --reporter=list,html
+          case "${{ matrix.group }}" in
+            1)
+              TEST_FILES="tests/e2e/edge-cases.spec.ts"
+              ;;
+            2)
+              TEST_FILES="tests/e2e/beta-squad-batch-1.spec.ts tests/e2e/beta-squad-batch-5.spec.ts"
+              ;;
+            3)
+              TEST_FILES="tests/e2e/beta-squad-batch-3.spec.ts tests/e2e/dashboard-financials.spec.ts tests/e2e/role-switching.spec.ts"
+              ;;
+            4)
+              TEST_FILES="tests/e2e/beta-squad-batch-4.spec.ts tests/e2e/beta-squad-batch-2.spec.ts"
+              ;;
+            5)
+              TEST_FILES="tests/e2e/complete-transaction-cycle.spec.ts tests/e2e/universal-master-audit.spec.ts tests/e2e/data-fetch-audit.spec.ts"
+              ;;
+            6)
+              TEST_FILES="tests/e2e/dispute-refund-audit.spec.ts tests/e2e/admin-smoke.spec.ts tests/e2e/ui-audit-all-roles.spec.ts tests/e2e/beta-squad-case-1.spec.ts tests/e2e/budget-estimator.spec.ts"
+              ;;
+            7)
+              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts"
+              ;;
+          esac
+          echo "TEST_FILES=$TEST_FILES" >> $GITHUB_ENV
+          echo "Group ${{ matrix.group }} will run: $TEST_FILES"
+
+      - name: Run E2E Tests for Group ${{ matrix.group }}
+        run: |
+          npx playwright test $TEST_FILES --workers=1 --reporter=list,html
         env:
           CI: true
           BASE_URL: http://127.0.0.1:3000
@@ -413,11 +452,12 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: e2e-test-report-${{ matrix.shard }}
+          name: e2e-test-report-${{ matrix.group }}
           path: |
             playwright-report/
             test-results/
           retention-days: 7
+
 
   # Job 5: Edge Case Tests
   edge-case-tests:
