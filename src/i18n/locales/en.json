@@ -1,6 +1,7 @@
 {
     "common": {
         "na": "N/A",
+        "bidding": "Bidding",
         "postJob": "Post Job",
         "dashboard": "Dashboard",
         "next": "Next",
@@ -780,6 +781,7 @@
         "closeBidding": "Close Bidding",
         "placeBid": "Place Bid",
         "bidPlaced": "Bid Placed",
+        "awardJob": "Award Job",
         "requestReschedule": "Request Reschedule",
         "offerSentMsg": "You have sent an offer. Waiting for professional to accept.",
         "retractOffer": "Retract Offer",
