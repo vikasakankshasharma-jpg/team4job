@@ -1,6 +1,7 @@
 {
     "common": {
         "na": "N/A",
+        "bidding": "Bidding",
         "postJob": "Post Job",
         "dashboard": "Dashboard",
         "next": "आगे",
@@ -779,6 +780,7 @@
         "closeBidding": "बोली बंद करें",
         "placeBid": "बोली लगाएं",
         "bidPlaced": "बोली लगाई गई",
+        "awardJob": "जॉब अवार्ड करें",
         "requestReschedule": "पुनर्निर्धारण का अनुरोध करें",
         "offerSentMsg": "आपने एक ऑफर भेजा है। सेवा प्रदाता की स्वीकृति की प्रतीक्षा है।",
         "retractOffer": "ऑफर वापस लें",
