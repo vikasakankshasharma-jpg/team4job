@@ -14,14 +14,15 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
     });
 
     test('Verify CCTV Page Tabs and AI Smart Split', async ({ page }) => {
+        const helper = new TestHelper(page);
         // 1. Navigate to CCTV Page
-        await page.goto('/cctv');
-        await expect(page.getByText('Post a CCTV Job')).toBeVisible({ timeout: 30000 });
+        await page.goto('/wizard');
+        await helper.form.selectWizardCategory('Security & Surveillance');
 
         // 2. Verify Tabs are present
         const tabsList = page.locator('[role="tablist"]');
-        await expect(tabsList.getByText('Step-by-Step')).toBeVisible();
-        await expect(tabsList.getByText('Spreadsheet')).toBeVisible();
+        await expect(tabsList.getByText('Classic')).toBeVisible();
+        await expect(tabsList.getByText('Bulk Spreadsheet')).toBeVisible();
         await expect(tabsList.getByText('AI Smart Split')).toBeVisible();
 
         // 3. Test AI Smart Split Flow
@@ -46,8 +47,10 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
     });
 
     test('Verify Spreadsheet Tab and Sample Download', async ({ page }) => {
-        await page.goto('/cctv');
-        await page.click('button[role="tab"]:has-text("Spreadsheet")');
+        const helper = new TestHelper(page);
+        await page.goto('/wizard');
+        await helper.form.selectWizardCategory('Security & Surveillance');
+        await page.click('button[role="tab"]:has-text("Bulk Spreadsheet")');
 
         await expect(page.getByText(/Bulk Upload via Spreadsheet/i)).toBeVisible();
         
@@ -61,7 +64,9 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
 
     test('Verify Pattern Detection Suggestion', async ({ page }) => {
         // Since we are in CI mode, the mock in ai.actions.ts will return a suggestion
-        await page.goto('/cctv');
+        const helper = new TestHelper(page);
+        await page.goto('/wizard');
+        await helper.form.selectWizardCategory('Security & Surveillance');
         
         // Wait for and verify the suggestion banner
         await expect(page.getByText('Frequent CCTV Installation')).toBeVisible({ timeout: 15000 });
