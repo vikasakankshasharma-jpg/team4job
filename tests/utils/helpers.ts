@@ -889,9 +889,7 @@ export class FormHelper {
         await this.selectWizardCategory(category);
         await this.selectWizardTemplate(null); // Custom request
         
-        // Step-by-Step selection
-        await this.page.getByText('Step-by-Step').first().click();
-        await this.page.waitForTimeout(500);
+        // UI flat structure: selectWizardTemplate(null) or "Step-by-Step" card advances the form directly to the questions state.
 
         // Select Sub-Type
         await this.selectWizardOption(subType);
