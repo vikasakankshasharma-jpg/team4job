@@ -936,6 +936,19 @@ export class FormHelper {
     }
 
     async fillPincodeAndSelectPO(pincode: string) {
+        // Intercept public API to prevent IP rate limits across 10 concurrent CI runners
+        await this.page.route('**/api.postalpincode.in/pincode/**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([{
+                    Status: 'Success',
+                    Message: 'Number of pincode(s) found:1',
+                    PostOffice: [{ Name: 'Mocked PO', District: 'Test District', State: 'Test State', Country: 'India' }]
+                }])
+            });
+        }).catch(() => { /* route already mocked */ });
+
         const pinInput = this.page.getByTestId('pincode-input').first();
         await pinInput.waitFor({ state: 'visible', timeout: 15000 });
         await pinInput.scrollIntoViewIfNeeded();
