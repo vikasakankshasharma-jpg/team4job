@@ -20,7 +20,7 @@ test.describe('Role Switching System', () => {
     test.beforeAll(() => {
         console.log('Seeding dual role user for tests...');
         try {
-            execSync('npx --no-install ts-node scripts/seed-dual-role.ts', { stdio: 'inherit' });
+            execSync('npx --no-install tsx scripts/seed-dual-role.ts', { stdio: 'inherit' });
         } catch (e) {
             console.error('Failed to seed dual role user:', e);
         }

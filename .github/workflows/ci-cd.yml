@@ -435,7 +435,7 @@ jobs:
 
       - name: Run E2E Tests for Group ${{ matrix.group }}
         run: |
-          npx playwright test $TEST_FILES --workers=1 --reporter=list,html
+          npx playwright test ${{ env.TEST_FILES }} --workers=1 --reporter=list,html
         env:
           CI: true
           BASE_URL: http://127.0.0.1:3000
