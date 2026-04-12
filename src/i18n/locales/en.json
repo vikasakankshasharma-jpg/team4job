@@ -134,7 +134,7 @@
         "emailMobileLabel": "Email or Mobile Number",
         "emailMobilePlaceholder": "name@example.com or 9876543210",
         "passwordLabel": "Password",
-        "passwordPlaceholder": "••••••••",
+        "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
         "loginButton": "Log In",
         "loginSubmit": "Log In",
         "showPassword": "Show password",
@@ -267,10 +267,10 @@
         "experience": "How was your experience?",
         "category": "Category",
         "selectCategory": "Select topic",
-        "catBug": "🐞 Bug Report",
-        "catFeature": "💡 Feature Request",
-        "catImprovement": "🔧 Improvement",
-        "catOther": "📁 Other",
+        "catBug": "\ud83d\udc1e Bug Report",
+        "catFeature": "\ud83d\udca1 Feature Request",
+        "catImprovement": "\ud83d\udd27 Improvement",
+        "catOther": "\ud83d\udcc1 Other",
         "details": "Details",
         "detailsPlaceholder": "Tell us what happened or what you'd like to see...",
         "send": "Send Feedback",
@@ -532,9 +532,9 @@
         "budget": "Budget",
         "budgetDesc": "Provide an estimated budget range to attract relevant bids.",
         "budgetDirectDesc": "Set the budget you are offering for this private job.",
-        "offeredBudget": "Offered Budget (₹)",
-        "minBudget": "Minimum Budget (₹)",
-        "maxBudget": "Maximum Budget (₹, Optional)",
+        "offeredBudget": "Offered Budget (\u20b9)",
+        "minBudget": "Minimum Budget (\u20b9)",
+        "maxBudget": "Maximum Budget (\u20b9, Optional)",
         "deadline": "Bidding Deadline",
         "deadlineDesc": "Not applicable for direct awards.",
         "startDate": "Job Work Start Date & Time",
@@ -585,8 +585,8 @@
         "applyNow": "Apply Now",
         "placeBid": "Place Bid",
         "verifyDetails": "I verify that these details are correct.",
-        "originalDescription": "Job Description (User Provided – {language})",
-        "compiledDescription": "Job Description (System Compiled – English)",
+        "originalDescription": "Job Description (User Provided \u2013 {language})",
+        "compiledDescription": "Job Description (System Compiled \u2013 English)",
         "noBidsYet": "No bids yet",
         "bidsReceived": "Bids Received",
         "awardJob": "Award Job",
@@ -652,7 +652,7 @@
         "loadFromTemplate": "Load from template...",
         "noTemplates": "No templates yet",
         "saveAsTemplateHelp": "Save this job as a template to reuse later",
-        "usedCount": "Used {count}×",
+        "usedCount": "Used {count}\u00d7",
         "manageTemplates": "Manage Templates",
         "stepOfTotal": "Step {step} of {total}",
         "percentCompleted": "{percent}% Completed",
@@ -677,7 +677,7 @@
         "promoteAndRelist": "Promote & Re-list",
         "promoteUnbidJob": "Promote Unbid Job",
         "promoteUnbidJobDesc": "Attract more professionals by offering a travel tip and re-listing the job. This tip is commission-free for the professional.",
-        "travelTipAmount": "Travel Tip (₹)",
+        "travelTipAmount": "Travel Tip (\u20b9)",
         "travelTipHelp": "This amount will be added to the total cost and paid directly to the professional.",
         "newBiddingDeadline": "New Bidding Deadline",
         "promoteAndRelistJob": "Promote & Re-list Job",
@@ -762,11 +762,11 @@
         "addExtraFunds": "Add Extra Funds",
         "downloadServiceInvoice": "Download Service Invoice",
         "addFundsDesc": "Add funds to the escrow for extra tasks or materials.",
-        "amountRupee": "Amount (₹)",
+        "amountRupee": "Amount (\u20b9)",
         "baseAmount": "Base Amount",
         "processingFee": "Processing Fee",
         "totalPayable": "Total Payable",
-        "payAmount": "Pay ₹{amount}",
+        "payAmount": "Pay \u20b9{amount}",
         "description": "Description",
         "attachments": "Attachments",
         "noBidsYet": "No bids yet.",
@@ -825,10 +825,10 @@
             "variationProposedDesc": "Sent to Client for approval.",
             "variationRequested": "Variation Requested",
             "variationRequestedDesc": "Sent to Professional for a quote.",
-            "enterQuoteAmount": "Enter quote amount (₹):",
+            "enterQuoteAmount": "Enter quote amount (\u20b9):",
             "quoteSubmitted": "Quote Submitted",
             "quoteSubmittedDesc": "Client notified.",
-            "confirmVariationPayment": "Confirm payment of ₹{amount} for \"{description}\"?",
+            "confirmVariationPayment": "Confirm payment of \u20b9{amount} for \"{description}\"?",
             "variationPaid": "Variation Paid",
             "variationDeclined": "Variation Declined",
             "variationDeclineConfirm": "Decline this variation order?",
@@ -844,7 +844,8 @@
             "paymentFailed": "Payment Failed",
             "initFailed": "Failed to initiate payment."
         },
-        "jobNotFound": "Job not found."
+        "jobNotFound": "Job not found.",
+        "addFunds": "Add Funds (Extras)"
     },
     "reviews": {
         "rateExperience": "Rate Your Experience",
@@ -873,7 +874,7 @@
         "tierGold": "Gold",
         "tierPlatinum": "Platinum",
         "howItWorks": "How it Works",
-        "howItWorksDesc": "Earn points by completing jobs (+50) and receiving high ratings (5★: +20, 4★: +10). Penalties apply for poor ratings (1★: -25) or cancellations.",
+        "howItWorksDesc": "Earn points by completing jobs (+50) and receiving high ratings (5\u2605: +20, 4\u2605: +10). Penalties apply for poor ratings (1\u2605: -25) or cancellations.",
         "benefitsTitle": "Tier Benefits",
         "benefitVisibility": "Increased visibility in search",
         "benefitFees": "Lower platform service fees",
@@ -1114,7 +1115,7 @@
         "aiSuggestionsAdded": "AI Suggestions Added!",
         "aiSuggestionsAddedDesc": "Description and skills have been auto-filled.",
         "budgetEstimated": "Budget Estimated!",
-        "budgetEstimatedDesc": "AI suggests a range of ₹{min} - ₹{max}.",
+        "budgetEstimatedDesc": "AI suggests a range of \u20b9{min} - \u20b9{max}.",
         "jobUpdated": "Job Updated",
         "jobUpdatedDesc": "Your job posting has been successfully updated."
     },
@@ -1162,7 +1163,7 @@
         "platformRating": "Platform Rating",
         "yourRelationship": "Your Relationship",
         "jobsCompleted": "{count} jobs",
-        "spent": "₹{amount}",
+        "spent": "\u20b9{amount}",
         "ratingFromYou": "{rating} from you",
         "onTime": "{percentage}% on-time",
         "lastHired": "Last hired: {time} ago",
@@ -1270,7 +1271,6 @@
             "authError": "Authentication details are missing. Please log in again."
         }
     },
-
     "profile": {
         "editProfile": "Edit Profile",
         "editProfileDesc": "Make changes to your profile here. Click save when you're done.",
@@ -1409,7 +1409,6 @@
         "clientRoleActivated": "Client Role Activated!",
         "clientRoleActivatedDesc": "You can now post jobs and hire professionals."
     },
-
     "components": {
         "export": {
             "button": "Export",
@@ -1431,8 +1430,6 @@
             "reset": "Reset Filters"
         }
     },
-
-
     "validation": {
         "titleMin": "Job title must be at least 10 characters.",
         "descMin": "Description must be at least 50 characters.",
@@ -1694,7 +1691,7 @@
         },
         "allJobs": {
             "title": "All Jobs",
-            "description": "{count} jobs shown • {bidding} bidding, {direct} direct",
+            "description": "{count} jobs shown \u2022 {bidding} bidding, {direct} direct",
             "stats": {
                 "total": "Total Jobs",
                 "totalDesc": "All jobs posted",
@@ -1757,7 +1754,7 @@
         },
         "auditLogs": {
             "title": "Admin Audit Log",
-            "description": "{count} actions shown • Chronological record of all admin actions",
+            "description": "{count} actions shown \u2022 Chronological record of all admin actions",
             "stats": {
                 "total": "Total Actions",
                 "totalDesc": "Last 100 actions",
@@ -2048,7 +2045,7 @@
             "form": {
                 "name": "Name",
                 "description": "Description",
-                "price": "Price (₹)",
+                "price": "Price (\u20b9)",
                 "interval": "Billing Interval",
                 "features": "Features (comma separated)",
                 "submit": "Save Plan",
@@ -2086,8 +2083,8 @@
                 "code": "Coupon Code",
                 "type": "Discount Type",
                 "value": "Discount Value",
-                "minSpend": "Minimum Spend (₹)",
-                "maxDiscount": "Max Discount (₹)",
+                "minSpend": "Minimum Spend (\u20b9)",
+                "maxDiscount": "Max Discount (\u20b9)",
                 "expiry": "Expiry Date",
                 "usageLimit": "Total Usage Limit",
                 "submit": "Create Coupon",
@@ -2095,7 +2092,7 @@
             },
             "types": {
                 "percentage": "Percentage (%)",
-                "fixed": "Fixed Amount (₹)"
+                "fixed": "Fixed Amount (\u20b9)"
             },
             "messages": {
                 "created": "Coupon created successfully.",
@@ -2221,7 +2218,7 @@
             "read": "Read",
             "justNow": "Just now",
             "jobId": "Job #{id}",
-            "amount": "₹{amount}",
+            "amount": "\u20b9{amount}",
             "release": "Release",
             "refund": "Refund",
             "split": "Split 50/50",
@@ -2254,7 +2251,7 @@
                 "customerSupport": "Customer support"
             },
             "currentMembers": "Current Team Members",
-            "membersShown": "{count} members shown • Administrative and support staff",
+            "membersShown": "{count} members shown \u2022 Administrative and support staff",
             "searchPlaceholder": "Search by name or email...",
             "noMembersFound": "No team members found",
             "noMembersMatch": "No members match your current filters",
@@ -2464,7 +2461,7 @@
         "optionOutdoor": "Outdoor Only",
         "optionBoth": "Both Indoor & Outdoor Setup Setup",
         "optionProfessionalSuggest": "Let Professional Suggest",
-        "aiCompiling": "Generating job description…",
+        "aiCompiling": "Generating job description\u2026",
         "jobPreview": "Job Preview",
         "looksGood": "Looks good, post job",
         "editDescription": "Edit description",
@@ -2619,6 +2616,10 @@
             "COUPON_CREATED": "Coupon Created",
             "BLACKLIST_UPDATED": "Blacklist Updated"
         }
+    },
+    "bidding": {
+        "placeBid": "Place a Bid",
+        "coverLetter": "Cover Letter",
+        "proposalPlaceholder": "Explain why you are the best fit for this job..."
     }
 }
-

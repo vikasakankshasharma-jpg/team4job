@@ -242,7 +242,7 @@ jobs:
   # Groups are assigned by weight (lines/10 + tests*5) so each CI job
   # finishes within the 60-minute timeout without server crashes.
   e2e-tests:
-    name: Full E2E Tests (Group ${{ matrix.group }}/7)
+    name: Full E2E Tests (Group ${{ matrix.group }}/10)
     runs-on: ubuntu-latest
     needs: smoke-tests
     timeout-minutes: 60
@@ -251,7 +251,7 @@ jobs:
       matrix:
         # 7 explicit groups — each maps to a specific set of test files below.
         # Distribution is weight-balanced so no single group exceeds ~170 units.
-        group: [1, 2, 3, 4, 5, 6, 7]
+        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     
     steps:
       - name: Checkout code
@@ -330,7 +330,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS="--max-old-space-size=3072" npm run start -- -p 3000 &
+        run: NODE_OPTIONS="--max-old-space-size=4096" npm run start -- -p 3000 &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -427,7 +427,16 @@ jobs:
               TEST_FILES="tests/e2e/dispute-refund-audit.spec.ts tests/e2e/admin-smoke.spec.ts tests/e2e/ui-audit-all-roles.spec.ts tests/e2e/beta-squad-case-1.spec.ts tests/e2e/budget-estimator.spec.ts"
               ;;
             7)
-              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts"
+              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts"
+              ;;
+            8)
+              TEST_FILES="tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts"
+              ;;
+            9)
+              TEST_FILES="tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts"
+              ;;
+            10)
+              TEST_FILES="tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts"
               ;;
           esac
           echo "TEST_FILES=$TEST_FILES" >> $GITHUB_ENV
