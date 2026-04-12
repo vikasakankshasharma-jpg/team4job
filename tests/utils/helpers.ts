@@ -383,7 +383,6 @@ export class AuthHelper {
                 await this.waitForStability();
 
                 // Click submit button with robustness
-                const submitButton = this.page.getByTestId('login-submit-btn').first();
                 await submitButton.waitFor({ state: 'visible', timeout: 20000 });
                 
                 // Final check before click
