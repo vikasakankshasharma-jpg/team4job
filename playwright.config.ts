@@ -102,7 +102,57 @@ export default defineConfig({
 
         /* Maximum time for navigation */
         navigationTimeout: 90 * 1000,
+
+        /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
+        /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
+        /* It mocks: 1. Google Maps Geocoder, 2. Postal Pincode API (fetch) */
+        launchOptions: {
+            args: ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'],
+        },
+        /* Init scripts run before any other script in the page */
+        contextOptions: {
+            ignoreHTTPSErrors: true,
+        },
+        /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
+        /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
+        /* It mocks: 1. Google Maps Geocoder, 2. Postal Pincode API (fetch) */
+        initScript: {
+            content: `
+                // 🛑 Mock Google Maps Geocoder to prevent "NoApiKeys" hangs
+                window.google = window.google || {};
+                window.google.maps = window.google.maps || {
+                    Geocoder: class {
+                        geocode(req, cb) {
+                            cb([{ geometry: { location: { lat: () => 12.9716, lng: () => 77.5946 } } }], 'OK');
+                        }
+                    },
+                    GeocoderStatus: { OK: 'OK' }
+                };
+
+                // 🛑 Mock fetch for Indian Postal Pincode API
+                const originalFetch = window.fetch;
+                window.fetch = async (...args) => {
+                    const url = args[0] && typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url ? args[0].url : '');
+                    if (url.includes('postalpincode.in/pincode/')) {
+                        console.log('[E2E-GLOBAL-MOCK] Intercepting Pincode API:', url);
+                        return {
+                            ok: true,
+                            json: async () => [{
+                                Status: 'Success',
+                                Message: 'Number of pincode(s) found:1',
+                                PostOffice: [{ Name: 'Mocked PO', District: 'Bangalore', State: 'Karnataka', Country: 'India' }]
+                            }]
+                        };
+                    }
+                    return originalFetch(...args);
+                };
+            `
+        }
     },
+
+    /* Apply global init script to all projects via projects metadata or use block */
+    /* We use the 'use' block for global application */
+    /* eslint-disable no-empty */
 
     /* Configure projects for major browsers */
     projects: [
