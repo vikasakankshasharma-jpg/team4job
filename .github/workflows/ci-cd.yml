@@ -330,7 +330,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
       - name: Start Next.js production server in background
-        run: npm run start -- -p 3000 &
+        run: NODE_OPTIONS="--max-old-space-size=3072" npm run start -- -p 3000 &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -388,6 +388,13 @@ jobs:
             cat /tmp/seed_response.json || true
             exit 1
           fi
+          # Final server health probe — confirm server is still up after seeding
+          echo "Confirming server health after seeding..."
+          if ! curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
+            echo "ERROR: Next.js server is down after seeding. Possible OOM. Aborting."
+            exit 1
+          fi
+          echo "Server health check passed. Starting tests."
 
       - name: Resolve test files for this group
         # Each group maps to a balanced set of spec files.

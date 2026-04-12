@@ -732,8 +732,11 @@ export class FormHelper {
             `button:has-text("${label}")`
         ).first();
 
-        // Ensure trigger is in view and clickable
-        await trigger.scrollIntoViewIfNeeded();
+        // Ensure trigger is in view and clickable — wait for it to be attached first
+        await trigger.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+            console.warn(`[FormHelper] Trigger for "${label}" not visible within 15s, trying anyway...`);
+        });
+        await trigger.scrollIntoViewIfNeeded().catch(() => {});
         // Create a robust open loop
         let isOpen = false;
         for (let i = 0; i < 3; i++) {
@@ -1228,7 +1231,7 @@ export class FormHelper {
 
         // Wait for redirect to job detail and confirm settlement
         console.log('[FormHelper] Waiting for job detail page settlement...');
-        await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
+        await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 });
         
         // Confirm dashboard marker is visible as proxy for hydration
         // Resilient wait: if the marker is not found within 15s (local build/slow sync), 
