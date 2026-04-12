@@ -14,5 +14,5 @@ export async function register() {
 }
 
 export const onRequestError = async (err: any) => {
-  Sentry.captureException(err);
+  // Sentry.captureException(err); // Disabled to prevent memory leaks when Sentry is not initialized
 };

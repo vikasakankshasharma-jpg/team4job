@@ -318,6 +318,7 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
+          export JAVA_TOOL_OPTIONS="-Xmx1536m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -330,7 +331,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm run start -- -p 3000 &
+        run: NODE_OPTIONS="--max-old-space-size=2560" npm run start -- -p 3000 &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
