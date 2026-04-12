@@ -321,6 +321,11 @@ export class AuthHelper {
                 // causing a MutationObserver crash that aborts the login POST request.
                 await this.page.waitForTimeout(2000);
 
+                // 🚦 HYDRATION LOCK: Wait for the login button to be enabled
+                const submitButton = this.page.getByTestId('login-submit-btn').first().or(this.page.locator('button[type="submit"]').first());
+                await submitButton.waitFor({ state: 'visible', timeout: 30000 });
+                await expect(submitButton).toBeEnabled({ timeout: 15000 }).catch(() => console.warn('[AuthHelper] Submit button still disabled, proceeding anyway...'));
+
                 await emailInput.waitFor({ state: 'visible', timeout: 30000 });
                 await emailInput.scrollIntoViewIfNeeded();
 

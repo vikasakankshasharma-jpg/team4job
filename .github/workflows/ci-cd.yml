@@ -364,35 +364,23 @@ jobs:
           done
           echo "Waiting for Next.js on port 3000..."
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
-              echo "Next.js is ready!"
+            if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+              echo "Next.js is fully running and serving /login!"
               break
             fi
-            echo "Attempt $i/60 - not ready yet, waiting 5s..."
+            echo "Attempt $i/60 - Next.js not ready yet, waiting 5s..."
             sleep 5
           done
-          echo "Seeding test users via API..."
-          SEED_SUCCESS=false
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /tmp/seed_response.json -w "%{http_code}" -X POST http://127.0.0.1:3000/api/e2e/seed-users)
-            if [ "$STATUS" = "200" ]; then
-              echo "Seeding successful!"
-              SEED_SUCCESS=true
-              break
-            fi
-            echo "Seed attempt $i failed (status $STATUS), retrying in 10s..."
-            cat /tmp/seed_response.json || true
-            sleep 10
-          done
-          if [ "$SEED_SUCCESS" = "false" ]; then
-            echo "ERROR: Failed to seed test users after 12 attempts. Aborting shard."
-            cat /tmp/seed_response.json || true
-            exit 1
+          
+          echo "Seeding test users via dedicated CLI script..."
+          if ! npx tsx scripts/ci-seed.ts; then
+             echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
+             exit 1
           fi
-          # Final server health probe — confirm server is still up after seeding
-          echo "Confirming server health after seeding..."
-          if ! curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
-            echo "ERROR: Next.js server is down after seeding. Possible OOM. Aborting."
+          
+          echo "Confirming server health after CLI seeding..."
+          if ! curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+            echo "ERROR: Next.js server crashed during or immediately after seeding. Possible OOM. Aborting."
             exit 1
           fi
           echo "Server health check passed. Starting tests."
