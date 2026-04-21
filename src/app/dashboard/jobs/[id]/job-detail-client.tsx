@@ -346,24 +346,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const job = realtimeJob || initialJob;
     const loading = (jobLoading && !job) || userLoading;
 
-    // Graceful error state if job is still missing after hydration attempts
-    if (!job && !loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] p-12 text-center">
-                <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center animate-pulse mb-6">
-                    <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-                </div>
-                <h3 className="text-xl font-black italic uppercase tracking-tighter mb-2">Syncing Job Data...</h3>
-                <p className="text-muted-foreground max-w-xs mx-auto">
-                    The server is currently under high load. We are attempting to fetch the latest job state directly from the database...
-                </p>
-                <Button className="mt-8 rounded-full" onClick={() => window.location.reload()}>
-                    Manual Sync
-                </Button>
-            </div>
-        );
-    }
-
     // Determine Winning Bid Amount (Hoisted for Payment Action)
     const winningBidAmount = React.useMemo(() => {
         if (!job?.awardedProfessional || !bids) return null;
@@ -371,9 +353,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         const winningBid = bids.find(b => getRefId(b.professional) === awardedId);
         return winningBid ? winningBid.amount : 0;
     }, [job, bids]);
-
-    // Legacy setJob/setBids not needed except for optimism?
-    // We rely on subscription updates.
 
     const [platformSettings, setPlatformSettings] = React.useState<PlatformSettings | null>(null);
     const [counterParty, setCounterParty] = React.useState<User | null>(null);
@@ -412,7 +391,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     // Feature Flags
     const isPaymentsEnabled = useFeatureFlag('ENABLE_PAYMENTS');
     const isDisputesEnabled = useFeatureFlag('ENABLE_DISPUTES_V2');
-    // DEEP DEBUG LOGGING FOR E2E
 
     const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
     const [revealLoading, setRevealLoading] = React.useState(false);
@@ -425,30 +403,33 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [marketAnalysis, setMarketAnalysis] = React.useState<any>(null);
     const [isAnalyzingMarket, setIsAnalyzingMarket] = React.useState(false);
 
+
     // Auto-trigger Market Analysis for Clients
     React.useEffect(() => {
         const analyzeMarket = async () => {
-            if (!isClient || job.status !== 'open' || bids.length > 0 || marketAnalysis || isAnalyzingMarket) return;
+            if (!isClient || job?.status !== 'open' || (bids && bids.length > 0) || marketAnalysis || isAnalyzingMarket) return;
 
             // Check if job is at least 1 day old (simulated check)
-            const postedDate = toDate(job.postedAt);
+            const postedDate = toDate(job?.postedAt);
             const hoursSincePosted = (Date.now() - postedDate.getTime()) / (1000 * 60 * 60);
 
             if (hoursSincePosted > 24 || process.env.NODE_ENV === 'development') {
                 setIsAnalyzingMarket(true);
                 try {
                     const res = await suggestPriceBoostAction({
-                        jobTitle: job.title,
-                        jobCategory: job.jobCategory,
-                        pincode: job.address?.cityPincode || job.location,
-                        currentBudget: job.priceEstimate?.min || 0,
-                        isUrgent: job.isUrgent,
-                        bidCount: bids.length,
+                        jobTitle: job?.title,
+                        jobCategory: job?.jobCategory,
+                        pincode: job?.address?.cityPincode || job?.location,
+                        currentBudget: job?.priceEstimate?.min || 0,
+                        isUrgent: job?.isUrgent,
+                        bidCount: bids?.length || 0,
                         daysSincePosted: Math.max(1, Math.floor(hoursSincePosted / 24))
                     });
                     if (res.success) {
                         setMarketAnalysis(res.data);
                     }
+                } catch (e) {
+                    console.error("Market analysis failed:", e);
                 } finally {
                     setIsAnalyzingMarket(false);
                 }
@@ -456,7 +437,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         };
 
         analyzeMarket();
-    }, [isClient, job, bids.length, marketAnalysis, isAnalyzingMarket]);
+    }, [isClient, job, bids, marketAnalysis, isAnalyzingMarket]);
+
 
     // Secure Contact Reveal Flow
     React.useEffect(() => {
@@ -832,25 +814,27 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     // It uses 'id' from closure. 'id' comes from params.
 
 
-    // Fetch Platform Settings (Fees & Rules)
-    // Fetch Platform Settings (Defaults for Client)
-    React.useEffect(() => {
-        // Fallback defaults without DB call
-        setPlatformSettings({
-            clientFeeRate: 2.5,
-            professionalCommissionRate: 5,
-            minJobBudgetForMilestones: 5000
-        } as any);
-    }, []);
 
-
-
+    // Graceful error state if job is still missing after hydration attempts
     if (loading) {
         return <JobDetailSkeleton />;
     }
 
     if (!job) {
-        return <div className="p-8 text-center">{t('jobNotFound')}</div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-12 text-center">
+                <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center animate-pulse mb-6">
+                    <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+                </div>
+                <h3 className="text-xl font-black italic uppercase tracking-tighter mb-2">Syncing Job Data...</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto">
+                    The server is currently under high load. We are attempting to fetch the latest job state directly from the database...
+                </p>
+                <Button className="mt-8 rounded-full" onClick={() => window.location.reload()}>
+                    Manual Sync
+                </Button>
+            </div>
+        );
     }
 
     // Determine Role View
