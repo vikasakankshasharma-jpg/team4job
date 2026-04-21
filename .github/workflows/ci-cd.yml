@@ -696,7 +696,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm_config_yes=true npx npm-check-updates -u && npm ci
+          npm ci
           npm install -g firebase-tools
 
       - name: Install Playwright browsers
