@@ -1217,7 +1217,7 @@ export class FormHelper {
         await this.page.click(`button:has-text("${text}")`, { force: true });
     }
 
-    async waitForToast(message: string, timeout = TIMEOUTS.medium) {
+    async waitForToast(message: string | RegExp, timeout = TIMEOUTS.medium) {
         console.log(`[FormHelper] Waiting for toast: "${message}" (timeout: ${timeout}ms)`);
         
         // Define failure signals: destructive toasts or explicit error messages

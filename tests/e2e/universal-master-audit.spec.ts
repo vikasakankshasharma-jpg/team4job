@@ -3,6 +3,7 @@ import { test, expect, Page } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { TEST_ACCOUNTS, TIMEOUTS, TEST_CREDENTIALS, getDateString, getDateTimeString } from '../fixtures/test-data';
 import { getAdminDb } from '../../src/infrastructure/firebase/admin';
+import { MultiRoleCoordinator } from '../utils/multi-role-coordinator';
 
 /**
  * 🕵️ UNIVERSAL MASTER AUDIT SUITE
