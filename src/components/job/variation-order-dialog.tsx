@@ -66,6 +66,7 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
                                 placeholder="e.g. Install extra 5m copper pipe..."
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
+                                data-testid="variation-description-input"
                             />
                         </div>
 
@@ -77,6 +78,7 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
                                     min={1}
                                     value={amount}
                                     onChange={e => setAmount(Number(e.target.value))}
+                                    data-testid="variation-amount-input"
                                 />
                                 <p className="text-xs text-muted-foreground">Includes all labor and materials.</p>
                             </div>
@@ -88,7 +90,7 @@ export function VariationOrderDialog({ open, onOpenChange, onSubmitProposal, onS
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={isLoading || !description.trim() || (activeTab === 'propose' && amount <= 0)}>
+                    <Button onClick={handleSubmit} disabled={isLoading || !description.trim() || (activeTab === 'propose' && amount <= 0)} data-testid="variation-submit-button">
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {activeTab === 'propose' ? 'Send Proposal' : 'Send Request'}
                     </Button>

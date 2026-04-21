@@ -68,10 +68,11 @@ export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: Use
                 <div className="space-y-6">
                     <div className="relative group/input">
                         <Input
-                            placeholder="••••••"
+                            placeholder={t('placeholder')}
                             value={otp}
                             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                             maxLength={6}
+                            data-testid="otp-input"
                             className="h-20 w-full text-center text-4xl font-black tracking-[0.8em] pl-[0.5em] rounded-3xl border-none bg-muted/40 focus-visible:ring-4 focus-visible:ring-primary/20 transition-all placeholder:opacity-20"
                         />
                         <div className="absolute top-1/2 -translate-y-1/2 right-6 opacity-20">
@@ -89,11 +90,12 @@ export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: Use
                     <Button 
                         onClick={handleStartWork} 
                         disabled={isLoading || otp.length < 6}
+                        data-testid="start-work-button"
                         className="w-full h-16 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all group overflow-hidden relative"
                     >
                         <span className="relative z-10 flex items-center">
                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2 fill-current" />}
-                            Commence Production Engagement
+                            {t('button')}
                         </span>
                         <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </Button>

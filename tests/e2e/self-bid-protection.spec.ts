@@ -4,8 +4,8 @@ import { TestHelper } from '../utils/helpers';
 import { generateUniqueJobTitle, TIMEOUTS } from '../fixtures/test-data';
 
 const DUAL_ROLE_USER = {
-    email: 'dualrole@example.com',
-    password: 'Vikas@129229'
+    email: 'anita.dual@team4job.com',
+    password: 'TestUser_2026!'
 };
 
 test.describe('Self-Interaction Guardrails', () => {
@@ -32,9 +32,25 @@ test.describe('Self-Interaction Guardrails', () => {
             return;
         }
 
-        // Fill job details
+        // Complete Wizard first (Mandatory redirection to /wizard)
+        await helper.form.completeWizard(
+            'Security & Surveillance',
+            'CCTV / Video Surveillance',
+            [
+                '3-4', 
+                'Both', 
+                'Commercial',
+                'needs fresh wiring',
+                '1 week',
+                'Not needed',
+                'Mobile viewing only'
+            ],
+            'Within 1-2 Days'
+        );
+
+        // Fill job details on the final form
         await page.fill('input[name="jobTitle"]', jobTitle);
-        await page.locator('[data-testid="job-description-input"]').fill('Testing self-bid protection. This job should not be biddable by the owner.');
+        await page.locator('[data-testid="job-description-input"], textarea[name="jobDescription"]').first().fill('Testing self-bid protection. This job should not be biddable by the owner.');
         // Select category
         await page.getByTestId('job-category-select').click();
         await page.locator('[role="option"]').first().click();
@@ -84,7 +100,7 @@ test.describe('Self-Interaction Guardrails', () => {
         await expect(page.getByTestId('actions-panel')).toBeVisible();
 
         const placeBidBtn = page.getByTestId('place-bid-button');
-        const closeBiddingBtn = page.getByRole('button', { name: "Close Bidding" });
+        const closeBiddingBtn = page.getByRole('button', { name: "Close Operations" });
 
         // Since the user is the OWNER of the job, the UI should strictly show the Client view (Close Bidding)
         // and HIDE the Place Bid button, regardless of the selected 'role' in the user menu.

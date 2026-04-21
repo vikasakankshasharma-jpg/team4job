@@ -12,9 +12,9 @@ test.describe('Role Switching System', () => {
     let helper: TestHelper;
 
     const DUAL_ROLE_USER = {
-        email: 'dualrole@example.com',
+        email: 'anita.dual@team4job.com',
         password: 'TestUser_2026!',
-        displayName: 'Dual Role User'
+        displayName: 'Anita Dual'
     };
 
     test.beforeAll(() => {

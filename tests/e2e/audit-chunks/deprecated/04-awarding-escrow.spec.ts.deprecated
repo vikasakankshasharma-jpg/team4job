@@ -1,0 +1,117 @@
+
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../../utils/helpers';
+import { TestState } from '../../utils/test-state';
+
+/**
+ * Audit Chunk 4: Awarding & Escrow
+ * Role: Client (Priya) & Professional (Installer)
+ * Responsibility: Client awards job, Professional accepts, Client funds job (Escrow).
+ */
+test.describe('Audit Chunk 4: Awarding & Escrow', () => {
+    test.beforeEach(async () => {
+        process.env.E2E_NO_CLEAR = 'true';
+    });
+    test.describe.configure({ mode: 'serial' });
+
+    test('Client awards and funds the job', async ({ page }) => {
+        const helper = new TestHelper(page);
+        const { jobId } = TestState.load();
+        if (!jobId) throw new Error('No jobId found in state. Run Chunk 2/3 first.');
+
+        console.log(`--- CHUNK 4: Awarding Job ${jobId} ---`);
+        
+        // 1. Client Awards (Check if already sent)
+        await helper.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Client');
+        // 1. Client Awards (Check if already sent)
+        await helper.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Client');
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.injectNuclearCSS();
+        await helper.auth.waitForQuiescence();
+        
+        const offerSentBtn = page.getByRole('button', { name: /Offer Sent|Modify Offer/i });
+        const awardBtn = page.getByTestId('send-offer-button').first();
+
+        if (await offerSentBtn.isVisible()) {
+            console.log('[Chunk 4] Offer already sent. Skipping.');
+        } else if (await awardBtn.isVisible()) {
+            await awardBtn.click();
+            
+            // Handle confirmation dialog
+            const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+            if (await confirmBtn.isVisible({ timeout: 10000 }).catch(() => false)) {
+                console.log('[Chunk 4] Confirmation dialog detected. Clicking Official Authorization...');
+                await confirmBtn.click();
+            }
+
+            try {
+                // Harden toast detection with fallback
+                await helper.form.waitForToast('MISSION AUTHORIZED', 25000);
+            } catch (e) {
+                console.log('[Chunk 4] MISSION AUTHORIZED toast not detected, checking button state...');
+                await expect(offerSentBtn).toBeVisible({ timeout: 30000 });
+            }
+        }
+
+        // 2. Professional Accepts (Check if already accepted)
+        await helper.auth.logout();
+        await helper.auth.login('installer_pro_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Professional');
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.injectNuclearCSS();
+        await helper.auth.waitForQuiescence();
+        
+        const acceptBtn = page.getByTestId('accept-job-button').first();
+        const startOtpIndicator = page.getByTestId('start-otp-value');
+
+        if (await startOtpIndicator.isVisible() || await page.getByText(/Wait for Client to Pay/i).isVisible()) {
+            console.log('[Chunk 4] Job already accepted. Proceeding to check funding.');
+        } else if (await acceptBtn.isVisible()) {
+            console.log('[Chunk 4] Clicking Accept button...');
+            await acceptBtn.click();
+            try {
+                await helper.form.waitForToast('Accepted', 15000);
+            } catch (e) {
+                console.log('[Chunk 4] Acceptance toast not detected, checking for state change...');
+                await page.reload();
+                await helper.auth.injectNuclearCSS();
+                await helper.auth.waitForQuiescence();
+                await expect(startOtpIndicator).toBeVisible({ timeout: 20000 });
+            }
+        }
+
+        // 3. Client Funds (Escrow)
+        await helper.auth.logout();
+        await helper.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Client');
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.injectNuclearCSS();
+        await helper.auth.waitForQuiescence();
+        
+        const fundBtn = page.getByTestId('proceed-payment-button');
+        const statusBadge = page.getByTestId('job-status-badge');
+
+        // Check if actually funded or just accepted
+        const statusText = await statusBadge.innerText();
+        console.log(`[Chunk 4] Current job status is: ${statusText}`);
+
+        if (statusText === 'In Progress' || statusText.includes('Progress')) {
+            console.log('[Chunk 4] Job already in progress (funded). Skipping payment.');
+        } else if (await fundBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+            console.log('[Chunk 4] Funding job via E2E DirectFund shim...');
+            await fundBtn.click();
+            // Bypass real payment gateway via E2E Shim
+            await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined, { timeout: 30000 });
+            await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+            await helper.job.waitForJobStatus('In Progress');
+        }
+        
+        await expect(page.getByTestId('start-otp-value')).toBeVisible({ timeout: 30000 });
+        const startOtp = await page.getByTestId('start-otp-value').innerText();
+        
+        TestState.save({ startOtp });
+        console.log(`✅ Chunk 4 Complete: Job Funded. OTP: ${startOtp}`);
+    });
+});

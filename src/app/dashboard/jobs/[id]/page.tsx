@@ -48,21 +48,38 @@ export default async function JobDetailPageWrapper(props: Props) {
 
     if (id) {
         try {
+            console.log(`[JobDetailSSR] Starting SSR fetch for Job ID: ${id}`);
             const userId = await getUserIdFromSession();
+            console.log(`[JobDetailSSR] Session userId: ${userId || 'Anonymous'}`);
 
             // Only fetch bids if we have a user (though layouts usually enforce auth)
-            // If no user, bidsRes will be skipped or we pass '' (which will fail gracefully in service)
             const [jobData, bidsRes] = await Promise.all([
-                jobService.getJobById(id, 'system-ssr'),
+                jobService.getJobById(id, userId || 'system-ssr'),
                 userId ? getBidsForJobAction(id, userId) : Promise.resolve({ success: true, bids: [] })
-            ]);
+            ]).catch(err => {
+                console.error(`[JobDetailSSR] Promise.all failed: ${err.message}`);
+                throw err;
+            });
 
-            initialJob = JSON.parse(JSON.stringify(jobData));
-            if (bidsRes.success) {
-                initialBids = bidsRes.bids || [];
+            if (!jobData) {
+                console.warn(`[JobDetailSSR] Job not found for ID: ${id}`);
+                initialJob = null;
+            } else {
+                initialJob = JSON.parse(JSON.stringify(jobData));
+                console.log(`[JobDetailSSR] Job data fetched successfully: ${initialJob.title}`);
             }
-        } catch (error) {
-            // Error pre-fetching job data
+
+            if (bidsRes && 'success' in bidsRes && bidsRes.success) {
+                initialBids = bidsRes.bids || [];
+                console.log(`[JobDetailSSR] Bids fetched: ${initialBids.length}`);
+            } else {
+                const errorMsg = bidsRes && 'error' in bidsRes ? bidsRes.error : 'Fetch failed';
+                console.warn(`[JobDetailSSR] Bids fetch failed: ${errorMsg}`);
+            }
+        } catch (error: any) {
+            console.error(`[JobDetailSSR] Fatal error during SSR for job ${id}:`, error.message);
+            // We still want to render the client component if possible to show a friendly error
+            initialJob = null;
         }
     }
 

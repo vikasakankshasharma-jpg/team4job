@@ -244,7 +244,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isEstimating, setIsEstimating] = React.useState(false); // New state for price estimation
   const { user, role, loading: userLoading } = useUser();
-  const { storage } = useFirebase();
+  const { storage, db } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mapCenter, setMapCenter] = React.useState<{ lat: number, lng: number } | null>(null);
@@ -371,6 +371,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   );
 
   const handleAutoResume = useCallback((draft: JobDraft) => {
+    // 🛡️ E2E/User-Protection: Don't overwrite if user has already started filling significant data
+    const currentTitle = form.getValues('jobTitle');
+    const currentDesc = form.getValues('jobDescription');
+    if (currentTitle && currentTitle !== draft.title && currentTitle.length > 5) {
+      console.log("[PostJob] Skipping auto-resume: Form already has user data.");
+      return;
+    }
+
     form.reset({
       jobTitle: draft.title || '',
       jobDescription: draft.description || '',
@@ -397,35 +405,58 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     if (directAwardParam) {
       form.setValue('directAwardProfessionalId', directAwardParam, { shouldValidate: true });
     }
-    const checkForDraft = async () => {
+    const checkForDraft = async (retries = 10) => {
       if (!user || isEditMode || repostJobId || isSubmitted) return;
+      
       try {
-        const { getLatestDraftAction } = await import('@/app/actions/draft.actions');
+        console.log(`[PostJob] Checking for draft (Attempt ${11 - retries})...`);
         const res = await getLatestDraftAction(user.id);
+        
+        let foundDraft = null;
         if (res.success && res.draft) {
-          setLoadedDraft(res.draft);
+          foundDraft = res.draft;
+        } else if (isWizardCompleted && db) {
+          // Fallback: Check local client cache to bypass emulator sync delay
+          const { getLatestDraft } = await import('@/lib/api/drafts');
+          const clientDraft = await getLatestDraft(db, user.id);
+          if (clientDraft) {
+            foundDraft = clientDraft;
+          }
+        }
+
+        if (foundDraft) {
+          setLoadedDraft(foundDraft);
           if (isWizardCompleted) {
-            // Auto-resume if coming from wizard
-            handleAutoResume(res.draft);
+            handleAutoResume(foundDraft);
           } else {
             setShowDraftDialog(true);
           }
+        } else if (isWizardCompleted && retries > 0) {
+           console.log(`[PostJob] Wizard completed but no draft found yet. Retrying in 2.5s... (${retries} left)`);
+           setTimeout(() => checkForDraft(retries - 1), 2500);
         } else if (isWizardCompleted) {
-           // Coming from wizard but no draft found yet? 
-           // At least we have the default future dates set now from useForm defaultValues.
-           // We could optionally show a small toast or just let the user fill it.
-           console.log("Wizard completed but no draft found in Firestore yet.");
-        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true') {
-          // Wizard-first guard: No draft, no special params → redirect to wizard
+           console.warn("[PostJob] Wizard completed but no draft found in Firestore after extended retries.");
+        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true' && !userLoading) {
+          // Safety: only redirect if definitely no draft and not coming from wizard
+          console.log("[PostJob] No draft found and no special params. Redirecting to wizard.");
           router.replace('/wizard');
         }
-      } catch (error) {
-        // Ignore error silently
+      } catch (error: any) {
+        if (error?.message?.includes('ABORTED') || error?.message?.includes('fetch')) {
+          console.warn(`[PostJob] Draft fetch interrupted: ${error.message}. Retrying...`);
+        }
+        if (isWizardCompleted && retries > 0) {
+           setTimeout(() => checkForDraft(retries - 1), 2500);
+        }
       }
     };
 
-    checkForDraft();
-  }, [directAwardParam, form, handleAutoResume, isEditMode, isSubmitted, isWizardCompleted, repostJobId, router, user]);
+    if (user && !userLoading) {
+      checkForDraft();
+    }
+  }, [directAwardParam, form, handleAutoResume, isEditMode, isSubmitted, isWizardCompleted, repostJobId, router, user, db, userLoading]);
+
+  const isE2EReady = !userLoading && (!isWizardCompleted || !!loadedDraft || process.env.NEXT_PUBLIC_E2E !== 'true');
 
   const handleResumeDraft = useCallback(() => {
     if (!loadedDraft) return;
@@ -741,13 +772,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     const values = pendingValues;
     if (!values) return;
 
-
-    // Close dialogs
-    setIsConfirmDialogOpen(false);
-    setIsPostConfirmDialogOpen(false);
-
     if (!user || !storage) { // Removed db requirement
       toast({ title: tCommon('error'), description: tError('loginRequired'), variant: "destructive" });
+      setIsConfirmDialogOpen(false);
+      setIsPostConfirmDialogOpen(false);
       return;
     }
 
@@ -858,12 +886,14 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
 
     } catch (error: any) {
       toast({
-        title: tError('postFailed'),
+        title: tCommon('error'),
         description: error.message || tCommon('error'),
         variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
+      setIsConfirmDialogOpen(false);
+      setIsPostConfirmDialogOpen(false);
     }
   }
 
@@ -1398,10 +1428,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }}>
+                      <AlertDialogCancel disabled={isProcessing}>{tCommon('cancel')}</AlertDialogCancel>
+                      <Button onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }} disabled={isProcessing}>
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : tJob('confirmAndSave')}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -1409,11 +1439,16 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                 <AlertDialog open={isPostConfirmDialogOpen} onOpenChange={setIsPostConfirmDialogOpen}>
                   <Button
                     type="button"
-                    disabled={isProcessing || isGenerating}
+                    disabled={isProcessing || isGenerating || (process.env.NEXT_PUBLIC_E2E === 'true' && !isE2EReady)}
                     onClick={handleSubmitClick}
                     data-testid="post-job-button"
+                    data-e2e-ready={isE2EReady}
+                    id="post-job-submit-button"
                     className="h-20 px-16 bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.5em] rounded-[1.8rem] shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all italic"
                   >
+                    {process.env.NEXT_PUBLIC_E2E === 'true' && isE2EReady && (
+                        <div id="e2e-post-job-ready" className="hidden" />
+                    )}
                     {isProcessing && <Loader2 className="mr-3 h-6 w-6 animate-spin" />}
                     {repostJobId ? tJob('repostJob') : tJob('postJob')}
                   </Button>
@@ -1425,10 +1460,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }}>
+                      <AlertDialogCancel disabled={isProcessing}>{tCommon('cancel')}</AlertDialogCancel>
+                      <Button onClick={(e) => { e.preventDefault(); handleFinalSubmit(); }} disabled={isProcessing}>
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : tJob('confirmAndSave')}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

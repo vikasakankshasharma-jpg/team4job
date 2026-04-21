@@ -1,4 +1,4 @@
-﻿
+
 import { test, expect, Page } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { getDateString, getDateTimeString, TIMEOUTS, TEST_JOB_DATA, TEST_ACCOUNTS } from '../fixtures/test-data';
@@ -35,7 +35,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // 1. Admin Login & Ban Professional
         await helper.auth.loginAsAdmin();
-        const ProfessionalEmail = 'Professional_pro_v3@team4job.com';
+        const ProfessionalEmail = 'installer_pro_v3@team4job.com';
         let accountRestricted = false;
 
         await page.goto('/dashboard/users');

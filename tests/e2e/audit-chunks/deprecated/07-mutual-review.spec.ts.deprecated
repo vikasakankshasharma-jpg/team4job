@@ -1,0 +1,67 @@
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../../utils/helpers';
+import { TestState } from '../../utils/test-state';
+
+/**
+ * Audit Chunk 7: Mutual Review & Reputation
+ * Role: Client (Priya) & Professional (Installer)
+ * Responsibility: Client and Professional rate each other to close the reputation loop.
+ */
+test.describe('Audit Chunk 7: Mutual Review', () => {
+    test.beforeEach(async () => {
+        process.env.E2E_NO_CLEAR = 'true';
+    });
+    test.describe.configure({ mode: 'serial' });
+
+    test('Client and professional provide mutual reviews', async ({ page }) => {
+        const helper = new TestHelper(page);
+        const { jobId } = TestState.load();
+        
+        if (!jobId) throw new Error('No jobId found in state. Run previous chunks first.');
+
+        console.log(`--- CHUNK 7: Mutual Review for ${jobId} ---`);
+        
+        // 1. Client Rates Professional
+        await helper.auth.loginAsClient();
+        await helper.auth.injectNuclearCSS();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForQuiescence();
+        
+        const clientReviewLocked = page.getByTestId('review-locked-card');
+        const reviewsRevealed = page.getByTestId('reviews-revealed-section');
+
+        if (await clientReviewLocked.isVisible() || await reviewsRevealed.isVisible()) {
+            console.log('[Chunk 7] Client already rated Professional. Skipping.');
+        } else {
+            console.log('[Chunk 7] Client submitting rating...');
+            await page.getByTestId('rating-star-5').click({ force: true });
+            await page.getByTestId('rating-comment').fill('Excellent audit completion. Professional and highly recommended.');
+            await page.getByTestId('submit-review-button').click({ force: true });
+            await helper.form.waitForToast(/Review submitted|Rating saved/i);
+            await expect(clientReviewLocked).toBeVisible({ timeout: 15000 });
+        }
+
+        // 2. Professional Rates Client (Reveal)
+        await helper.auth.logout();
+        await helper.auth.loginAsProfessional();
+        await helper.auth.injectNuclearCSS();
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForQuiescence();
+
+        if (await reviewsRevealed.isVisible()) {
+            console.log('[Chunk 7] Reviews already revealed. Skipping.');
+        } else {
+            console.log('[Chunk 7] Professional submitting rating...');
+            await page.getByTestId('rating-star-5').click({ force: true });
+            await page.getByTestId('rating-comment').fill('Great client, clear requirements, prompt payment.');
+            await page.getByTestId('submit-review-button').click({ force: true });
+            await helper.form.waitForToast(/Review submitted|Rating saved/i);
+            
+            // Verification of revealed reviews
+            await expect(reviewsRevealed).toBeVisible({ timeout: 20000 });
+            await expect(page.getByText('Excellent audit completion.')).toBeVisible();
+        }
+        
+        console.log('✅ Chunk 7 Complete: Audit lifecycle finished.');
+    });
+});

@@ -137,6 +137,7 @@ export function VariationOrderList({ job, user, isClient, onPayForTask, onQuoteT
                                             <Button 
                                                 className="rounded-[1.5rem] h-14 px-10 font-black uppercase tracking-[0.2em] text-[10px] bg-success text-white shadow-2xl shadow-success/20 hover:scale-105 transition-all"
                                                 onClick={() => onPayForTask(task)}
+                                                data-testid="approve-variation-button"
                                             >
                                                 <CheckCircle2 className="h-4 w-4 mr-2" />
                                                 Approve & Fund

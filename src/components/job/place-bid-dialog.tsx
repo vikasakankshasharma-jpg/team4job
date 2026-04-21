@@ -122,13 +122,26 @@ export function PlaceBidDialog({
     };
 
     async function onSubmit(values: z.infer<typeof bidSchema>) {
+        const isE2E = typeof window !== 'undefined' && 
+            (window.location.hostname === 'localhost' || 
+             window.location.hostname === '127.0.0.1' || 
+             process.env.NEXT_PUBLIC_E2E === 'true');
+             
+        if (isE2E) {
+            console.log('[PlaceBidDialog] onSubmit started', { 
+                values, 
+                isValid: form.formState.isValid,
+                errors: form.formState.errors 
+            });
+        }
+
         if (!user.isMobileVerified) {
+            if (isE2E) console.warn('[PlaceBidDialog] Mobile not verified');
             toast({ title: "Verification Required", description: "Please verify your mobile number to place bids.", variant: "destructive" });
             return;
         }
 
         if (!user.payouts?.beneficiaryId) {
-            const isE2E = typeof window !== 'undefined' && (window.location.hostname === 'localhost');
             if (!isE2E) {
                 toast({
                     title: "Payout Account Missing",
@@ -137,8 +150,12 @@ export function PlaceBidDialog({
                     action: <Link href="/dashboard/profile" className={buttonVariants({ variant: "outline", size: "sm" })}>Setup Now</Link>
                 });
                 return;
+            } else {
+                console.log('[PlaceBidDialog] Payout missing, but bypassing for E2E');
             }
         }
+
+        if (isE2E) console.log('[PlaceBidDialog] Proceeding with submission check...');
 
         try {
             const result = await placeBidAction(job.id, user.id, 'Professional', {
@@ -150,6 +167,7 @@ export function PlaceBidDialog({
             });
 
             if (result.success) {
+                if (isE2E) console.log('[PlaceBidDialog] Bid success, closing dialog');
                 toast({ title: "Bid Placed!", description: "The Client has been notified." });
                 onBidSubmit();
                 onOpenChange(false);
@@ -157,6 +175,7 @@ export function PlaceBidDialog({
                 throw new Error(result.error);
             }
         } catch (error: any) {
+            if (isE2E) console.error('[PlaceBidDialog] Bid Error:', error);
             toast({ title: "Bid Failed", description: tError(error.message) || "Could not place bid.", variant: "destructive" });
         }
     }
@@ -380,6 +399,8 @@ export function PlaceBidDialog({
                                         ) : (
                                             "Confirm & Place Bid"
                                         )}
+                                        {/* Hidden state indicator for E2E */}
+                                        <span className="sr-only" data-testid="bid-submitting-state">{isSubmitting ? 'true' : 'false'}</span>
                                     </Button>
                                 </DialogFooter>
                             </form>

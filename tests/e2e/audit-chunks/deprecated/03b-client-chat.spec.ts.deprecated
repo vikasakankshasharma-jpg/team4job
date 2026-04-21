@@ -1,0 +1,75 @@
+
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../../utils/helpers';
+import { TestState } from '../../utils/test-state';
+import { TIMEOUTS } from '../../fixtures/test-data';
+
+/**
+ * Audit Chunk 3b: Client Chat
+ * Role: Client (Priya)
+ * Responsibility: See bid and initiate chat.
+ */
+test.describe('Audit Chunk 3b: Client Chat', () => {
+    test.beforeEach(async () => {
+        process.env.E2E_NO_CLEAR = 'true';
+    });
+
+    test('Client opens chat with professional', async ({ page, context }) => {
+        test.setTimeout(480000); // 8 minutes
+        const { jobId } = TestState.load();
+        if (!jobId) throw new Error('No jobId found in state. Run Chunk 3a first.');
+
+        console.log(`--- CHUNK 3b: Client Chat on ${jobId} ---`);
+        
+        const helper = new TestHelper(page);
+        
+        // 2. Client receives bid and opens chat (Direct Redirect to avoid dashboard load)
+        const goalUrl = `/dashboard/jobs/${jobId}`;
+        await helper.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+        
+        console.log(`[Chunk 3b] Logged in. Navigating directly to ${goalUrl}...`);
+        await page.goto(goalUrl);
+        await helper.auth.injectNuclearCSS();
+        await helper.auth.waitForQuiescence();
+
+        const bidCard = page.getByTestId('bid-card-wrapper').first();
+        await expect(bidCard).toBeVisible({ timeout: TIMEOUTS.medium });
+
+        const chatBtn = page.getByRole('button', { name: /Message|Chat|Initiate Comms/i }).first();
+        await expect(chatBtn).toBeVisible({ timeout: 60000 });
+        
+        console.log('[Chunk 3b] SETTLING COMPILATION (20s) to ensure event listeners are attached...');
+        await page.waitForTimeout(20000); // Nuclear pause for dev server bundle settlement
+        
+        console.log('[Chunk 3b] Initiating Comms (New Tab Guard active)...');
+        let chatPage;
+        try {
+            const [pageEvent] = await Promise.all([
+                context.waitForEvent('page', { timeout: 30000 }),
+                chatBtn.click({ timeout: 15000 })
+            ]);
+            chatPage = pageEvent;
+        } catch (e) {
+            console.log('[Chunk 3b] Initial click failed to open tab. Retrying with Force Click + Extra Wait...');
+            await page.waitForTimeout(10000);
+            const [pageEvent] = await Promise.all([
+                context.waitForEvent('page', { timeout: 60000 }),
+                chatBtn.click({ force: true })
+            ]);
+            chatPage = pageEvent;
+        }
+        
+        console.log('[Chunk 3b] Tab opened. Waiting for hydration...');
+        await chatPage.waitForLoadState('domcontentloaded', { timeout: 60000 });
+        
+        // Harden the chat page after opening
+        const chatHelper = new TestHelper(chatPage);
+        await chatHelper.auth.injectNuclearCSS();
+        
+        // Verify chat interface appeared on the new page
+        // Broadened selector to find ANY chat-related element
+        const chatWindow = chatPage.locator('[data-testid*="chat"], [data-testid*="message"], textarea, .chat-container, h1:has-text("Chat"), h2:has-text("Chat")').first();
+        await expect(chatWindow).toBeVisible({ timeout: 180000 });
+        console.log('✅ Chunk 3b Complete: Chat interface reached.');
+    });
+});

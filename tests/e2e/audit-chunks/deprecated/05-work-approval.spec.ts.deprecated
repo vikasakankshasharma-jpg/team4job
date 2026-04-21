@@ -1,0 +1,88 @@
+
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../../utils/helpers';
+import { TestState } from '../../utils/test-state';
+
+/**
+ * Audit Chunk 5: Work & Approval
+ * Role: Professional (Installer) & Client (Priya)
+ * Responsibility: Professional starts work with OTP, submits completion; Client approves.
+ */
+test.describe('Audit Chunk 5: Work & Approval', () => {
+    test.beforeEach(async () => {
+        process.env.E2E_NO_CLEAR = 'true';
+    });
+    test.describe.configure({ mode: 'serial' });
+
+    test('Professional completes work and client approves', async ({ page }) => {
+        const helper = new TestHelper(page);
+        const { jobId, startOtp } = TestState.load();
+        
+        if (!jobId || !startOtp) {
+            throw new Error('Missing state (jobId or startOtp). Run Chunk 4 first.');
+        }
+
+        console.log(`--- CHUNK 5: Executing Work for ${jobId} ---`);
+        
+        // 1. Professional Starts Work (Check if already started)
+        await helper.auth.login('installer_pro_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Professional');
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
+        
+        const otpInput = page.getByTestId('otp-input');
+        const submitSection = page.getByTestId('Professional-completion-section');
+
+        if (await submitSection.isVisible()) {
+            console.log('[Chunk 5] Work already started. Skipping OTP step.');
+        } else if (await otpInput.isVisible()) {
+            await otpInput.fill(startOtp);
+            const startBtn = page.getByTestId('start-work-button');
+            await expect(startBtn).toBeEnabled();
+            await startBtn.click();
+            await helper.form.waitForToast('Work Started');
+        }
+
+        // 2. Professional Submits for Review (Check if already submitted)
+        const jobStatus = await page.getByTestId('job-status-badge').innerText();
+        if (jobStatus === 'Pending Confirmation') {
+            console.log('[Chunk 5] Work already submitted for review. Skipping submission.');
+        } else {
+            console.log('[Chunk 5] Submitting completion proof...');
+            await submitSection.locator('input[type="file"]').setInputFiles({
+                name: 'audit_proof.png', 
+                mimeType: 'image/png', 
+                buffer: Buffer.from('audit-proof-content')
+            });
+            
+            const submitBtn = page.getByTestId('submit-for-review-button');
+            await submitBtn.click();
+            await helper.job.waitForJobStatus('Pending Confirmation');
+        }
+
+        // 3. Client Approves (Check if already completed)
+        await helper.auth.logout();
+        await helper.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+        await helper.auth.ensureRole('Client');
+        await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
+        
+        const finalStatus = await page.getByTestId('job-status-badge').innerText();
+        if (finalStatus === 'Completed') {
+            console.log('[Chunk 5] Job already approved/completed. Skipping.');
+        } else {
+            const approveBtn = page.getByTestId('approve-release-button');
+            await expect(approveBtn).toBeVisible({ timeout: 20000 });
+            await approveBtn.click();
+            
+            // Handle confirmation dialog if any
+            const confirmBtn = page.getByRole('button', { name: /Confirm|Approve|Release/i }).last();
+            if (await confirmBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+                await confirmBtn.click();
+            }
+
+            await helper.job.waitForJobStatus('Completed');
+        }
+        console.log('✅ Chunk 5 Complete: Job Approved and Closed.');
+    });
+});

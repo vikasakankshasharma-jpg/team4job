@@ -1,0 +1,132 @@
+
+import { test, expect } from '@playwright/test';
+import { TestHelper } from '../../utils/helpers';
+import { TestState } from '../../utils/test-state';
+import { TIMEOUTS } from '../../fixtures/test-data';
+
+/**
+ * Audit Chunk 3: Negotiation & Bidding
+ * Role: Professional (Installer) & Client (Priya)
+ * Responsibility: Professional finds the job and bids; Client receives message and chats.
+ */
+test.describe('Audit Chunk 3: Negotiation', () => {
+    test.beforeEach(async () => {
+        process.env.E2E_NO_CLEAR = 'true';
+    });
+    test.describe.configure({ mode: 'serial' });
+
+    test('Professional bids and chats with client', async ({ browser }) => {
+        test.setTimeout(900000); // 15 minutes for dual-browser latency
+        // --- HARDENING: Kill all seeding for Chunk 3 to save resources ---
+        process.env.E2E_SEED_USERS = 'false';
+        
+        const { jobId } = TestState.load();
+        if (!jobId) throw new Error('No jobId found in state. Run Chunk 2 first.');
+
+        console.log(`--- CHUNK 3: Professional Bidding on ${jobId} ---`);
+        
+        // ACT 1: Professional Context
+        const contextPro = await browser.newContext();
+        try {
+            const pagePro = await contextPro.newPage();
+            const helperPro = new TestHelper(pagePro);
+
+            // 1. Professional Bids (Check if already bid)
+            await helperPro.auth.login('installer_pro_v3@team4job.com', 'TestUser_2026!');
+            await helperPro.auth.ensureRole('Professional');
+            
+            await pagePro.goto(`/dashboard/jobs/${jobId}`);
+            await helperPro.auth.injectNuclearCSS();
+            await helperPro.auth.waitForQuiescence();
+            
+            const placeBidBtn = pagePro.getByTestId('place-bid-button');
+            const viewBidBtn = pagePro.getByRole('button', { name: /View My Bid|Modify Bid|Proposal Submitted/i });
+
+            if (await viewBidBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+                console.log('[Chunk 3] Bid already placed. Skipping.');
+            } else if (await placeBidBtn.isVisible({ timeout: 10000 }).catch(() => false) && (await placeBidBtn.innerText()).includes('Submitted')) {
+                console.log('[Chunk 3] Bid button shows "Submitted". Skipping.');
+            } else if (await placeBidBtn.isVisible({ timeout: 10000 }).catch(() => false) && await placeBidBtn.isDisabled()) {
+                console.log('[Chunk 3] Bid button disabled. Checking for bid card...');
+                const bidCard = pagePro.getByTestId('bid-card-wrapper').first();
+                if (await bidCard.isVisible({ timeout: 15000 }).catch(() => false)) {
+                    console.log('[Chunk 3] Bid card detected. Skipping.');
+                } else {
+                    console.log('[Chunk 3] Refreshing for disabled button state...');
+                    await pagePro.reload();
+                    await helperPro.auth.injectNuclearCSS();
+                    await helperPro.auth.waitForQuiescence();
+                    if (await viewBidBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+                         console.log('[Chunk 3] Bid visible after refresh.');
+                    } else {
+                        throw new Error('Bid button disabled but no bid card found.');
+                    }
+                }
+            } else {
+                await expect(placeBidBtn).toBeVisible({ timeout: 20000 });
+                await placeBidBtn.click();
+                
+                const bidDialog = pagePro.locator('div[role="dialog"]');
+                await expect(bidDialog).toBeVisible({ timeout: 10000 });
+                
+                await bidDialog.locator('input[name="amount"]').fill('6000');
+                await bidDialog.locator('textarea[name="coverLetter"]').fill('I have the specific skills for this audit chunk.');
+                
+                await pagePro.getByTestId('submit-bid-button').click({ force: true });
+                
+                try {
+                    await helperPro.form.waitForToast(/Bid placed successfully|Bid Placed!/i, 15000);
+                } catch (e) {
+                    console.log('[Chunk 3] Toast timeout, checking button state...');
+                    await expect(viewBidBtn).toBeVisible({ timeout: 30000 });
+                }
+                console.log('[Chunk 3] Bid placed successfully.');
+            }
+        } finally {
+            await contextPro.close();
+            console.log('[Chunk 3] Professional context closed. SETTLING SESSION (10s)...');
+            await new Promise(r => setTimeout(r, 10000));
+        }
+
+        // ACT 2: Client Context
+        const contextClient = await browser.newContext();
+        try {
+            const pageClient = await contextClient.newPage();
+            const helperClient = new TestHelper(pageClient);
+
+            // 2. Client receives bid and opens chat (Direct Redirect to avoid dashboard load)
+            const goalUrl = `/dashboard/jobs/${jobId}`;
+            await helperClient.auth.login('giver_vip_v3@team4job.com', 'TestUser_2026!');
+            
+            console.log(`[Chunk 3] Logged in. Navigating directly to ${goalUrl}...`);
+            await pageClient.goto(goalUrl);
+            await helperClient.auth.injectNuclearCSS();
+            await helperClient.auth.waitForQuiescence();
+
+            const bidCard = pageClient.getByTestId('bid-card-wrapper').first();
+            await expect(bidCard).toBeVisible({ timeout: TIMEOUTS.medium });
+
+            const chatBtn = pageClient.getByRole('button', { name: /Message|Chat|Initiate Comms/i }).first();
+            await expect(chatBtn).toBeVisible();
+            
+            console.log('[Chunk 3] Initiating Comms (New Tab)...');
+            const [chatPage] = await Promise.all([
+                contextClient.waitForEvent('page', { timeout: 120000 }), // 2 minutes for tab compile
+                chatBtn.click()
+            ]);
+            
+            await chatPage.waitForLoadState('networkidle', { timeout: 90000 });
+            // Harden the chat page after opening
+            const chatHelper = new TestHelper(chatPage);
+            await chatHelper.auth.injectNuclearCSS();
+            await chatHelper.auth.waitForQuiescence();
+            
+            // Verify chat interface appeared on the new page
+            const chatWindow = chatPage.locator('[data-testid*="chat-window"], [data-testid*="message-area"], textarea[placeholder*="message"]').first();
+            await expect(chatWindow).toBeVisible({ timeout: 120000 });
+            console.log('✅ Chunk 3 Complete: Bid placed and chat interface reached.');
+        } finally {
+            await contextClient.close();
+        }
+    });
+});

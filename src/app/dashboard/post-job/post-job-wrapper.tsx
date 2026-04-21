@@ -6,18 +6,23 @@ import PostJobClient from './post-job-client';
 
 const GOOGLE_MAPS_LIBRARIES = ["places", "geocoding"] as ("places" | "geocoding")[];
 
+function LiveMapWrapper() {
+    const { isLoaded: googleMapsLoaded } = useJsApiLoader({
+        id: 'google-map-script',
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+        libraries: GOOGLE_MAPS_LIBRARIES,
+    });
+    return <PostJobClient isMapLoaded={googleMapsLoaded} />;
+}
+
 export default function PostJobWrapper() {
     const isE2E = process.env.NEXT_PUBLIC_E2E === "true";
     
-    const { isLoaded: googleMapsLoaded } = useJsApiLoader({
-        id: 'google-map-script',
-        googleMapsApiKey: isE2E ? "" : (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""),
-        libraries: GOOGLE_MAPS_LIBRARIES,
-    });
-
     // CI Stabilization: In E2E mode, we skip Google Maps to avoid ExpiredKeyMapError 
     // and IntersectionObserver crashes. The components will show manual input fallbacks.
-    const isMapLoaded = isE2E ? false : googleMapsLoaded;
+    if (isE2E) {
+        return <PostJobClient isMapLoaded={false} />;
+    }
 
-    return <PostJobClient isMapLoaded={isMapLoaded} />;
+    return <LiveMapWrapper />;
 }

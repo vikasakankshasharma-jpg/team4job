@@ -1117,7 +1117,10 @@
         "budgetEstimated": "Budget Estimated!",
         "budgetEstimatedDesc": "AI suggests a range of \u20b9{min} - \u20b9{max}.",
         "jobUpdated": "Job Updated",
-        "jobUpdatedDesc": "Your job posting has been successfully updated."
+        "jobUpdatedDesc": "Your job posting has been successfully updated.",
+        "offerSent": "Offer Sent",
+        "workSubmitted": "Work submitted successfully",
+        "reviewSubmitted": "Review submitted successfully"
     },
     "professionals": {
         "title": "Find Professionals",
@@ -1275,6 +1278,15 @@
         "editProfile": "Edit Profile",
         "editProfileDesc": "Make changes to your profile here. Click save when you're done.",
         "name": "Name",
+        "emailAddress": "Email Address",
+        "mobileNumber": "Mobile Number",
+        "residenceAddress": "Residence Address",
+        "officeAddress": "Office Address",
+        "houseNo": "House/Flat No",
+        "streetArea": "Street/Area",
+        "landmark": "Landmark (Optional)",
+        "cityVillage": "City/Village",
+        "pincode": "Pincode",
         "residentialPincode": "Residential Pincode",
         "officePincode": "Office Pincode (Optional)",
         "officePincodeDesc": "Add an office pincode to find jobs in that area too.",
@@ -1298,6 +1310,8 @@
         "request": "Request",
         "skillRequestSubmitted": "Skill Request Submitted",
         "skillRequestSubmittedDesc": "Your request for \"{skill}\" has been sent for review.",
+        "skillsUpdated": "Skills Updated",
+        "skillsUpdatedDesc": "Your expertise profile has been synchronized.",
         "jobsCompleted": "Jobs Completed",
         "payoutSettings": "Payout Settings",
         "payoutSettingsDesc": "Manage the bank account where you receive payments for completed jobs.",
@@ -1407,7 +1421,19 @@
         "skillsUpdated": "Skills Updated",
         "skillsUpdatedDesc": "Your list of skills has been saved.",
         "clientRoleActivated": "Client Role Activated!",
-        "clientRoleActivatedDesc": "You can now post jobs and hire professionals."
+        "clientRoleActivatedDesc": "You can now post jobs and hire professionals.",
+        "pendingVerification": "Pending verification",
+        "readOnlyVerified": "Verified details cannot be changed.",
+        "verifiedAddressAadhar": "Verified Address (Aadhar)",
+        "notProvided": "Not provided",
+        "typeDeleteToConfirm": "Please type DELETE to confirm.",
+        "areYouAbsolutelySure": "Are you absolutely sure?",
+        "deleteConfirmationDesc": "This action cannot be undone. This will permanently delete your account and remove your data from our servers.",
+        "typeDeleteToConfirmLabel": "Type DELETE to confirm:",
+        "verifiedStatus": "Status",
+        "skillsLabel": "Skills",
+        "mySkills": "My Skills",
+        "mySkillsDesc": "Manage the skills shown on your profile."
     },
     "components": {
         "export": {

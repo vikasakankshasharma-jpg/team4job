@@ -344,7 +344,25 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // Merge initial and realtime, prefer realtime
     const job = realtimeJob || initialJob;
-    const loading = jobLoading && !job;
+    const loading = (jobLoading && !job) || userLoading;
+
+    // Graceful error state if job is still missing after hydration attempts
+    if (!job && !loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-12 text-center">
+                <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center animate-pulse mb-6">
+                    <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+                </div>
+                <h3 className="text-xl font-black italic uppercase tracking-tighter mb-2">Syncing Job Data...</h3>
+                <p className="text-muted-foreground max-w-xs mx-auto">
+                    The server is currently under high load. We are attempting to fetch the latest job state directly from the database...
+                </p>
+                <Button className="mt-8 rounded-full" onClick={() => window.location.reload()}>
+                    Manual Sync
+                </Button>
+            </div>
+        );
+    }
 
     // Determine Winning Bid Amount (Hoisted for Payment Action)
     const winningBidAmount = React.useMemo(() => {
@@ -1153,7 +1171,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                         <Avatar className="h-32 w-32 border-8 border-background/20 shadow-2xl transition-transform duration-700 group-hover:scale-110">
                                                                             <AvatarImage src={profAvatar} alt={profName} />
                                                                             <AvatarFallback className="font-black text-4xl bg-primary/10 text-primary">
-                                                                                {profName.substring(0, 2).toUpperCase()}
+                                                                                {profName?.substring(0, 2).toUpperCase()}
                                                                             </AvatarFallback>
                                                                         </Avatar>
                                                                         <div className="absolute -bottom-4 -right-4 p-3 rounded-[1.5rem] bg-background shadow-2xl border border-white/5 scale-125">
@@ -1385,7 +1403,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                     <div className="p-8 flex items-center gap-6">
                                                         <Avatar className="h-20 w-20 border-4 border-background/20 shadow-2xl">
                                                             <AvatarImage src={counterParty.realAvatarUrl || counterParty.avatarUrl} />
-                                                            <AvatarFallback className="font-black text-2xl bg-primary/10 text-primary">{counterParty.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                            <AvatarFallback className="font-black text-2xl bg-primary/10 text-primary">{counterParty.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                         <div>
                                                             <p className="font-black text-2xl tracking-tighter italic leading-none mb-1 uppercase">{counterParty.name}</p>

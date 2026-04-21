@@ -74,6 +74,11 @@ export async function PUT(req: NextRequest) {
             await sendNotification(data.email, "Security Alert: Email Changed", `Your Team4Job account email has been updated. A 48-hour cooling period is active.`);
             securityAlerts.push("Email address was changed. 48-hour cooling period applied.");
         }
+        // 5. Handle GSTIN Change
+        if (data.gstin !== undefined && data.gstin !== (userData.gstin || "")) {
+            updates.gstin = data.gstin;
+            securityAlerts.push("GSTIN details were updated.");
+        }
 
         // 5. Apply Updates
         if (Object.keys(updates).length > 0) {

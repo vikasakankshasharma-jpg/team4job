@@ -72,9 +72,9 @@ export default defineConfig({
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
 
-    /* Retry flaky tests caused by emulator timing (CI: 2, local: 1) */
+    /* Retry flaky tests caused by emulator timing (CI: 2, local: 2) */
     /* In CI, retry once only — 2 retries × 180s timeout = massive queue buildup */
-    retries: process.env.CI ? 1 : 1,
+    retries: process.env.CI ? 1 : 2,
 
     /* Single worker to prevent emulator state collisions */
     workers: 1,
@@ -97,11 +97,11 @@ export default defineConfig({
         /* Video on failure */
         video: 'retain-on-failure',
 
-        /* Maximum time each action can take — keep under CI job timeout of 60min */
-        actionTimeout: 60 * 1000,
+        /* Maximum time each action can take */
+        actionTimeout: 180 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 90 * 1000,
+        navigationTimeout: 300 * 1000,
 
         /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */

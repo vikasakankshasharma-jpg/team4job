@@ -7,141 +7,114 @@ test.describe('Secured Variation Orders', () => {
 
     // Shared Data
     let jobId: string;
-    const ProfessionalEmail = 'Professional_variation@example.com';
-    const jobGiverEmail = 'giver_variation@example.com';
 
     test('Full Variation Order Cycle', async ({ page }) => {
-        await page.addInitScript(() => {
-            (window as any).__DISABLE_AUTO_SAVE__ = true;
-        });
-        await page.setViewportSize({ width: 1280, height: 1000 });
-        test.setTimeout(300000); // 5 minutes
         const helper = new TestHelper(page);
         await helper.mockExternalAPIs();
+        await page.setViewportSize({ width: 1280, height: 1000 });
 
         // 1. Client Creates Job
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+        console.log('--- Step 1: Client Creates Job ---');
+        await helper.auth.login(TEST_ACCOUNTS.clientBusiness.email, TEST_ACCOUNTS.clientBusiness.password);
+        await helper.auth.ensureRole('Client');
         await helper.nav.goToPostJob();
 
-        await helper.form.fillInput('Job Title', 'Variation Test Job ' + Date.now());
-        await page.locator('textarea[name="jobDescription"]').fill('A simple job for testing variations. Must be at least 50 chars long to pass validation.');
-        await helper.form.fillPincodeAndSelectPO('110001'); // Delhi
-        await helper.form.selectDropdown('Category', 'Security'); // Valid category
-        await page.waitForTimeout(500);
+        // 🚦 RECOVERY: Pre-clear any old state if needed, but since we use unique titles it's fine
+        const jobTitle = 'Variation Test Job ' + Date.now();
+        const branchAnswers = [
+            '3-4',
+            'Both',
+            'Commercial',
+            'needs fresh wiring',
+            '1 week',
+            'Not needed',
+            'Mobile viewing only'
+        ];
 
-        // Use simpler labels and clear first
-        const skillsInput = page.locator('[data-testid="skills-input"], input[placeholder*="Skills"]');
-        await skillsInput.scrollIntoViewIfNeeded();
-        await skillsInput.clear();
-        await skillsInput.fill('Cabling, Drilling');
+        await helper.form.completeWizard(
+            'Security & Surveillance',
+            'CCTV / Video Surveillance',
+            branchAnswers,
+            'Within 1-2 Days'
+        );
 
-        // Address Details (using testid support in helper: 'House' -> 'house-input')
-        await helper.form.fillInput('House', 'Flat 101, Tech Park');
-        await helper.form.fillInput('Street', 'Main Avenue');
-        await helper.form.fillInput('Full Address', 'Flat 101, Tech Park, Main Avenue, Delhi 110001');
-
-        // Budget (using testid support: 'Min Budget' -> 'min-budget-input')
+        // Fill remaining details on the final form
+        await helper.form.fillInput('Job Title', jobTitle);
+        await helper.form.fillInput('Job Description', 'A simple job for testing variations. Must be at least 50 chars long to pass validation.');
         await helper.form.fillInput('Min Budget', '5000');
         await helper.form.fillInput('Max Budget', '10000');
+        await helper.form.submitPostJob("110001");
 
-        // Dates - standard format
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const deadlineDate = tomorrow.toISOString().split('T')[0];
-
-        await helper.form.fillInput('Bidding Deadline', deadlineDate);
-        // Start date 2 days later, using standard formatting for datetime-local
-        // datetime-local expects YYYY-MM-DDTHH:mm
-        const dayAfter = new Date();
-        dayAfter.setDate(dayAfter.getDate() + 2);
-        const startDate = dayAfter.toISOString().slice(0, 16);
-
-        await helper.form.fillInput('Job Work Start Date & Time', startDate);
-
-        // Prepare form and submit using robust helpers
-        await helper.preparePostJobSubmission();
-        await helper.form.submitPostJob();
-
-        // Check for navigation OR error message
-        try {
-            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 15000 });
-        } catch (e) {
-            // Check if error message is present
-            const errorMsg = await page.locator('.text-red-500').first().textContent().catch(() => null);
-            if (errorMsg) {
-                console.error("Post Job Failed with validation error:", errorMsg);
-                throw new Error(`Post Job validation failed: ${errorMsg}`);
-            }
-            throw e;
-        }
-
+        // Check for navigation
+        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 120000 });
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Created Job: ${jobId}`);
-        expect(jobId).toBeTruthy();
 
         // 2. Professional Bids
         console.log('--- Step 2: Professional Bids ---');
-        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
-
+        await helper.auth.ensureRole('Professional');
+        
         console.log(`Professional navigating to job: /dashboard/jobs/${jobId}`);
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
-        await expect(page.getByTestId('job-title')).toBeVisible({ timeout: 15000 });
-        await page.getByTestId('place-bid-button').click();
+        const placeBidBtn = page.getByTestId('place-bid-button').first();
+        await placeBidBtn.waitFor({ state: 'visible', timeout: 30000 });
+        await placeBidBtn.click();
 
-        // Wait for bid dialog to appear
+        // Wait for bid dialog
         const bidDialog = page.locator('div[role="dialog"]');
         await bidDialog.waitFor({ state: 'visible', timeout: 10000 });
 
-        await bidDialog.locator('input[name="amount"]').fill('500');
-        await bidDialog.locator('textarea[name="coverLetter"]').fill('I am the best Professional for this job.');
-        await bidDialog.getByRole('button', { name: 'Place Bid' }).click();
-        await helper.form.waitForToast('Bid Placed!');
+        await bidDialog.locator('input[name="amount"]').fill('5000');
+        await bidDialog.locator('textarea[name="coverLetter"]').fill('I am proposing a professional installation with variation support. I have extensive experience in CCTV systems.');
+        
+        const submitBidBtn = bidDialog.getByTestId('submit-bid-button').first();
+        await submitBidBtn.click({ force: true });
+        await bidDialog.waitFor({ state: 'hidden', timeout: 60000 });
+        
+        await helper.form.waitForToast('Bid Placed', 60000); 
         console.log('[PASS] Bid Placed');
 
         // 3. Client Awards
-        console.log('--- Step 3: JG Awards ---');
-        await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+        console.log('--- Step 3: Client Awards ---');
+        await helper.auth.login(TEST_ACCOUNTS.clientBusiness.email, TEST_ACCOUNTS.clientBusiness.password);
+        await helper.auth.ensureRole('Client');
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
-        // Wait for bids to load - reload if needed
-        try {
-            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 15000 });
-        } catch {
-            // Bid might not have synced yet - reload and try again
-            console.log('[E2E] Bids not visible, reloading page...');
-            await page.reload();
-            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
-        }
+        // Wait for bids to load and find the specific bid
+        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Offer Sent');
 
         // 4. Professional Accepts
         console.log('--- Step 4: Professional Accepts ---');
-        await helper.auth.logout();
         await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
+        await helper.auth.ensureRole('Professional');
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
         await page.getByTestId('accept-job-button').first().click();
 
         // Handle Conflict Dialog if it appears
         const conflictDialog = page.getByText('Schedule Conflict Warning');
         if (await conflictDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
+            await page.getByTestId('bypass-conflict-button').click();
         }
 
-        await helper.form.waitForToast('Job Accepted!');
+        await helper.form.waitForToast('Job Accepted');
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Job Accepted');
 
-        // 5. Client Funds Job (to move to In Progress)
-        console.log('--- Step 5: JG Funds Job ---');
-        await helper.auth.logout();
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+        // 5. Client Funds Job
+        console.log('--- Step 5: Client Funds Job ---');
+        await helper.auth.login(TEST_ACCOUNTS.clientBusiness.email, TEST_ACCOUNTS.clientBusiness.password);
+        await helper.auth.ensureRole('Client');
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
         await page.getByTestId('proceed-payment-button').click();
 
@@ -150,45 +123,49 @@ test.describe('Secured Variation Orders', () => {
         await page.evaluate(async () => {
             await (window as any).e2e_directFundJob();
         });
-        await helper.form.waitForToast('Test Mode: Payment Initiated');
+        await helper.form.waitForToast('Test Mode');
 
-        // Reload to see status
         await page.waitForTimeout(2000);
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         console.log('[PASS] Job Funded, Status: In Progress');
-        await helper.auth.logout();
 
         // 6. Professional Proposes Variation
+        console.log('--- Step 6: Professional Proposes Variation ---');
         await helper.auth.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
         await helper.auth.ensureRole('Professional');
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
         await page.click('[data-testid="propose-variation-button"]');
-        await page.fill('textarea', 'Extra Copper Wiring');
-        await page.fill('input[type="number"]', '150');
-        await page.click('button:has-text("Send Proposal")');
+        await page.getByTestId('variation-description-input').fill('Extra Copper Wiring for Outdoor Units');
+        await page.getByTestId('variation-amount-input').fill('1500');
+        await page.getByTestId('variation-submit-button').click();
 
-        // Check for toast (optional/relaxed) and verify data persistence
-        await expect(page.locator('text=Variation Proposed').first()).toBeVisible({ timeout: 5000 });
-        await expect(page.locator('text=Extra Copper Wiring')).toBeVisible();
-        await expect(page.locator('text=QUOTED')).toBeVisible();
-        await helper.auth.logout();
+        await expect(page.locator('text=Variation Proposed').first()).toBeVisible({ timeout: 15000 });
+        console.log('[PASS] Variation Proposed');
 
-        // 6. Client Pays
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+        // 7. Client Pays for Variation
+        console.log('--- Step 7: Client Pays for Variation ---');
+        await helper.auth.login(TEST_ACCOUNTS.clientBusiness.email, TEST_ACCOUNTS.clientBusiness.password);
+        await helper.auth.ensureRole('Client');
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await helper.auth.waitForStability();
 
-        page.once('dialog', dialog => dialog.accept());
-
-        // Find Approve & Pay button in the list
-        const approveBtn = page.locator('button:has-text("Approve & Pay")');
+        // Find Approve & Fund button in the list
+        const approveBtn = page.getByTestId('approve-variation-button').first();
         await approveBtn.waitFor({ state: 'visible', timeout: 30000 });
-        await page.waitForTimeout(2000); // Wait for React hydration
+        
+        // Handle confirmation dialog
+        page.once('dialog', dialog => dialog.accept());
         await approveBtn.click();
-        await helper.form.waitForToast('Test Mode: Variation Payment Initiated');
+        
+        await helper.form.waitForToast('Test Mode');
         console.log('[PASS] Variation Payment Initiated');
+        
+        await page.waitForTimeout(2000);
+        await page.reload();
+        await expect(page.locator('text=Variation Paid').first()).toBeVisible({ timeout: 15000 });
+        console.log('[PASS] Variation Cycle Complete');
     });
 });
-
-

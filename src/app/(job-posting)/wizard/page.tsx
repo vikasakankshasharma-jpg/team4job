@@ -295,6 +295,10 @@ export default function SmartWizardPage() {
             // Save final draft, reusing wizard draft ID if one exists
             await saveDraft(db, user.id, draftData, wizardDraftId || undefined);
             toast({ title: "Draft Saved", description: "Redirecting to final review..." });
+            
+            // Wait briefly to allow Firestore local cache to sync with backend before navigation
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
             router.push('/dashboard/post-job?wizardCompleted=true');
         } catch (error) {
             toast({ title: "Error", description: "Failed to save job details.", variant: "destructive" });

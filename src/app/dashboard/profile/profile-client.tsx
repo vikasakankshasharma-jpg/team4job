@@ -422,23 +422,30 @@ function CompletedJobsStat() {
     const [loading, setLoading] = React.useState(true);
 
     useEffect(() => {
-        if (!user || role !== 'Professional' || !db) {
+        // Hydration Guard: Ensure we have a valid user ID before performing Firestore queries
+        if (!user?.id || role !== 'Professional' || !db) {
             setLoading(false);
             return;
         }
         const fetchJobsData = async () => {
             setLoading(true);
-            const q = query(
-                collection(db, 'jobs'),
-                where('status', '==', 'Completed'),
-                where('awardedProfessional', '==', doc(db, 'users', user.id))
-            );
-            const querySnapshot = await getDocs(q);
-            setJobsCompletedCount(querySnapshot.size);
-            setLoading(false);
+            try {
+                const userRef = doc(db, 'users', user.id);
+                const q = query(
+                    collection(db, 'jobs'),
+                    where('status', '==', 'Completed'),
+                    where('awardedProfessional', '==', userRef)
+                );
+                const querySnapshot = await getDocs(q);
+                setJobsCompletedCount(querySnapshot.size);
+            } catch (error) {
+                console.error("[Profile] Failed to fetch completed jobs count:", error);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchJobsData();
-    }, [user, role, db]);
+    }, [user?.id, role, db]);
 
     return (
         <Link href="/dashboard/my-bids?status=Completed" className="block p-6 rounded-xl border border-border/50 bg-background/50 shadow-sm hover:bg-accent/50 hover:border-border transition-all flex flex-col items-center justify-center group text-center mt-2 lg:mt-0">
@@ -966,7 +973,11 @@ export default function ProfileClient() {
     }
 
     const handleBecomeclient = async () => {
-        if (!setUser || !setRole || !user || !db) return;
+        // Hydration & Safety Guard
+        if (!setUser || !setRole || !user?.id || !db) {
+            console.warn("[Profile] Cannot activate client role: prerequisites missing", { user: !!user, id: user?.id });
+            return;
+        }
         
         try {
             const userRef = doc(db, 'users', user.id);
@@ -1009,7 +1020,7 @@ export default function ProfileClient() {
                         <Avatar className="h-28 w-28 border-4 border-background shadow-md">
                             <AvatarImage src={user.realAvatarUrl} alt={user.name} />
                             <AvatarFallback className="text-4xl font-bold bg-primary/10 text-primary">
-                                {user.name.charAt(0)}
+                                {(user.name || "U").charAt(0)}
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-1">

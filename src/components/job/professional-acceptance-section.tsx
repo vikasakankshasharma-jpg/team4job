@@ -335,6 +335,7 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
                                     processAcceptance();
                                 }} 
                                 className="h-16 flex-[2] rounded-[1.5rem] bg-amber-500 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-amber-500/30 hover:bg-amber-600 transition-all active:scale-95 italic"
+                                data-testid="bypass-conflict-button"
                             >
                                 Bypass & Authorize
                             </Button>
