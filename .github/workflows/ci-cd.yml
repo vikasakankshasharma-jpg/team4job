@@ -180,7 +180,7 @@ jobs:
   smoke-auth:
     name: Smoke Tests — Auth (with emulator)
     runs-on: ubuntu-latest
-    needs: smoke-http
+    needs: [smoke-http, build]
     timeout-minutes: 45
 
     steps:
@@ -234,8 +234,16 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
-      - name: Start Next.js dev server in background
-        run: npm run dev &
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
+      - name: Start Next.js production server in background
+        run: npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -404,8 +412,16 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
-      - name: Start Next.js dev server in background
-        run: NODE_OPTIONS="--max-old-space-size=2560" npm run dev &
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
+      - name: Start Next.js production server in background
+        run: npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -605,8 +621,16 @@ jobs:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
 
-      - name: Start Next.js dev server for Edge Cases
-        run: npm run dev &
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
+      - name: Start Next.js production server in background
+        run: npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -706,6 +730,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
       - name: Setup environment variables
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -765,7 +797,7 @@ jobs:
   visual-regression-tests:
     name: Visual Regression Tests (Shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
-    needs: lint-and-typecheck
+    needs: [lint-and-typecheck, build]
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -814,8 +846,16 @@ jobs:
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
 
-      - name: Start Next.js dev server in background
-        run: npm run dev &
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Extract build artifacts
+        run: tar -xzf build-artifacts.tar.gz
+
+      - name: Start Next.js production server in background
+        run: npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
