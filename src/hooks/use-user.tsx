@@ -11,7 +11,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useFirestore, useFirebase } from "@/infrastructure/firebase/client-provider";
 import { toDate } from "@/lib/utils";
-import { updateSessionTokenAction, removeSessionTokenAction, getUserProfileAction } from "@/app/actions/auth.actions";
+import { getUserProfileAction } from "@/app/actions/auth.actions";
 
 
 type Role = "Client" | "Professional" | "Admin" | "Support Team";
@@ -181,7 +181,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Sync token to cookie for server-side fetching
         try {
           const token = await firebaseUser.getIdToken();
-          await updateSessionTokenAction(token);
+          // Use API route instead of Server Action to bypass CSRF 400 issues in CI
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            body: JSON.stringify({ token }),
+            headers: { 'Content-Type': 'application/json' }
+          });
         } catch (e: any) {
           // Token revoked, expired, or user disabled — sign out and let onAuthStateChanged handle redirect
           const isAuthError = e?.code?.startsWith('auth/') ||
@@ -344,7 +349,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else {
         // Clear token cookie
-        await removeSessionTokenAction();
+        // Clear token cookie via API route
+        await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
         setHasAuthUser(false);
         updateUserState(null);
         setLoading(false);
