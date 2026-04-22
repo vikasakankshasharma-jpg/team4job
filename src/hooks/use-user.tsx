@@ -359,6 +359,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setHasAuthUser(false);
         updateUserState(null);
         setLoading(false);
+      }
       if (typeof window !== 'undefined') {
         document.body.dataset.hydrated = 'true';
       }
