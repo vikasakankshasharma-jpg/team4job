@@ -182,11 +182,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const token = await firebaseUser.getIdToken();
           // Use API route instead of Server Action to bypass CSRF 400 issues in CI
+          // 🚀 SAFETY: Add 5s timeout to prevent hanging the auth listener
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
           await fetch('/api/auth/session', {
             method: 'POST',
             body: JSON.stringify({ token }),
-            headers: { 'Content-Type': 'application/json' }
-          });
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+          }).finally(() => clearTimeout(timeoutId));
         } catch (e: any) {
           // Token revoked, expired, or user disabled — sign out and let onAuthStateChanged handle redirect
           const isAuthError = e?.code?.startsWith('auth/') ||
@@ -354,6 +359,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setHasAuthUser(false);
         updateUserState(null);
         setLoading(false);
+      if (typeof window !== 'undefined') {
+        document.body.dataset.hydrated = 'true';
       }
     });
 
@@ -507,17 +514,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await signInWithEmailAndPassword(auth, email, password);
 
-      // 🚀 DETERMINISM FIX: Await session sync BEFORE returning true.
-      // This prevents a race condition where the page redirects to /dashboard
-      // before the auth-token cookie is set, causing a "Stuck on Login" hang.
+      // 🚀 DETERMINISM FIX: Sync session but don't let it block the entire login flow 
+      // if it hangs (5s timeout).
       const firebaseUser = auth.currentUser;
       if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          body: JSON.stringify({ token }),
-          headers: { 'Content-Type': 'application/json' }
-        }).catch(err => console.error('[useUser] Session sync failed:', err));
+        try {
+          const token = await firebaseUser.getIdToken();
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            body: JSON.stringify({ token }),
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+          }).finally(() => clearTimeout(timeoutId));
+        } catch (err) {
+          console.error('[useUser] Session sync failed or timed out:', err);
+        }
       }
 
       return true;

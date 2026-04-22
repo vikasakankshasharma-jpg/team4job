@@ -120,9 +120,12 @@ export class AuthHelper {
 
     async waitForQuiescence() {
         console.log('[AuthHelper] Waiting for page quiescence (Hydration & Network)...');
-        // Wait for hydration marker if it exists, otherwise use networkidle
+        // 🚀 DETERMINISM: Wait for the app to signal it is hydrated
+        await this.page.waitForSelector('body[data-hydrated="true"]', { timeout: 20000 }).catch(() => {
+            console.warn('[AuthHelper] Hydration marker data-hydrated="true" not found after 20s. Proceeding anyway...');
+        });
         await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
-        await this.page.waitForTimeout(2000); // Wait for React hydration 
+        await this.page.waitForTimeout(1000); 
         await this.injectNuclearCSS();
     }
 
