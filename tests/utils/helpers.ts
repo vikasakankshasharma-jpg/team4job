@@ -317,9 +317,9 @@ export class AuthHelper {
 
                 // Navigation to login - wait for domcontentloaded to ensure hydration is complete
                 // This prevents the "white screen" and input clearing issues on slow dev servers
-                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 120000 }).catch(async (e) => {
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 240000 }).catch(async (e) => {
                     console.warn(`[AuthHelper] initial goto domcontentloaded timed out. Forcing stop and reload...`);
-                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {});
                 });
                 
                 await this.page.waitForTimeout(5000); // Increased buffer for Next.js hydration and stability
@@ -440,11 +440,11 @@ export class AuthHelper {
 
                 // Wait for navigation or error
                 try {
-                    // Increased timeout to 120s to handle fresh dev-server compilation
-                    await this.page.waitForURL(/\/dashboard/, { timeout: 120000 });
+                    // Increased timeout to 240s to handle fresh dev-server compilation on constrained CI runners
+                    await this.page.waitForURL(/\/dashboard/, { timeout: 240000 });
                     console.log('[AuthHelper] Login submission redirect to dashboard detected.');
                 } catch (e) {
-                    console.warn('[AuthHelper] No redirect to /dashboard after 120s. Checking for error toasts or splash screen...');
+                    console.warn('[AuthHelper] No redirect to /dashboard after 240s. Checking for error toasts or splash screen...');
                     
                     // Check for error toasts (using some known error strings or general destructive variant)
                     const errorToast = this.page.locator('[role="status"]:has-text("Failed"), [role="status"]:has-text("Invalid")');
