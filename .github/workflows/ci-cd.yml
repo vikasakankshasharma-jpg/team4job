@@ -300,7 +300,7 @@ jobs:
         run: npx playwright test tests/e2e/smoke-auth/ --workers=1 --reporter=list,html
         env:
           CI: true
-          BASE_URL: http://127.0.0.1:3000
+          BASE_URL: http://localhost:3000
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -342,7 +342,7 @@ jobs:
       matrix:
         # 10 explicit groups — each maps to a specific set of test files below.
         # Distribution is weight-balanced so no single group exceeds ~170 units.
-        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     
     steps:
       - name: Checkout code
@@ -500,22 +500,37 @@ jobs:
               TEST_FILES="tests/e2e/beta-squad-batch-4.spec.ts tests/e2e/beta-squad-batch-2.spec.ts"
               ;;
             5)
-              TEST_FILES="tests/e2e/complete-transaction-cycle.spec.ts tests/e2e/universal-master-audit.spec.ts tests/e2e/data-fetch-audit.spec.ts"
+              TEST_FILES="tests/e2e/complete-transaction-cycle.spec.ts tests/e2e/data-fetch-audit.spec.ts"
               ;;
             6)
               TEST_FILES="tests/e2e/dispute-refund-audit.spec.ts tests/e2e/admin-smoke.spec.ts tests/e2e/ui-audit-all-roles.spec.ts tests/e2e/beta-squad-case-1.spec.ts tests/e2e/budget-estimator.spec.ts"
               ;;
             7)
-              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts"
+              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts"
               ;;
             8)
-              TEST_FILES="tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts"
+              TEST_FILES="tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts"
               ;;
             9)
-              TEST_FILES="tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts"
+              TEST_FILES="tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts"
               ;;
             10)
-              TEST_FILES="tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts"
+              TEST_FILES="tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts"
+              ;;
+            11)
+              TEST_FILES="tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts"
+              ;;
+            12)
+              TEST_FILES="tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts"
+              ;;
+            13)
+              TEST_FILES="tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts"
+              ;;
+            14)
+              TEST_FILES="tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts"
+              ;;
+            15)
+              TEST_FILES="tests/e2e/universal-master-audit.spec.ts"
               ;;
           esac
           echo "TEST_FILES=$TEST_FILES" >> $GITHUB_ENV
@@ -526,7 +541,7 @@ jobs:
           npx playwright test ${{ env.TEST_FILES }} --workers=1 --reporter=list,html
         env:
           CI: true
-          BASE_URL: http://127.0.0.1:3000
+          BASE_URL: http://localhost:3000
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -683,7 +698,7 @@ jobs:
           NEXT_PUBLIC_USE_EMULATOR: true
           NEXT_PUBLIC_E2E: true
           ALLOW_E2E_SEED: true
-          BASE_URL: http://127.0.0.1:3000
+          BASE_URL: http://localhost:3000
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
@@ -802,7 +817,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     
     steps:
       - name: Checkout code

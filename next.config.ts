@@ -32,7 +32,14 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '127.0.0.1:3000', 'localhost:9099', '127.0.0.1:9099'],
+      allowedOrigins: [
+        'localhost:3000', 
+        '127.0.0.1:3000', 
+        'localhost:9099', 
+        '127.0.0.1:9099',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+      ],
     },
     optimizePackageImports: [
       'lucide-react',
