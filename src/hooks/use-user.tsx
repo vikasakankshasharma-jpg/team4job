@@ -463,6 +463,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoggingOut.current = true;
     try {
       await signOut(auth);
+      // Deterministically clear session cookie
+      await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
       updateUserState(null);
       localStorage.removeItem('userRole');
       smartPush('/login');
@@ -504,6 +506,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       await signInWithEmailAndPassword(auth, email, password);
+
+      // 🚀 DETERMINISM FIX: Await session sync BEFORE returning true.
+      // This prevents a race condition where the page redirects to /dashboard
+      // before the auth-token cookie is set, causing a "Stuck on Login" hang.
+      const firebaseUser = auth.currentUser;
+      if (firebaseUser) {
+        const token = await firebaseUser.getIdToken();
+        await fetch('/api/auth/session', {
+          method: 'POST',
+          body: JSON.stringify({ token }),
+          headers: { 'Content-Type': 'application/json' }
+        }).catch(err => console.error('[useUser] Session sync failed:', err));
+      }
+
       return true;
     } catch (error: any) {
       return false;
