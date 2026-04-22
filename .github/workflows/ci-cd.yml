@@ -297,7 +297,7 @@ jobs:
           echo "All services ready. Running tests."
 
       - name: Run auth smoke tests
-        run: npx playwright test tests/e2e/smoke-auth.spec.ts --workers=1 --reporter=list,html
+        run: npx playwright test tests/e2e/smoke-auth/ --workers=1 --reporter=list,html
         env:
           CI: true
           BASE_URL: http://127.0.0.1:3000
