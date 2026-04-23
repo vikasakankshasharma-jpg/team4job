@@ -10,8 +10,10 @@ process.env.FIREBASE_STORAGE_EMULATOR_HOST = '127.0.0.1:9199';
 
 console.log('🔧 Configured for Local Emulators (Auth: 9099, Firestore: 8080, Storage: 9199)');
 
+// Sync with the Next.js client's project ID to prevent EMAIL_NOT_FOUND errors
+const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.DO_FIREBASE_PROJECT_ID || 'team4job-live';
+
 if (!getApps().length) {
-    const projectId = 'team4job-live';
     initializeApp({ projectId });
 }
 
@@ -164,10 +166,10 @@ async function seed() {
     if (process.env.E2E_NO_CLEAR === 'true') {
         console.log('⏭️ Skipping database clearing (E2E_NO_CLEAR=true)');
     } else {
-        console.log('🧹 Clearing emulator databases...');
+        console.log(`🧹 Clearing emulator databases for project: ${projectId}...`);
         try {
-            await fetch(`http://127.0.0.1:8080/emulator/v1/projects/team4job-live/databases/(default)/documents`, { method: 'DELETE' });
-            await fetch(`http://127.0.0.1:9099/emulator/v1/projects/team4job-live/accounts`, { method: 'DELETE' });
+            await fetch(`http://127.0.0.1:8080/emulator/v1/projects/${projectId}/databases/(default)/documents`, { method: 'DELETE' });
+            await fetch(`http://127.0.0.1:9099/emulator/v1/projects/${projectId}/accounts`, { method: 'DELETE' });
         } catch (e) {
             console.warn('⚠️ Could not clear databases, proceeding anyway...', e);
         }
