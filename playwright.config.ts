@@ -185,7 +185,7 @@ export default defineConfig({
      * - Keep at 8 min per test so a shard with 3-4 tests stays well within 60 min
      * - @slow tests (beta-squad, milestones) are excluded from the regression shard
      */
-    timeout: process.env.CI ? 8 * 60 * 1000 : 35 * 60 * 1000,
+    timeout: process.env.CI ? 5 * 60 * 1000 : 35 * 60 * 1000,
 
     /* Expect timeout */
     expect: {

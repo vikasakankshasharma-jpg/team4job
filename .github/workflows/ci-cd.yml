@@ -175,13 +175,27 @@ jobs:
           retention-days: 7
 
   # Job 3b: Auth Smoke Tests — requires Firebase emulator.
-  # Only 5 targeted auth-flow tests. Single runner, no matrix sharding.
-  # Startup time: ~10 min (npm ci + Java 21 + Firebase emulator + npm run dev).
+  # MATRIX strategy: each shard runs exactly 1 test file in parallel.
+  # Math: 1 test × 5min × 2 retries = 10min + 12min setup = 22min total (well within 35min timeout)
   smoke-auth:
-    name: Smoke Tests — Auth (with emulator)
+    name: "Smoke Auth — ${{ matrix.test-name }}"
     runs-on: ubuntu-latest
     needs: [smoke-http, build]
-    timeout-minutes: 60
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - test-file: tests/e2e/smoke-auth/01-client-login.spec.ts
+            test-name: client-login
+          - test-file: tests/e2e/smoke-auth/02-pro-login.spec.ts
+            test-name: pro-login
+          - test-file: tests/e2e/smoke-auth/03-admin-login.spec.ts
+            test-name: admin-login
+          - test-file: tests/e2e/smoke-auth/04-client-wizard.spec.ts
+            test-name: client-wizard
+          - test-file: tests/e2e/smoke-auth/05-pro-browse.spec.ts
+            test-name: pro-browse
 
     steps:
       - name: Checkout code
@@ -261,7 +275,7 @@ jobs:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
 
-      - name: Wait for Firebase emulator and Next.js dev server
+      - name: Wait for Firebase emulator and Next.js server
         run: |
           echo "Waiting for Firebase Auth Emulator on port 9099..."
           for i in $(seq 1 40); do
@@ -294,10 +308,10 @@ jobs:
             echo "ERROR: Seeding failed. Aborting."
             exit 1
           fi
-          echo "All services ready. Running tests."
+          echo "All services ready."
 
-      - name: Run auth smoke tests
-        run: npx playwright test tests/e2e/smoke-auth/ --workers=1 --reporter=list,html
+      - name: "Run smoke auth test — ${{ matrix.test-name }}"
+        run: npx playwright test ${{ matrix.test-file }} --workers=1 --reporter=list,html
         env:
           CI: true
           BASE_URL: http://localhost:3000
@@ -318,12 +332,13 @@ jobs:
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
+          ALLOW_E2E_SEED: true
 
-      - name: Upload auth smoke test report
+      - name: Upload smoke auth report — ${{ matrix.test-name }}
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: smoke-auth-report
+          name: smoke-auth-report-${{ matrix.test-name }}
           path: |
             playwright-report/
             test-results/
