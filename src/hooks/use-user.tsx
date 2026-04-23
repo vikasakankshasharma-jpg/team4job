@@ -11,7 +11,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useFirestore, useFirebase } from "@/infrastructure/firebase/client-provider";
 import { toDate } from "@/lib/utils";
-import { getUserProfileAction } from "@/app/actions/auth.actions";
+// getUserProfileAction removed — replaced with direct Firestore reads to avoid CSRF 400 errors
 
 
 type Role = "Client" | "Professional" | "Admin" | "Support Team";
@@ -214,7 +214,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const fetchProfile = async () => {
             try {
-              const userData = await getUserProfileAction(firebaseUser.uid);
+              // 🚀 Direct Firestore read instead of Server Action to avoid CSRF 400 errors
+              const { getDoc, doc: firestoreDoc } = await import('firebase/firestore');
+              const docSnap = await getDoc(firestoreDoc(db, 'users', firebaseUser.uid));
+              const userData = docSnap.exists() ? docSnap.data() as User : null;
               if (userData) {
                 updateUserState(userData);
               } else {
@@ -230,7 +233,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } as User);
               }
             } catch (e) {
-              console.error("Audit Server-Action Profile Fetch Error:", e);
+              console.error('E2E Profile Fetch Error (direct Firestore):', e);
               const fallbackUser: User = {
                 id: firebaseUser.uid,
                 email: firebaseUser.email!,
