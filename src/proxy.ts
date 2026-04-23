@@ -3,7 +3,6 @@ import type { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 
 const locales = ['en', 'hi', 'mr', 'ta', 'te', 'kn'];
-const defaultLocale = 'en';
 
 const isE2eAllowed = () => {
     const emulatorEnabled =
@@ -38,7 +37,8 @@ export async function proxy(request: NextRequest) {
             if (!isE2eAllowed()) {
                 await limiter.check(20, ip + pathname);
             }
-        } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) {
             return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
 
