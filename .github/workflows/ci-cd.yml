@@ -13,7 +13,6 @@ defaults:
 
 env:
   NODE_VERSION: '20.x'
-  FIREBASE_CLI_EXPERIMENTS: webframeworks
   FIREBASE_TOOLS_VERSION: '11.28.0'
 
 jobs:
@@ -73,10 +72,7 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
-          NEXT_PUBLIC_IS_CI: true
-          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
-          NEXT_PUBLIC_USE_EMULATOR: true
-          NEXT_PUBLIC_E2E: true
+
 
 
       - name: Archive build artifacts
@@ -216,7 +212,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -348,7 +344,7 @@ jobs:
   # Groups are assigned by weight (lines/10 + tests*5) so each CI job
   # finishes within the 60-minute timeout without server crashes.
   e2e-tests:
-    name: Full E2E Tests (Group ${{ matrix.group }}/10)
+    name: Full E2E Tests (Group ${{ matrix.group }}/20)
     runs-on: ubuntu-latest
     needs: smoke-auth
     timeout-minutes: 60
@@ -378,7 +374,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -629,7 +625,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -769,7 +765,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
           npm install -g @lhci/cli
 
       - name: Install Playwright browsers
@@ -868,7 +864,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -998,7 +994,7 @@ jobs:
           echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Jobs Status" >> $GITHUB_STEP_SUMMARY
-          echo "- Smoke Tests: ${{ needs.smoke-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke Tests: ${{ needs.smoke-auth.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Edge Case Tests: ${{ needs.edge-case-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Performance Tests: ${{ needs.performance-tests.result }}" >> $GITHUB_STEP_SUMMARY

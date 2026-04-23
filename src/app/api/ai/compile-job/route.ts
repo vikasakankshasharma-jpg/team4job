@@ -1,5 +1,4 @@
 
-import { compileSmartJob } from '@/ai/flows/compile-smart-job';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -20,6 +19,7 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        const { compileSmartJob } = await import('@/ai/flows/compile-smart-job');
         const result = await compileSmartJob(body);
         return NextResponse.json(result);
     } catch (error: any) {

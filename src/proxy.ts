@@ -1,7 +1,9 @@
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
+
+const locales = ['en', 'hi', 'mr', 'ta', 'te', 'kn'];
+const defaultLocale = 'en';
 
 const isE2eAllowed = () => {
     const emulatorEnabled =
@@ -14,63 +16,67 @@ const isE2eAllowed = () => {
     return process.env.NODE_ENV !== 'production';
 };
 
-// Paths that do not require authentication (public APIs)
 const PUBLIC_PATHS = [
     '/api/auth/session',
     '/api/cashfree/webhook',
-    '/api/test-email', // Email testing endpoint
+    '/api/test-email',
     ...(isE2eAllowed() ? ['/api/e2e'] : []),
 ];
 
-// Initialize rate limiter: 20 requests per minute per IP
-// Note: This is per-container/instance.
 const limiter = rateLimit({
-    interval: 60 * 1000, // 60 seconds
-    uniqueTokenPerInterval: 500, // Max 500 unique IPs per minute
+    interval: 60 * 1000,
+    uniqueTokenPerInterval: 500,
 });
 
-export default async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Only strictly secure /api routes
-    if (!pathname.startsWith('/api')) {
-        return NextResponse.next();
-    }
-
-    // Skip public paths from Auth checks, but maybe NOT rate limits?
-    // Let's rate limit everything to be safe.
-
-    // 1. Rate Limiting Check
-    const ip = request.headers.get('x-forwarded-for') || 'anonymous';
-    try {
-        // Bypass rate limiting in E2E mode to prevent flakiness
-        if (!isE2eAllowed()) {
-            await limiter.check(20, ip + pathname);
+    // 1. API Logic (Rate Limiting & Auth)
+    if (pathname.startsWith('/api')) {
+        const ip = request.headers.get('x-forwarded-for') || 'anonymous';
+        try {
+            if (!isE2eAllowed()) {
+                await limiter.check(20, ip + pathname);
+            }
+        } catch (e) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
-    } catch (e) {
-        // Rate Limited
-        return NextResponse.json(
-            { error: 'Too Many Requests' },
-            { status: 429 }
-        );
-    }
-    // 2. Auth Check
-    if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+
+        if (PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+            return NextResponse.next();
+        }
+
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return NextResponse.json(
+                { error: 'Authentication required. Please provide a valid Bearer token.' },
+                { status: 401 }
+            );
+        }
         return NextResponse.next();
     }
 
-    const authHeader = request.headers.get('Authorization');
+    // 2. Localization Logic
+    const pathnameHasLocale = locales.some(
+        (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+    );
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return NextResponse.json(
-             { error: 'Authentication required. Please provide a valid Bearer token.' },
-             { status: 401 }
-        );
+    if (pathnameHasLocale) {
+        const segments = pathname.split('/');
+        const locale = segments[1];
+        const newPathname = pathname.replace(`/${locale}`, '') || '/';
+
+        const response = NextResponse.redirect(new URL(newPathname, request.url));
+        response.cookies.set('NEXT_LOCALE', locale, {
+            path: '/',
+            maxAge: 365 * 24 * 60 * 60,
+        });
+        return response;
     }
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: '/api/:path*',
+    matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js).*)'],
 };

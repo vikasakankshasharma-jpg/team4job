@@ -1,17 +1,16 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from '@next/bundle-analyzer';
+import createNextIntlPlugin from 'next-intl/plugin';
 import { withSentryConfig } from '@sentry/nextjs';
+
+const withNextIntl = createNextIntlPlugin();
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // We now enforce ESLint checks during the build
-    ignoreDuringBuilds: true,
-  },
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'genkit', '@genkit-ai/googleai', '@genkit-ai/vertexai'],
   compress: true,
   poweredByHeader: false,
   images: {
@@ -33,12 +32,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        'localhost:3000', 
-        '127.0.0.1:3000', 
-        'localhost:9099', 
-        '127.0.0.1:9099',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000'
+        'localhost:3000',
+        '127.0.0.1:3000',
       ],
     },
     optimizePackageImports: [
@@ -119,7 +114,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(), geolocation=()',
+            value: 'camera=(self), microphone=(), geolocation=(self)',
           },
           {
             key: 'Content-Security-Policy',
@@ -132,9 +127,10 @@ const nextConfig: NextConfig = {
 };
 
 const nextConfigWithBundleAnalyzer = withBundleAnalyzer(nextConfig);
+const nextConfigWithIntl = withNextIntl(nextConfigWithBundleAnalyzer);
 
 // Sentry runtime monitoring is still active (see instrumentation-client.ts)
-export default withSentryConfig(nextConfigWithBundleAnalyzer, {
+export default withSentryConfig(nextConfigWithIntl, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
