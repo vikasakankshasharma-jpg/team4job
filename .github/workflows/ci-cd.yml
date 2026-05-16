@@ -273,28 +273,33 @@ jobs:
 
       - name: Wait for Firebase emulator and Next.js server
         run: |
+          echo "Checking if Firebase emulator process is running..."
+          ps aux | grep firebase || echo "Firebase process not found in ps"
+          
           echo "Waiting for Firebase Auth Emulator on port 9099..."
-          for i in $(seq 1 40); do
+          for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1; then
-              echo "Firebase Auth Emulator is ready!"
+              echo "Firebase Auth Emulator is ready after ${i} attempts!"
               break
             fi
-            echo "Attempt $i/40 - emulator not ready, waiting 5s..."
+            echo "Attempt $i/60 - emulator not ready, waiting 5s..."
             sleep 5
-            if [ $i -eq 40 ]; then
+            if [ $i -eq 60 ]; then
               echo "ERROR: Firebase emulator did not start. Aborting."
+              # Print logs if possible
+              ls -R .firebase || echo "No .firebase directory"
               exit 1
             fi
           done
           echo "Waiting for Next.js on port 3000..."
-          for i in $(seq 1 40); do
+          for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
-              echo "Next.js is ready!"
+              echo "Next.js is ready after ${i} attempts!"
               break
             fi
-            echo "Attempt $i/40 - Next.js not ready, waiting 5s..."
+            echo "Attempt $i/60 - Next.js not ready, waiting 5s..."
             sleep 5
-            if [ $i -eq 40 ]; then
+            if [ $i -eq 60 ]; then
               echo "ERROR: Next.js dev server did not start. Aborting."
               exit 1
             fi
@@ -455,12 +460,12 @@ jobs:
       - name: Wait for Firebase Emulator and Next.js to be ready
         run: |
           echo "Waiting for Firebase Auth Emulator on port 9099..."
-          for i in $(seq 1 40); do
+          for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1; then
-              echo "Firebase Auth Emulator is ready!"
+              echo "Firebase Auth Emulator is ready after ${i} attempts!"
               break
             fi
-            echo "Attempt $i/40 - emulator not ready yet, waiting 5s..."
+            echo "Attempt $i/60 - emulator not ready yet, waiting 5s..."
             sleep 5
           done
           echo "Waiting for Next.js on port 3000..."
