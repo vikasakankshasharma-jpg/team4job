@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import { getAdminDb, getAdminStorage } from '@/infrastructure/firebase/admin';
 import { rateLimit } from "@/lib/rate-limit";
-import { Timestamp } from "firebase-admin/firestore";
+import { userService } from "@/domains/users/user.service";
+import { ProfessionalOnboardingInput } from "@/lib/types";
 
 const limiter = rateLimit({
     interval: 60 * 60 * 1000, // 1 hour
@@ -20,66 +20,41 @@ export async function POST(req: NextRequest) {
         const decodedToken = await getAuth().verifyIdToken(token);
         const userId = decodedToken.uid;
 
-        // Rate Limiting (Prevent multiple application submissions per hour)
+        // Rate Limiting
         try {
-            await limiter.check(3, userId); // Limit 3 attempts per hour per user
+            await limiter.check(3, userId);
         } catch (e) {
             return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
         }
 
         const formData = await req.formData();
-        const db = getAdminDb();
-        const storage = getAdminStorage();
 
-        // 1. Extract Data
-        const firstName = formData.get("firstName") as string;
-        const lastName = formData.get("lastName") as string;
-        const shopName = formData.get("shopName") as string;
-        const city = formData.get("city") as string;
-        const pincode = formData.get("pincode") as string;
-        const experience = formData.get("experience") as string;
-        const skills = JSON.parse(formData.get("skills") as string || "[]");
-
-        // 2. Upload Files
-        const files = {
-            aadharFront: formData.get("aadharFront") as File | null,
-            aadharBack: formData.get("aadharBack") as File | null,
-            panCard: formData.get("panCard") as File | null,
-            profilePhoto: formData.get("profilePhoto") as File | null,
+        // 1. Prepare Data for Service
+        const onboardingData: ProfessionalOnboardingInput = {
+            firstName: formData.get("firstName") as string,
+            lastName: formData.get("lastName") as string,
+            shopName: formData.get("shopName") as string,
+            city: formData.get("city") as string,
+            pincode: formData.get("pincode") as string,
+            experience: formData.get("experience") as string,
+            skills: JSON.parse(formData.get("skills") as string || "[]"),
+            files: {}
         };
 
-        const uploadedUrls: Record<string, string> = {};
-        const bucket = storage.bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dodo-beta.firebasestorage.app');
-
-        for (const [key, file] of Object.entries(files)) {
+        const fileKeys = ["aadharFront", "aadharBack", "panCard", "profilePhoto"] as const;
+        for (const key of fileKeys) {
+            const file = formData.get(key) as File | null;
             if (file && file.size > 0) {
-                const buffer = Buffer.from(await file.arrayBuffer());
-                const fileName = `kyc/${userId}/${key}_${Date.now()}.${file.name.split('.').pop()}`;
-                const fileRef = bucket.file(fileName);
-
-                await fileRef.save(buffer, {
-                    metadata: { contentType: file.type },
-                });
-
-                await fileRef.makePublic(); // Or use signed URLs for better security
-                uploadedUrls[key] = fileRef.publicUrl();
+                onboardingData.files[key] = {
+                    buffer: Buffer.from(await file.arrayBuffer()),
+                    name: file.name,
+                    type: file.type
+                };
             }
         }
 
-        // 3. Update User Profile
-        await db.collection("users").doc(userId).update({
-            name: `${firstName} ${lastName}`.trim(),
-            "address.cityPincode": pincode,
-            "address.city": city, // Assuming schema supports this or we map it
-            "professionalProfile.shopName": shopName, // Add to schema if missing
-            "professionalProfile.experience": experience,
-            "professionalProfile.skills": skills,
-            "professionalProfile.verificationStatus": "verified",
-            "professionalProfile.verified": true,
-            "professionalProfile.documents": uploadedUrls,
-            "professionalProfile.submittedAt": Timestamp.now(),
-            "realAvatarUrl": uploadedUrls.profilePhoto || undefined,
-        });
+        // 2. Call Domain Service
+        await userService.submitProfessionalOnboarding(userId, onboardingData);
 
         return NextResponse.json({ success: true, message: "Application submitted successfully" });
 

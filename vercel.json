@@ -52,5 +52,10 @@
       "develop": true
     }
   },
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/warm",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }

@@ -4,7 +4,7 @@
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
-  maxInstances: 2
+  maxInstances: 10
   memory: 1024Mi
   cpu: 1
 
@@ -35,19 +35,22 @@ env:
   - variable: GEMINI_API_KEY
     secret: gemini-api-key
 
-  # Cashfree (Currently TEST keys - Update to PROD when ready)
+  # Cashfree PRODUCTION keys
   - variable: CASHFREE_PAYMENTS_CLIENT_ID
-    value: TEST10789459c9709ea1989304ccd77e95498701
+    secret: cashfree-payments-prod-client-id
+  - variable: CASHFREE_PAYOUTS_CLIENT_ID
+    secret: cashfree-payouts-prod-client-id
+  - variable: CASHFREE_CLIENT_ID
+    secret: cashfree-prod-client-id
+  - variable: CASHFREE_ENV
+    value: production
+  
   - variable: CASHFREE_PAYMENTS_CLIENT_SECRET
     secret: cashfree-payments-secret # Assumes you have a secret named this
   
-  - variable: CASHFREE_PAYOUTS_CLIENT_ID
-    value: CF10789459D5ADRNV4U4NC739RIECG
   - variable: CASHFREE_PAYOUTS_CLIENT_SECRET
     secret: cashfree-payouts-secret # Assumes you have a secret named this
 
-  - variable: CASHFREE_CLIENT_ID
-    value: CF10789459D5AE14N4U4NC739RIECG
   - variable: CASHFREE_CLIENT_SECRET
     secret: cashfree-client-secret # Assumes you have a secret named this
 

@@ -615,12 +615,18 @@ export interface AIFeedback {
 
 export interface UpdateProfileInput {
   name?: string;
+  email?: string;
   mobile?: string;
   address?: Address;
+  addresses?: {
+    residence?: Address;
+    office?: Address;
+  };
   pincodes?: {
     residential: string;
     office?: string;
   };
+  gstin?: string;
   professionalProfile?: Partial<User["professionalProfile"]>;
 }
 
@@ -629,6 +635,22 @@ export interface ProfessionalFilters {
   minRating?: number;
   verified?: boolean;
   pincode?: string;
+}
+
+export interface ProfessionalOnboardingInput {
+    firstName: string;
+    lastName: string;
+    shopName: string;
+    city: string;
+    pincode: string;
+    experience: string;
+    skills: string[];
+    files: {
+        aadharFront?: { buffer: Buffer; name: string; type: string } | null;
+        aadharBack?: { buffer: Buffer; name: string; type: string } | null;
+        panCard?: { buffer: Buffer; name: string; type: string } | null;
+        profilePhoto?: { buffer: Buffer; name: string; type: string } | null;
+    };
 }
 
 

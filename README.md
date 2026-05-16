@@ -2,7 +2,7 @@
 > **"Zero to Hero" Manual for Recreating the Platform**
 
 ![Deployment](https://img.shields.io/badge/deployment-live-success)
-![Next.js](https://img.shields.io/badge/Next.js-14.x-black)
+![Next.js](https://img.shields.io/badge/Next.js-16.x-black)
 ![Firebase](https://img.shields.io/badge/Firebase-Spark%20Plan-orange)
 ![Readiness](https://img.shields.io/badge/Readiness-100%25-brightgreen)
 
@@ -28,8 +28,8 @@
 ## 2. Architecture Blueprint
 
 ### Tech Stack
-*   **Frontend:** Next.js 14 (App Router), React 18, TailwindCSS, ShadCN/UI.
-*   **Backend:** Firebase App Hosting (running on Cloud Run), Firebase Functions for triggers.
+*   **Frontend:** Next.js 16 (App Router + Turbopack), React 19, TailwindCSS, ShadCN/UI.
+*   **Backend:** Vercel Functions (Node.js 20+), Firebase Admin SDK.
 *   **Database:** Cloud Firestore (NoSQL).
 *   **AI (Phase 1):** Google Gemini (via Genkit) for job scoping and bid analysis.
 *   **AI (Phase 2 Planned):** Sarvam AI for regional language Voice Agents and Document OCR.
@@ -93,8 +93,8 @@ This remains the core logic of the application and is detailed in the previous v
 ## 4. Zero-Cost Security Architecture
 
 To maintain the free tier, we use a specific architecture:
-1.  **Firebase App Hosting:** The Next.js application is deployed as a containerized service on Firebase App Hosting. This runs on Cloud Run, which has a generous free tier for compute resources, handling our API routes and server-side rendering.
-2.  **Firebase Functions:** Used for background triggers (e.g., `onBidCreated`) that don't need to be user-facing. The free tier for function invocations is substantial.
+1.  **Vercel Edge & Serverless:** The application is deployed on Vercel, utilizing Edge Middleware (`proxy.ts`) for localization and security.
+2.  **Lambda Optimization:** Heavy AI SDKs (Genkit) are externalized to reduce cold starts.
 3.  **Client-Side Throttling:** We use `lodash.debounce` on all write operations to save Firestore quotas.
 
 ---
@@ -135,9 +135,9 @@ We use **Playwright** for a comprehensive suite of over 25+ automated E2E tests 
     *All 25 core test cases (Beta Squad Suite) pass with a 100% success rate.*
 
 ### Deployment
-*   **Production:** Deploys automatically to **dodo-beta.web.app** via GitHub Actions on push to the `main` branch.
-*   **Configuration:** The deployment is configured in `apphosting.yaml`.
-*   **Manual Trigger:** You can manually trigger the "Deploy to Production" workflow in the GitHub Actions tab.
+*   **Production:** Deploys automatically to **Vercel** via GitHub Actions on push to the `main` branch.
+*   **Monitoring:** Vercel Analytics and Speed Insights are active in production.
+*   **Configuration:** Deployment headers and skew protection are configured in `vercel.json`.
 
 ---
 

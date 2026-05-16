@@ -10,6 +10,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['127.0.0.1', 'localhost:3000'],
   serverExternalPackages: ['firebase-admin', 'genkit', '@genkit-ai/googleai', '@genkit-ai/vertexai'],
   compress: true,
   poweredByHeader: false,
@@ -18,12 +19,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'example.com',
         port: '',
         pathname: '/**',
       },

@@ -2,7 +2,8 @@
 
 import { userRepository } from './user.repository';
 
-import { User, UpdateProfileInput, ProfessionalFilters, Role } from '@/lib/types';
+import { User, UpdateProfileInput, ProfessionalFilters, Role, ProfessionalOnboardingInput } from '@/lib/types';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export class UserService {
     async getProfile(userId: string): Promise<User> {
@@ -18,18 +19,89 @@ export class UserService {
         return user;
     }
 
-    async updateProfile(userId: string, updates: UpdateProfileInput): Promise<void> {
-        // Validate updates
-        if (updates.name && updates.name.trim().length < 2) {
-            throw new Error('Name must be at least 2 characters');
+    async updateProfile(userId: string, data: UpdateProfileInput): Promise<void> {
+        const user = await userRepository.fetchById(userId);
+        if (!user) throw new Error('User not found');
+
+        const updates: any = {};
+        const securityAlerts: string[] = [];
+
+        // 1. Handle Name Change
+        if (data.name && data.name !== user.name) {
+            if (data.name.trim().length < 2) throw new Error('Name too short');
+            updates.name = data.name;
         }
 
-        if (updates.mobile && !this.isValidMobile(updates.mobile)) {
-            throw new Error('Invalid mobile number');
+        // 2. Handle Address Changes
+        if (data.addresses) {
+            updates.addresses = {
+                ...user.addresses,
+                residence: data.addresses.residence || user.addresses?.residence,
+                office: data.addresses.office || user.addresses?.office,
+            };
+            securityAlerts.push("Address details were updated.");
         }
 
-        await userRepository.update(userId, updates as Partial<User>);
+        // 3. Handle Mobile Change (with Cooling Period)
+        if (data.mobile && data.mobile !== user.mobile) {
+            if (!this.isValidMobile(data.mobile)) throw new Error('Invalid mobile number');
+            
+            const oldMobile = user.mobile;
+            updates.mobile = data.mobile;
+            updates.isMobileVerified = false;
+            updates.restrictedUntil = Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000));
+            
+            const { sendWhatsAppTemplate } = await import("@/lib/whatsapp");
+            if (oldMobile) {
+                await sendWhatsAppTemplate(oldMobile, "security_alert", ["Mobile Number Change", "Your mobile number is being changed."]);
+            }
+            await sendWhatsAppTemplate(data.mobile, "security_alert", ["Mobile Number Change", "Your mobile number has been updated. A 48-hour cooling period is active."]);
+            securityAlerts.push("Mobile number was changed. 48-hour cooling period applied.");
+        }
 
+        // 4. Handle Email Change (with Cooling Period)
+        if (data.email && data.email !== user.email) {
+            const oldEmail = user.email;
+            updates.email = data.email;
+            updates.isEmailVerified = false;
+            updates.restrictedUntil = Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000));
+
+            const { getAdminAuth } = await import("@/infrastructure/firebase/admin");
+            const auth = getAdminAuth();
+            await auth.updateUser(userId, { email: data.email, emailVerified: false });
+
+            const { sendNotification } = await import("@/lib/notifications");
+            if (oldEmail) {
+                await sendNotification(oldEmail, "Security Alert: Email Changed", `Your Team4Job account email is being changed to ${data.email}.`);
+            }
+            await sendNotification(data.email, "Security Alert: Email Changed", `Your Team4Job account email has been updated.`);
+            securityAlerts.push("Email address was changed. 48-hour cooling period applied.");
+        }
+
+        // 5. GSTIN
+        if (data.gstin !== undefined && data.gstin !== (user.gstin || "")) {
+            updates.gstin = data.gstin;
+            securityAlerts.push("GSTIN details were updated.");
+        }
+
+        // 6. Apply Updates
+        if (Object.keys(updates).length > 0) {
+            await userRepository.update(userId, updates);
+
+            // In-App Notification
+            if (securityAlerts.length > 0) {
+                const db = (await import('@/infrastructure/firebase/admin')).getAdminDb();
+                await db.collection("notifications").add({
+                    userId,
+                    type: "SECURITY_ALERT",
+                    title: "Profile Security Update",
+                    message: securityAlerts.join(" "),
+                    createdAt: Timestamp.now(),
+                    read: false,
+                    priority: "high"
+                });
+            }
+        }
     }
 
     async verifyProfessional(professionalId: string, adminId: string): Promise<void> {
@@ -132,6 +204,48 @@ export class UserService {
 
 
         return stats;
+    }
+
+    async submitProfessionalOnboarding(userId: string, data: ProfessionalOnboardingInput): Promise<void> {
+        const { getAdminStorage } = await import('@/infrastructure/firebase/admin');
+        const storage = getAdminStorage();
+        const bucket = storage.bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dodo-beta.firebasestorage.app');
+
+        const uploadedUrls: Record<string, string> = {};
+
+        // 1. Upload Files
+        for (const [key, fileData] of Object.entries(data.files)) {
+            if (fileData && fileData.buffer) {
+                const fileName = `kyc/${userId}/${key}_${Date.now()}.${fileData.name.split('.').pop()}`;
+                const fileRef = bucket.file(fileName);
+
+                await fileRef.save(fileData.buffer, {
+                    metadata: { contentType: fileData.type },
+                });
+
+                await fileRef.makePublic();
+                uploadedUrls[key] = fileRef.publicUrl();
+            }
+        }
+
+        // 2. Update User Profile using repository
+        await userRepository.update(userId, {
+            name: `${data.firstName} ${data.lastName}`.trim(),
+            address: {
+                cityPincode: data.pincode,
+                city: data.city,
+            } as any,
+            professionalProfile: {
+                shopName: data.shopName,
+                experience: data.experience,
+                skills: data.skills,
+                verificationStatus: "verified",
+                verified: true,
+                documents: uploadedUrls,
+                submittedAt: Timestamp.now(),
+            } as any,
+            realAvatarUrl: uploadedUrls.profilePhoto || undefined,
+        } as any);
     }
 
     private isValidMobile(mobile: string): boolean {

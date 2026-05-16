@@ -592,7 +592,7 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
                         {tJob('nearYou')}
                       </CardTitle>
                       <CardDescription className="text-base font-medium opacity-80 mt-1">
-                        {tJob('unbidOppPincode').replace('{unbid}', 'Unbid')}
+                        {tJob('unbidOppPincode', { unbid: tCommon('unbid') })}
                       </CardDescription>
                     </div>
                     {user && user.pincodes?.office && (

@@ -191,6 +191,23 @@ export class JobService {
             throw new Error('Unauthorized update attempt');
         }
 
+        // --- Chat Moderation (Revenue Protection) ---
+        if (updates.privateMessages && updates.privateMessages.length > 0) {
+            const lastMsg = updates.privateMessages[updates.privateMessages.length - 1];
+            if (lastMsg && lastMsg.content) {
+                const { moderateMessageFlow } = await import('@/ai/flows/moderate-message');
+                const moderation = await moderateMessageFlow({
+                    message: lastMsg.content,
+                    userId: userId,
+                    limitType: 'ai_chat'
+                });
+
+                if (moderation.isFlagged) {
+                    throw new Error(moderation.reason || "Message blocked by safety filters.");
+                }
+            }
+        }
+
         await jobRepository.update(jobId, updates);
     }
 
@@ -423,7 +440,7 @@ export class JobService {
     /**
      * Submit work
      */
-    async submitWork(jobId: string, userId: string): Promise<void> {
+    async submitWork(jobId: string, userId: string, attachments?: any[]): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
         if (!job) {
             throw new Error('Job not found');
@@ -437,9 +454,15 @@ export class JobService {
             throw new Error(`Cannot submit work in ${job.status} status`);
         }
 
-        await jobRepository.update(jobId, {
+        const updates: any = {
             workSubmittedAt: new Date(),
-        });
+        };
+
+        if (attachments && attachments.length > 0) {
+            updates.attachments = attachments;
+        }
+
+        await jobRepository.update(jobId, updates);
 
         await jobRepository.updateStatus(jobId, 'Pending Confirmation', userId, 'Work submitted by Professional');
     }
@@ -778,6 +801,129 @@ export class JobService {
             avatarUrl: targetUser.avatarUrl,
             roles: targetUser.roles
         };
+    }
+
+    /**
+     * Raise a dispute for a job
+     */
+    async raiseDispute(
+        jobId: string,
+        userId: string,
+        reason: string,
+        description: string,
+        category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question" = "Job Dispute",
+        attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+    ): Promise<string> {
+        const job = await this.getJobById(jobId, userId);
+
+        // 1. Create Dispute Record
+        const disputeId = await jobRepository.createDispute({
+            jobId,
+            jobTitle: job.title,
+            requesterId: userId,
+            category,
+            reason,
+            title: `Dispute: ${reason}`,
+            description,
+            status: 'Open',
+            parties: {
+                clientId: job.clientId,
+                professionalId: job.awardedProfessionalId
+            },
+            messages: [{
+                authorId: userId,
+                authorRole: job.clientId === userId ? 'Client' : 'Professional',
+                content: description,
+                attachments: attachments,
+                timestamp: new Date()
+            }]
+        });
+
+        // 2. Update Transaction Status
+        const db = getAdminDb();
+        const transQuery = await db.collection('transactions').where("jobId", "==", jobId).limit(1).get();
+        if (!transQuery.empty) {
+            const transDoc = transQuery.docs[0];
+            if (transDoc.data().status === 'funded') {
+                await transDoc.ref.update({ status: 'disputed' });
+            }
+        }
+
+        // 3. Update Job Status
+        await jobRepository.update(jobId, {
+            status: 'disputed',
+            disputeId: disputeId
+        });
+
+        // 4. Send Notifications
+        const otherPartyId = job.clientId === userId ? job.awardedProfessionalId : job.clientId;
+        if (otherPartyId) {
+            const [otherParty, requester] = await Promise.all([
+                userRepository.fetchById(otherPartyId),
+                userRepository.fetchById(userId)
+            ]);
+
+            if (otherParty && requester) {
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+                await emailService.sendDisputeRaisedEmail({
+                    to: otherParty.email,
+                    userName: otherParty.name,
+                    jobTitle: job.title,
+                    reason,
+                    disputeLink: `${baseUrl}/dashboard/disputes/${disputeId}`
+                });
+            }
+        }
+
+        return disputeId;
+    }
+
+    /**
+     * Send a communication message for a job
+     */
+    async sendCommunication(
+        jobId: string,
+        senderId: string,
+        content: string,
+        attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+    ): Promise<void> {
+        const job = await jobRepository.fetchById(jobId);
+        if (!job) throw new Error("Job not found");
+
+        const isClient = job.clientId === senderId;
+        const msgType = isClient ? 'job_giver_message' : 'Professional_message';
+
+        // 1. Save to Repository
+        await jobRepository.addCommunication(jobId, {
+            jobId,
+            type: msgType,
+            content: content.trim(),
+            author: senderId,
+            authorName: isClient ? 'Client' : 'Professional',
+            read: false,
+            attachments
+        });
+
+        // 2. Notify recipient
+        const recipientId = isClient ? job.awardedProfessionalId : job.clientId;
+        if (recipientId) {
+            const [recipient, sender] = await Promise.all([
+                userRepository.fetchById(recipientId),
+                userRepository.fetchById(senderId)
+            ]);
+
+            if (recipient && sender) {
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+                await emailService.sendNewMessageEmail({
+                    to: recipient.email,
+                    userName: recipient.name,
+                    senderName: sender.name,
+                    jobTitle: job.title,
+                    messagePreview: content.substring(0, 100) + (content.length > 100 ? '...' : ''),
+                    chatLink: `${baseUrl}/dashboard/jobs/${jobId}?tab=communications`
+                });
+            }
+        }
     }
 }
 

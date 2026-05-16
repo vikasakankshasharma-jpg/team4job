@@ -362,9 +362,42 @@ export class JobRepository {
             throw error;
         }
     }
+
+    /**
+     * Create a new dispute record
+     */
+    async createDispute(disputeData: any): Promise<string> {
+        try {
+            const db = getAdminDb();
+            const docRef = db.collection('disputes').doc();
+            await docRef.set({
+                ...disputeData,
+                id: docRef.id,
+                createdAt: Timestamp.now(),
+            });
+            return docRef.id;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Add a message to job communications subcollection
+     */
+    async addCommunication(jobId: string, messageData: any): Promise<string> {
+        try {
+            const db = getAdminDb();
+            const docRef = await db.collection(`jobs/${jobId}/communications`).add({
+                ...messageData,
+                timestamp: Timestamp.now(),
+            });
+            return docRef.id;
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 export const jobRepository = new JobRepository();
-
 
 

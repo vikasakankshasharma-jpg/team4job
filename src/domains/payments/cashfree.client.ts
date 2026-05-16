@@ -29,7 +29,9 @@ const paymentsBaseUrl =
     process.env.CASHFREE_ENV === 'production'
         ? 'https://api.cashfree.com'
         : 'https://sandbox.cashfree.com';
-const payoutsBaseUrl = 'https://payout-gamma.cashfree.com/payouts';
+const payoutsBaseUrl = process.env.CASHFREE_ENV === 'production'
+    ? 'https://payout-api.cashfree.com/payout'
+    : 'https://payout-gamma.cashfree.com/payouts';
 
 const getPaymentCredentials = () => {
     const clientId = process.env.CASHFREE_PAYMENTS_CLIENT_ID;

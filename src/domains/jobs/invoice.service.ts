@@ -39,7 +39,7 @@ export class InvoiceService {
         }
 
         // 2. Expand Client and Professional for Invoice Details
-        let expandedJob = { ...jobData } as any;
+        const expandedJob = { ...jobData } as any;
 
         if (jobData.clientId) {
             const giverSnap = await db.collection('users').doc(jobData.clientId).get();

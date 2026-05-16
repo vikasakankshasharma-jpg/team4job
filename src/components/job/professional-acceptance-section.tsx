@@ -174,7 +174,7 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
             .filter(s => s.professionalId !== user.id)
             .sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
-        let update: Partial<Job> = {
+        const update: Partial<Job> = {
             disqualifiedProfessionalIds: arrayUnion(user.id) as any,
             selectedProfessionals: remainingOffers,
         };

@@ -84,14 +84,14 @@ export class AuthHelper {
         while (attempts < maxRetries) {
             attempts++;
             try {
-                console.log(`[AuthHelper] Seed users attempt ${attempts}/${maxRetries} via CLI`);
-                
-                // Use shell: true for Windows command resolution and inherit environment
-                // Use explicit shell string to satisfy TypeScript during next build
+                console.log(`[AuthHelper] E2E_NO_CLEAR: ${process.env.E2E_NO_CLEAR}`);
                 execSync('npx tsx scripts/ci-seed.ts', { 
                     stdio: 'inherit',
                     shell: process.platform === 'win32' ? 'powershell.exe' : '/bin/sh',
-                    env: process.env 
+                    env: {
+                        ...process.env,
+                        E2E_NO_CLEAR: process.env.E2E_NO_CLEAR
+                    }
                 });
 
                 AuthHelper.seeded = true;

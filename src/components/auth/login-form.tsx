@@ -124,7 +124,7 @@ export function LoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" noValidate>
+      <form onSubmit={form.handleSubmit(onSubmit)} method="POST" className="space-y-6" noValidate>
         {lockoutUntil && (
           <Alert variant="destructive">
             <AlertTitle>{t('loginLocked')}</AlertTitle>

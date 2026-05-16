@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShieldAlert, TrendingUp, Users, AlertTriangle, CheckCircle, Clock, UserPlus, Briefcase, FileText, Activity, Zap, CheckCircle2, Filter } from "lucide-react";
-import { collection, query, where, orderBy, onSnapshot, limit, getCountFromServer, doc, updateDoc, Timestamp } from "firebase/firestore";
-import { formatDistanceToNow, startOfDay, startOfWeek, startOfMonth, subDays } from "date-fns";
+import { collection, query, where, orderBy, onSnapshot, limit, doc, updateDoc } from "firebase/firestore";
+import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { useTranslations } from 'next-intl';
 import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
+import { useAdminMetrics } from "@/hooks/use-admin-metrics";
 
 interface AdminAlert {
     id: string;
@@ -61,96 +62,14 @@ export default function AdminClient() {
     const [alerts, setAlerts] = React.useState<AdminAlert[]>([]);
     const [filteredAlerts, setFilteredAlerts] = React.useState<AdminAlert[]>([]);
     const [alertFilter, setAlertFilter] = React.useState<'ALL' | 'INFO' | 'WARNING' | 'CRITICAL' | 'UNREAD'>('ALL');
-    const [metrics, setMetrics] = React.useState<PlatformMetrics>({
-        activeJobs: 0,
-        openDisputes: 0,
-        totalUsers: 0,
-        newUsersToday: 0,
-        newJobsToday: 0,
-        newJobsThisWeek: 0,
-        completedJobsThisWeek: 0,
-    });
-    const [statsLoading, setStatsLoading] = React.useState(true);
-    const [platformHealth, setPlatformHealth] = React.useState({
-        firebase: 'operational',
-        overall: 'healthy'
-    });
+    const { metrics, statsLoading, platformHealth } = useAdminMetrics();
 
-    // 1. Authorization Guard
+    // Authorization Guard
     React.useEffect(() => {
         if (!loading && (!user || !user.roles.includes(USER_ROLES.admin))) {
             router.push('/dashboard');
         }
     }, [user, loading, router]);
-
-    // 2. Fetch Enhanced Metrics
-    React.useEffect(() => {
-        if (!db || !user || !user.roles.includes(USER_ROLES.admin)) return;
-
-        const fetchMetrics = async () => {
-            try {
-                const jobsColl = collection(db, 'jobs');
-                const usersColl = collection(db, 'users');
-                const disputesColl = collection(db, 'disputes');
-
-                const todayStart = Timestamp.fromDate(startOfDay(new Date()));
-                const weekStart = Timestamp.fromDate(startOfWeek(new Date()));
-                const monthStart = Timestamp.fromDate(startOfMonth(new Date()));
-
-                // Active Jobs
-                const activeJobsQuery = query(jobsColl, where("status", "in", [JOB_STATUS.IN_PROGRESS, JOB_STATUS.PENDING_CONFIRMATION, JOB_STATUS.PENDING_FUNDING]));
-                const activeJobsSnap = await getCountFromServer(activeJobsQuery);
-
-                // Open Disputes
-                const disputesQuery = query(disputesColl, where("status", "==", DISPUTE_STATUS.OPEN));
-                const disputesSnap = await getCountFromServer(disputesQuery);
-
-                // Total Users
-                const usersSnap = await getCountFromServer(usersColl);
-
-                // New Users Today
-                const newUsersTodayQuery = query(usersColl, where("memberSince", ">=", todayStart));
-                const newUsersTodaySnap = await getCountFromServer(newUsersTodayQuery);
-
-                // New Jobs Today
-                const newJobsTodayQuery = query(jobsColl, where("createdAt", ">=", todayStart));
-                const newJobsTodaySnap = await getCountFromServer(newJobsTodayQuery);
-
-                // New Jobs This Week
-                const newJobsWeekQuery = query(jobsColl, where("createdAt", ">=", weekStart));
-                const newJobsWeekSnap = await getCountFromServer(newJobsWeekQuery);
-
-                // Completed Jobs This Week
-                const completedJobsWeekQuery = query(jobsColl, where("status", "==", JOB_STATUS.COMPLETED), where("updatedAt", ">=", weekStart));
-                const completedJobsWeekSnap = await getCountFromServer(completedJobsWeekQuery);
-
-                setMetrics({
-                    activeJobs: activeJobsSnap.data().count,
-                    openDisputes: disputesSnap.data().count,
-                    totalUsers: usersSnap.data().count,
-                    newUsersToday: newUsersTodaySnap.data().count,
-                    newJobsToday: newJobsTodaySnap.data().count,
-                    newJobsThisWeek: newJobsWeekSnap.data().count,
-                    completedJobsThisWeek: completedJobsWeekSnap.data().count,
-                });
-
-                // Platform health check (simplified - all operational if we got here)
-                setPlatformHealth({
-                    firebase: 'operational',
-                    overall: 'healthy'
-                });
-            } catch (error) {
-                setPlatformHealth({
-                    firebase: 'degraded',
-                    overall: 'issues'
-                });
-            } finally {
-                setStatsLoading(false);
-            }
-        };
-
-        fetchMetrics();
-    }, [db, user]);
 
     // 3. Live Alerts Feed
     React.useEffect(() => {

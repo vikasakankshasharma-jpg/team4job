@@ -15,12 +15,34 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body>
-        {/* `NextError` is the default Next.js error page component. Its type
-        definition requires a `statusCode` prop. However, since the App Router
-        does not expose status codes for errors, we simply pass 0 to render a
-        generic error message. */}
-        <NextError statusCode={0} />
+      <body style={{ 
+        background: '#0f172a', 
+        color: '#fff', 
+        display: 'flex', 
+        minHeight: '100vh', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        flexDirection: 'column', 
+        fontFamily: 'sans-serif', 
+        textAlign: 'center', 
+        padding: '2rem' 
+      }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          Team4Job — Something went very wrong
+        </h1>
+        <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
+          Our team has been alerted. Please refresh or return to the homepage.
+        </p>
+        <a href="/" style={{ 
+          background: '#3b82f6', 
+          color: '#fff', 
+          padding: '0.75rem 2rem',
+          borderRadius: '8px', 
+          textDecoration: 'none',
+          fontWeight: '500'
+        }}>
+          Return to Team4Job
+        </a>
       </body>
     </html>
   );

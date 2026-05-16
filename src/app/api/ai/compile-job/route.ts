@@ -7,7 +7,6 @@ export async function POST(req: NextRequest) {
         
         // E2E Bypass: Return mock results instantly to avoid Genkit/LLM variability in tests
         if (process.env.NEXT_PUBLIC_E2E === 'true') {
-            console.log('[E2E] AI Compile Bypass Active');
             const subType = body.answers?.['sub_type'] ? String(body.answers['sub_type']).toUpperCase() : '';
             return NextResponse.json({
                 jobTitle: subType ? `${body.category} - ${subType} Service` : `${body.category} - Service Requirement`,

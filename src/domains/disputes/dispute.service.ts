@@ -3,6 +3,8 @@ import { disputeRepository } from './dispute.repository';
 import { CreateDisputeInput, Dispute, DisputeMessage } from './dispute.types';
 
 import { jobService } from '../jobs/job.service';
+import { userRepository } from '../users/user.repository';
+import { emailService } from '@/lib/email/email-service';
 import { Role } from '@/lib/types';
 
 export class DisputeService {
@@ -46,14 +48,80 @@ export class DisputeService {
         return dispute;
     }
 
-    async respondToDispute(disputeId: string, authorId: string, content: string, role: any): Promise<void> {
+    async respondToDispute(
+        disputeId: string,
+        authorId: string,
+        content: string,
+        authorRole: Role,
+        attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+    ): Promise<void> {
+        const dispute = await disputeRepository.fetchById(disputeId);
+        if (!dispute) throw new Error("Dispute not found");
+
         const message: DisputeMessage = {
             authorId,
-            authorRole: role,
+            authorRole,
             content,
-            timestamp: new Date()
+            timestamp: new Date(),
+            attachments
         };
         await disputeRepository.addMessage(disputeId, message);
+
+        // Notify other parties
+        if (dispute.parties) {
+            const recipientIds = [dispute.parties.clientId, dispute.parties.professionalId].filter(id => id !== authorId);
+            await this.notifyParties(dispute, recipientIds, authorRole, content);
+        }
+    }
+
+    async updateDisputeStatus(
+        disputeId: string,
+        adminId: string,
+        newStatus: Dispute['status'],
+        resolution?: string
+    ): Promise<void> {
+        const dispute = await disputeRepository.fetchById(disputeId);
+        if (!dispute) throw new Error("Dispute not found");
+
+        await disputeRepository.updateStatus(disputeId, newStatus, resolution);
+
+        // Notify parties about the status update
+        if (dispute.parties) {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+            const partyIds = [dispute.parties.clientId, dispute.parties.professionalId];
+
+            for (const pid of partyIds) {
+                const pUser = await userRepository.fetchById(pid);
+                if (pUser) {
+                    await emailService.sendDisputeUpdateEmail({
+                        to: pUser.email,
+                        userName: pUser.name,
+                        jobTitle: dispute.jobTitle || 'Your Job',
+                        status: newStatus,
+                        disputeLink: `${baseUrl}/dashboard/disputes/${disputeId}`
+                    });
+                }
+            }
+        }
+    }
+
+    private async notifyParties(dispute: Dispute, recipientIds: string[], authorRole: Role, content: string): Promise<void> {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://dodo-test.web.app';
+        const senderName = ['Support Team', 'Admin'].includes(authorRole) ? 'Support Team' : (authorRole === 'Client' ? 'Client' : 'Professional');
+
+        for (const recipientId of recipientIds) {
+            const recipient = await userRepository.fetchById(recipientId);
+            if (recipient) {
+                await emailService.sendNewMessageEmail({
+                    to: recipient.email,
+                    userName: recipient.name,
+                    senderName,
+                    jobTitle: dispute.jobTitle || 'Your Job',
+                    messagePreview: content.substring(0, 100),
+                    chatLink: `${baseUrl}/dashboard/disputes/${dispute.id}`
+                });
+            }
+        }
     }
 
     async listMyDisputes(userId: string): Promise<Dispute[]> {

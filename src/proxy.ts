@@ -19,6 +19,9 @@ const PUBLIC_PATHS = [
     '/api/auth/session',
     '/api/cashfree/webhook',
     '/api/test-email',
+    '/api/health',
+    '/api/webhooks',
+    '/api/cron',
     ...(isE2eAllowed() ? ['/api/e2e'] : []),
 ];
 
@@ -46,8 +49,18 @@ export async function proxy(request: NextRequest) {
             return NextResponse.next();
         }
 
+        // E2E/Internal Bypass: If we're in a test-allowed environment and have a session cookie,
+        // allow the request to proceed without a Bearer token (which is for external clients).
+        if (isE2eAllowed()) {
+            const hasSession = request.cookies.has('auth-token') || request.cookies.has('next-auth.session-token');
+            if (hasSession) {
+                return NextResponse.next();
+            }
+        }
+
         const authHeader = request.headers.get('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.warn(`[Proxy] 401 Unauthorized: Missing Bearer token for ${pathname}. Referer: ${request.headers.get('referer')}`);
             return NextResponse.json(
                 { error: 'Authentication required. Please provide a valid Bearer token.' },
                 { status: 401 }

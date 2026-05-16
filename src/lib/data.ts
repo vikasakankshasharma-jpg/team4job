@@ -5,7 +5,7 @@ import { PlaceHolderImages } from './placeholder-images';
 // The demo data is managed exclusively by the database seeding script
 // located in `src/lib/firebase/seed.ts`.
 
-export let users: User[] = [
+export const users: User[] = [
   {
     id: 'ADMIN-20240101-0001',
     name: 'Admin User',
@@ -87,12 +87,12 @@ export let users: User[] = [
   },
 ];
 
-export let bids: Bid[] = [];
-export let comments: Comment[] = [];
-export let disputes: Dispute[] = [];
-export let privateMessages: PrivateMessage[] = [];
+export const bids: Bid[] = [];
+export const comments: Comment[] = [];
+export const disputes: Dispute[] = [];
+export const privateMessages: PrivateMessage[] = [];
 
-export let jobs: Job[] = [
+export const jobs: Job[] = [
   {
     id: "JOB-20240720-A1B2",
     title: "Install 16 Smart Devices for a Commercial Building",

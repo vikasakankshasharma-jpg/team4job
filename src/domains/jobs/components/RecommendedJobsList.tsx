@@ -40,7 +40,7 @@ export function RecommendedJobsList({ user }: RecommendedJobsProps) {
             // 1. Fetch potential jobs (Open for Bidding)
             // Optimization: Limit to recent 20 jobs to save AI tokens, filter by city if possible
             const jobsRef = collection(db, 'jobs');
-            let q = query(
+            const q = query(
                 jobsRef,
                 where('status', '==', 'Open for Bidding'),
                 orderBy('postedAt', 'desc'),

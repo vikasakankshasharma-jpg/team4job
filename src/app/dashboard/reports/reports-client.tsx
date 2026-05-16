@@ -340,7 +340,7 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
         setExporting(dataType);
         try {
             let data: any[] = [];
-            let filename = `team4job-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
+            const filename = `team4job-export-${dataType}-${new Date().toISOString().split('T')[0]}.csv`;
 
             switch (dataType) {
                 case 'users':

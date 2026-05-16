@@ -184,7 +184,7 @@ function SignUpController({ isMapLoaded, referredBy }: SignUpMasterProps) {
 
       // Step 1: Create user with email/password FIRST
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      let firebaseUser: FirebaseUser = userCredential.user;
+      const firebaseUser: FirebaseUser = userCredential.user;
 
       // Step 2: Link phone credential to the newly created user
       if (verifiedCredential) {

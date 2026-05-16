@@ -1,0 +1,52 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e6]:
+      - link "Team4Job" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img
+        - generic [ref=e9]: Team4Job
+      - generic [ref=e10]:
+        - button "Help" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e15]: Help
+        - generic [ref=e16]:
+          - button "🇬🇧 English" [ref=e17] [cursor=pointer]:
+            - img [ref=e18]
+            - generic [ref=e21]: 🇬🇧 English
+          - button "Toggle theme" [ref=e22] [cursor=pointer]:
+            - img
+            - img [ref=e23]
+            - generic [ref=e25]: Toggle theme
+    - main [ref=e26]:
+      - generic [ref=e28]:
+        - tablist [ref=e30]:
+          - tab "Log In" [selected] [ref=e31] [cursor=pointer]
+          - tab "Sign Up" [ref=e32] [cursor=pointer]
+        - tabpanel "Log In" [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - heading "Log In" [level=3] [ref=e36]
+              - paragraph [ref=e37]: Enter your credentials to access your dashboard.
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - text: Email or Mobile Number
+                - textbox "Email or Mobile Number" [ref=e41]:
+                  - /placeholder: name@example.com or 9876543210
+              - generic [ref=e42]:
+                - text: Password
+                - generic [ref=e43]:
+                  - textbox "Password" [ref=e44]:
+                    - /placeholder: ••••••••
+                  - button "Show password" [ref=e45] [cursor=pointer]:
+                    - img [ref=e46]
+                    - generic [ref=e49]: Show password
+              - button "Log In" [ref=e50] [cursor=pointer]
+  - region "Notifications (F8)" [active]:
+    - list
+  - alert [ref=e51]: Team4Job | Professional Services Marketplace
+```
