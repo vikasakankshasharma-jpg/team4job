@@ -6,13 +6,41 @@ test.describe('Offline Mode (PWA)', () => {
         await page.goto('/');
 
         // Go offline
+        console.log('Simulating offline state...');
         await page.context().setOffline(true);
 
-        // Need to check if the OfflineDetector component triggers a UI update
-        // Example: await expect(page.locator('text=You are currently offline')).toBeVisible();
+        // Verify the OfflineDetector component triggers a UI update
+        // The detector typically shows a banner or toast
+        const offlineBanner = page.locator('text=/You are currently offline|No internet connection/i').first()
+            .or(page.locator('[data-testid="offline-alert"]'));
+        
+        await expect(offlineBanner).toBeVisible({ timeout: 10000 });
+        console.log('Offline banner verified.');
 
         // Restore online status
+        console.log('Restoring online state...');
         await page.context().setOffline(false);
+
+        // Verify the banner disappears
+        await expect(offlineBanner).not.toBeVisible({ timeout: 10000 });
+        console.log('Online state restoration verified.');
     });
 
+    test('Critical actions are blocked or warn when offline', async ({ page }) => {
+        await page.goto('/login');
+
+        await page.context().setOffline(true);
+
+        const loginBtn = page.getByRole('button', { name: /Log In/i }).first();
+        if (await loginBtn.isVisible()) {
+            await loginBtn.click({ force: true });
+            
+            // Should show an error or be disabled
+            const errorMsg = page.locator('text=/offline|network|connection/i').first();
+            await expect(errorMsg).toBeVisible({ timeout: 5000 });
+        }
+
+        await page.context().setOffline(false);
+    });
 });
+
