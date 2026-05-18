@@ -21,3 +21,22 @@ export class AlertDeduplicator {
     return true;
   }
 }
+
+const globalDeduplicator = new AlertDeduplicator();
+
+export async function deduplicateAlert(
+  level: 'INFO' | 'WARNING' | 'CRITICAL',
+  message: string,
+  metadata?: any
+): Promise<boolean> {
+  const entityId = metadata?.jobId || metadata?.disputeId || metadata?.userId || message;
+  const alert: AlertEvent = {
+    type: message,
+    entityId: String(entityId),
+    severity: level,
+    timestampMs: Date.now(),
+  };
+  // Returns true if duplicate (i.e., we should NOT emit)
+  return !globalDeduplicator.shouldEmit(alert);
+}
+

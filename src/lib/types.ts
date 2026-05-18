@@ -1,6 +1,5 @@
-
 import { DocumentReference, Timestamp } from "firebase/firestore";
-import { SchemaEnvelope } from "./schema-envelope";
+import { SchemaEnvelope } from "./schema/schema-envelope";
 
 export type Address = {
   house: string;

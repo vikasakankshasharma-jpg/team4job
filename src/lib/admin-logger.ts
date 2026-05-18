@@ -1,6 +1,6 @@
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { deduplicateAlert } from './alert-deduplication';
+import { deduplicateAlert } from './alerts/alert-deduplication';
 
 export type AdminActionType =
     | 'USER_SUSPENDED'
