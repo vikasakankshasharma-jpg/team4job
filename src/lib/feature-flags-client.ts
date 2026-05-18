@@ -3,12 +3,21 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useFirebase } from "@/infrastructure/firebase/client-provider";
 
-export type FeatureFlagKey = 'ENABLE_PAYMENTS' | 'ENABLE_AI_GENERATION' | 'ENABLE_DISPUTES_V2';
+export type FeatureFlagKey = 
+  | 'ENABLE_PAYMENTS' 
+  | 'ENABLE_AI_GENERATION' 
+  | 'ENABLE_DISPUTES_V2'
+  | 'case_mgmt_v1'
+  | 'triage_v1'
+  | 'finops_v1';
 
 export const DEFAULT_FLAGS: Record<FeatureFlagKey, boolean> = {
     'ENABLE_PAYMENTS': true,
     'ENABLE_AI_GENERATION': true,
     'ENABLE_DISPUTES_V2': true,
+    'case_mgmt_v1': true,
+    'triage_v1': true,
+    'finops_v1': true,
 };
 
 // CLIENT-SIDE Hook

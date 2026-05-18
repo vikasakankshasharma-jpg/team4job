@@ -24,3 +24,11 @@ export class EventEmitterService {
 }
 
 export const platformEventEmitter = new EventEmitterService();
+
+// Register background consumers & linkers to prevent cold-start circular dependencies
+if (typeof window === 'undefined') {
+  void import('@/domains/cases/dispute-case-linker').catch(() => {});
+  void import('@/domains/analytics/analytics.consumer').catch(() => {});
+  void import('@/domains/notifications/notification.consumer').catch(() => {});
+  void import('@/domains/risk/risk.consumer').catch(() => {});
+}

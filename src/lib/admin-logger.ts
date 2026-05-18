@@ -69,7 +69,34 @@ export async function logAdminAction(params: {
 }): Promise<void> {
     try {
         const db = getAdminDb();
-        const logEntry: Omit<AdminActionLog, 'id'> = {
+        const crypto = await import('crypto');
+
+        // Fetch last log to get previousHash
+        const lastLogSnap = await db.collection('admin_action_logs')
+            .orderBy('timestamp', 'desc')
+            .limit(1)
+            .get();
+
+        let previousHash = '0000000000000000000000000000000000000000000000000000000000000000';
+        if (!lastLogSnap.empty) {
+            const lastLog = lastLogSnap.docs[0].data();
+            previousHash = lastLog.hash || previousHash;
+        }
+
+        const nowTimestamp = Timestamp.now();
+
+        // Construct exact string format expected by verify-integrity
+        const logEntryString = JSON.stringify({
+            adminId: params.adminId,
+            actionType: params.actionType,
+            timestamp: nowTimestamp.seconds,
+            targetId: params.targetId || '',
+            previousHash,
+        });
+
+        const hash = crypto.createHash('sha256').update(logEntryString).digest('hex');
+
+        const logEntry: Omit<AdminActionLog, 'id'> & { hash: string; previousHash: string } = {
             adminId: params.adminId,
             adminName: params.adminName,
             adminEmail: params.adminEmail,
@@ -78,7 +105,7 @@ export async function logAdminAction(params: {
             targetId: params.targetId,
             targetName: params.targetName,
             details: params.details || {},
-            timestamp: Timestamp.now(),
+            timestamp: nowTimestamp,
             ipAddress: params.ipAddress,
             userAgent: params.userAgent,
             beforeState: params.beforeState,
@@ -86,6 +113,8 @@ export async function logAdminAction(params: {
             caseId: params.caseId,
             requiresDualControl: params.requiresDualControl,
             approvedBy: params.approvedBy,
+            hash,
+            previousHash
         };
 
         await db.collection('admin_action_logs').add(logEntry);

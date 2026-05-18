@@ -13,7 +13,12 @@ export type AdminAction =
   | 'user.sanction'
   | 'refund.process'
   | 'payout.approve'
-  | 'feature_flag.update';
+  | 'feature_flag.update'
+  | 'case.view'
+  | 'case.assign'
+  | 'case.resolve'
+  | 'case.approve_high_risk'
+  | 'audit.verify_chain';
 
 export interface AccessContext {
   amountInr?: number;
@@ -21,11 +26,11 @@ export interface AccessContext {
 }
 
 const PERMISSIONS: Record<AdminRole, AdminAction[]> = {
-  support_agent: ['dispute.review'],
-  risk_analyst: ['dispute.review', 'dispute.resolve', 'user.view_pii'],
-  finance_ops: ['refund.process', 'payout.approve', 'dispute.review'],
-  compliance_manager: ['user.view_pii', 'user.sanction', 'dispute.resolve'],
-  platform_admin: ['dispute.review', 'dispute.resolve', 'user.view_pii', 'feature_flag.update'],
+  support_agent: ['dispute.review', 'case.view'],
+  risk_analyst: ['dispute.review', 'dispute.resolve', 'user.view_pii', 'case.view', 'case.assign', 'case.resolve'],
+  finance_ops: ['refund.process', 'payout.approve', 'dispute.review', 'case.view', 'case.resolve'],
+  compliance_manager: ['user.view_pii', 'user.sanction', 'dispute.resolve', 'case.view', 'case.assign', 'case.resolve', 'case.approve_high_risk', 'audit.verify_chain'],
+  platform_admin: ['dispute.review', 'dispute.resolve', 'user.view_pii', 'feature_flag.update', 'case.view', 'case.assign', 'case.resolve'],
   super_admin: [
     'dispute.review',
     'dispute.resolve',
@@ -34,6 +39,11 @@ const PERMISSIONS: Record<AdminRole, AdminAction[]> = {
     'refund.process',
     'payout.approve',
     'feature_flag.update',
+    'case.view',
+    'case.assign',
+    'case.resolve',
+    'case.approve_high_risk',
+    'audit.verify_chain',
   ],
 };
 

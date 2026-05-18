@@ -6,7 +6,13 @@ export type PlatformEventName =
   | 'dispute.opened'
   | 'dispute.resolved'
   | 'review.submitted'
-  | 'user.flagged';
+  | 'user.flagged'
+  | 'case.opened'
+  | 'case.closed'
+  | 'case.approval_requested'
+  | 'case.approved'
+  | 'case.rejected'
+  | 'refund.requested';
 
 export interface PlatformEvent<TPayload = Record<string, unknown>> {
   name: PlatformEventName;
