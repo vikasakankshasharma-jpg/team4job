@@ -5,6 +5,7 @@ import { paymentRepository } from './payment.repository';
 
 import { Timestamp } from 'firebase-admin/firestore';
 import { userRepository } from '../users/user.repository';
+import { platformEventEmitter } from '@/lib/events/event-emitter';
 
 /**
  * Payment Service - Business logic for payments
@@ -131,6 +132,12 @@ export class PaymentService {
             await paymentRepository.update(transactionResult.id, {
                 status: 'funded',
                 fundedAt: Timestamp.now() as any,
+            });
+
+            platformEventEmitter.emit({
+                name: 'escrow.funded',
+                occurredAt: new Date().toISOString(),
+                payload: { transactionId: transactionResult.id, jobId: transactionResult.data.jobId },
             });
 
             // Data Aggregation: Update Professional's Projected Earnings

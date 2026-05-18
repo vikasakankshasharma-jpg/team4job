@@ -2,6 +2,7 @@
 
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { COLLECTIONS, getDocData } from '@/infrastructure/firebase/firestore';
+import { applyEnvelope } from '@/lib/schema/schema-envelope';
 
 import { Job, JobFilters, JobStats, ProfessionalStats, ClientStats } from './job.types';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -25,7 +26,7 @@ export class JobRepository {
             const customJobId = `JOB-${timestamp}-${random}`;
 
             const docRef = db.collection(COLLECTIONS.JOBS).doc(customJobId);
-            await docRef.set({
+            await docRef.set(applyEnvelope({
                 ...job,
                 postedAt: Timestamp.now(),
                 createdAt: Timestamp.now(),
@@ -33,7 +34,7 @@ export class JobRepository {
                 bids: [],
                 comments: [],
                 statusHistory: [],
-            });
+            }));
 
 
             return customJobId;
@@ -370,11 +371,11 @@ export class JobRepository {
         try {
             const db = getAdminDb();
             const docRef = db.collection('disputes').doc();
-            await docRef.set({
+            await docRef.set(applyEnvelope({
                 ...disputeData,
                 id: docRef.id,
                 createdAt: Timestamp.now(),
-            });
+            } as Record<string, unknown>));
             return docRef.id;
         } catch (error) {
             throw error;

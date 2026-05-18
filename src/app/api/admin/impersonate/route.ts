@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
 import { userService } from '@/domains/users/user.service';
+import { logAdminAction } from '@/lib/admin-logger';
 
 
 export const dynamic = 'force-dynamic';
@@ -44,7 +45,18 @@ export async function POST(req: NextRequest) {
         });
 
         // 5. Log this action
-
+        const targetUser = await userService.getProfile(targetUserId).catch(() => null);
+        await logAdminAction({
+            adminId: admin.id,
+            adminName: admin.name || admin.email,
+            adminEmail: admin.email,
+            actionType: 'IMPERSONATE_USER',
+            targetType: 'user',
+            targetId: targetUserId,
+            targetName: targetUser ? (targetUser.name || targetUser.email) : undefined,
+            details: { impersonatorId: admin.id },
+            userAgent: req.headers.get('user-agent') || undefined,
+        });
 
         return NextResponse.json({ token: customToken });
 

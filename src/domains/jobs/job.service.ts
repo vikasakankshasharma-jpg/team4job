@@ -13,6 +13,7 @@ import { aiLearningService } from '@/ai/services/ai-learning.service';
 import { userRepository } from '../users/user.repository';
 import { emailService } from '@/lib/email/email-service';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { platformEventEmitter } from '@/lib/events/event-emitter';
 
 /**
  * Job Service - Business logic for job management
@@ -47,6 +48,12 @@ export class JobService {
             };
 
             const jobId = await jobRepository.create(job);
+
+            platformEventEmitter.emit({
+                name: 'job.created',
+                occurredAt: new Date().toISOString(),
+                payload: { jobId, clientId: userId },
+            });
 
             // Increment Client stats
             userRepository.incrementStats(userId, { activeJobs: 1 }).catch(e => { /* Failed to increment activeJobs */ });
@@ -327,6 +334,12 @@ export class JobService {
             userId,
             `Accepted bid from ${professionalId}`
         );
+
+        platformEventEmitter.emit({
+            name: 'job.awarded',
+            occurredAt: new Date().toISOString(),
+            payload: { jobId, clientId: userId, professionalId },
+        });
 
         // Increment Professional stats (Awarded/Won)
         userRepository.incrementStats(professionalId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });

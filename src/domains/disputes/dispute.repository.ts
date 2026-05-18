@@ -2,12 +2,13 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { Dispute, CreateDisputeInput, DisputeMessage } from './dispute.types';
 import { Timestamp } from 'firebase-admin/firestore';
+import { applyEnvelope } from '@/lib/schema/schema-envelope';
 
 export class DisputeRepository {
     private collection = getAdminDb().collection('disputes');
 
     async create(data: CreateDisputeInput): Promise<string> {
-        const docRef = await this.collection.add({
+        const docRef = await this.collection.add(applyEnvelope({
             ...data,
             status: 'Open',
             messages: [
@@ -19,7 +20,7 @@ export class DisputeRepository {
                 }
             ],
             createdAt: Timestamp.now()
-        });
+        }));
         return docRef.id;
     }
 

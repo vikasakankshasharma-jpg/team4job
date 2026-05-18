@@ -8,6 +8,7 @@ import { bidRepository } from './bid.repository'; // Import added
 import { Role } from '@/lib/types';
 import { userRepository } from '../users/user.repository';
 import { emailService } from '@/lib/email/email-service';
+import { platformEventEmitter } from '@/lib/events/event-emitter';
 
 /**
  * Bid Service - Business logic for bid management
@@ -65,6 +66,12 @@ export class BidService {
 
         // 1. Create Bid in Subcollection
         const bidId = await bidRepository.create(data.jobId, bid);
+
+        platformEventEmitter.emit({
+            name: 'bid.placed',
+            occurredAt: new Date().toISOString(),
+            payload: { bidId, jobId: data.jobId, professionalId: userId, clientId: job.clientId },
+        });
 
         // 2. Update Job (bidderIds for checks)
         // We do NOT update the `bids` array on the Job document anymore to strictly use subcollections

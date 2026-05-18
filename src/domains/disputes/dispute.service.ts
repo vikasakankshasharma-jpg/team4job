@@ -6,6 +6,7 @@ import { jobService } from '../jobs/job.service';
 import { userRepository } from '../users/user.repository';
 import { emailService } from '@/lib/email/email-service';
 import { Role } from '@/lib/types';
+import { platformEventEmitter } from '@/lib/events/event-emitter';
 
 export class DisputeService {
     async createDispute(input: CreateDisputeInput): Promise<string> {
@@ -24,6 +25,12 @@ export class DisputeService {
             }
 
             const id = await disputeRepository.create(input);
+
+            platformEventEmitter.emit({
+                name: 'dispute.opened',
+                occurredAt: new Date().toISOString(),
+                payload: { disputeId: id, jobId: input.jobId, requesterId: input.requesterId },
+            });
 
             return id;
         } catch (error: any) {
@@ -84,6 +91,14 @@ export class DisputeService {
         if (!dispute) throw new Error("Dispute not found");
 
         await disputeRepository.updateStatus(disputeId, newStatus, resolution);
+
+        if (newStatus === 'Resolved') {
+            platformEventEmitter.emit({
+                name: 'dispute.resolved',
+                occurredAt: new Date().toISOString(),
+                payload: { disputeId, adminId, resolution },
+            });
+        }
 
         // Notify parties about the status update
         if (dispute.parties) {

@@ -3,6 +3,7 @@ import { Transaction } from "@/domains/payments/payment.types";
 import { getAdminDb } from "@/infrastructure/firebase/admin";
 import { COLLECTIONS } from "@/infrastructure/firebase/firestore";
 import { Timestamp } from "firebase-admin/firestore";
+import { applyEnvelope } from "@/lib/schema/schema-envelope";
 
 export class PaymentRepository {
     private get db() {
@@ -14,7 +15,7 @@ export class PaymentRepository {
     }
 
     async create(data: Partial<Transaction>): Promise<string> {
-        const docRef = await this.collection.add(data);
+        const docRef = await this.collection.add(applyEnvelope(data));
         return docRef.id;
     }
 

@@ -1,5 +1,6 @@
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
+import { deduplicateAlert } from './alert-deduplication';
 
 export type AdminActionType =
     | 'USER_SUSPENDED'
@@ -16,7 +17,14 @@ export type AdminActionType =
     | 'SUBSCRIPTION_GRANTED'
     | 'COUPON_CREATED'
     | 'BLACKLIST_UPDATED'
-    | 'IMPERSONATE_USER';
+    | 'IMPERSONATE_USER'
+    | 'ROLE_CHANGED'
+    | 'PAYOUT_OVERRIDDEN'
+    | 'KYC_APPROVED'
+    | 'KYC_REJECTED'
+    | 'RISK_SCORE_OVERRIDE'
+    | 'CASE_CREATED'
+    | 'CASE_CLOSED';
 
 export interface AdminActionLog {
     id: string;
@@ -24,13 +32,18 @@ export interface AdminActionLog {
     adminName: string;
     adminEmail: string;
     actionType: AdminActionType;
-    targetType: 'user' | 'job' | 'dispute' | 'transaction' | 'settings' | 'team' | 'coupon' | 'blacklist';
+    targetType: 'user' | 'job' | 'dispute' | 'transaction' | 'settings' | 'team' | 'coupon' | 'blacklist' | 'case';
     targetId?: string;
     targetName?: string;
     details: Record<string, any>;
     timestamp: Timestamp;
     ipAddress?: string;
     userAgent?: string;
+    beforeState?: Record<string, any>;
+    afterState?: Record<string, any>;
+    caseId?: string;
+    requiresDualControl?: boolean;
+    approvedBy?: string;
 }
 
 /**
@@ -48,7 +61,11 @@ export async function logAdminAction(params: {
     details?: Record<string, any>;
     ipAddress?: string;
     userAgent?: string;
-
+    beforeState?: Record<string, any>;
+    afterState?: Record<string, any>;
+    caseId?: string;
+    requiresDualControl?: boolean;
+    approvedBy?: string;
 }): Promise<void> {
     try {
         const db = getAdminDb();
@@ -64,6 +81,11 @@ export async function logAdminAction(params: {
             timestamp: Timestamp.now(),
             ipAddress: params.ipAddress,
             userAgent: params.userAgent,
+            beforeState: params.beforeState,
+            afterState: params.afterState,
+            caseId: params.caseId,
+            requiresDualControl: params.requiresDualControl,
+            approvedBy: params.approvedBy,
         };
 
         await db.collection('admin_action_logs').add(logEntry);
@@ -92,6 +114,13 @@ export function getActionTypeLabel(actionType: AdminActionType): string {
         COUPON_CREATED: 'Coupon Created',
         BLACKLIST_UPDATED: 'Blacklist Updated',
         IMPERSONATE_USER: 'Impersonated User',
+        ROLE_CHANGED: 'Role Changed',
+        PAYOUT_OVERRIDDEN: 'Payout Overridden',
+        KYC_APPROVED: 'KYC Approved',
+        KYC_REJECTED: 'KYC Rejected',
+        RISK_SCORE_OVERRIDE: 'Risk Score Override',
+        CASE_CREATED: 'Case Created',
+        CASE_CLOSED: 'Case Closed',
     };
 
     return labels[actionType] || actionType;
@@ -108,6 +137,11 @@ export async function logAdminAlert(
 
 ): Promise<void> {
     try {
+        const isDuplicate = await deduplicateAlert(level, message, metadata);
+        if (isDuplicate) {
+            return; // Suppress duplicate alert write to admin_alerts
+        }
+
         const db = getAdminDb();
         await db.collection('admin_alerts').add({
             level,

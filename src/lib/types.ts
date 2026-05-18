@@ -1,5 +1,6 @@
 
 import { DocumentReference, Timestamp } from "firebase/firestore";
+import { SchemaEnvelope } from "./schema-envelope";
 
 export type Address = {
   house: string;
@@ -11,6 +12,9 @@ export type Address = {
 };
 
 export type UserStatus = 'active' | 'suspended' | 'deactivated';
+
+export type AdminRole = 'support_agent' | 'risk_analyst' | 'finance_ops' | 'compliance_manager' | 'platform_admin' | 'super_admin';
+
 
 export type PortfolioItem = {
   id: string;
@@ -43,6 +47,7 @@ export type User = {
   };
   district?: string; // Added for district-wise queries
   roles: ('Client' | 'Professional' | 'Admin' | 'Support Team')[];
+  adminRole?: AdminRole;
   memberSince: Date | Timestamp;
   lastLoginAt?: Date | Timestamp;
   lastActiveAt?: Date | Timestamp; // For tracking inactivity
@@ -195,7 +200,7 @@ export interface Milestone {
   createdAt: number;
 }
 
-export type Job = {
+export type Job = Partial<SchemaEnvelope> & {
   id: string;
   title: string;
   description: string;
@@ -300,7 +305,7 @@ export type DisputeMessage = {
   attachments?: DisputeAttachment[];
 }
 
-export type Dispute = {
+export type Dispute = Partial<SchemaEnvelope> & {
   id: string;
   requesterId: string;
   category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question";
@@ -352,7 +357,7 @@ export type BlacklistEntry = {
   createdAt: Date | Timestamp;
 };
 
-export type Transaction = {
+export type Transaction = Partial<SchemaEnvelope> & {
   id: string; // Our internal ID
   jobId: string;
   jobTitle: string;
