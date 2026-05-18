@@ -1,72 +1,78 @@
 import { Case } from './case.types';
 import { TRIAGE_WEIGHTS } from '@/lib/constants/triage-weights';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export interface ScoreBreakdown {
-  slaProximityScore: number;
-  amountAtRiskScore: number;
-  customerValueScore: number;
-  fraudLikelihoodScore: number;
-  dataCompletenessPenaltyScore: number;
-  totalScore: number;
+  sla: number;
+  amount: number;
+  value: number;
+  fraud: number;
+  completeness: number;
+}
+
+export interface TriageScoreResult {
+  scoreTotal: number;
+  scoreBreakdown: ScoreBreakdown;
+  scoreVersion: string;
+  computedAt: Date;
 }
 
 export class TriageScoreService {
-  calculateScore(caseDoc: Case): ScoreBreakdown {
-    const { slaProximity, amountAtRisk, customerValue, fraudLikelihood, dataCompletenessPenalty } = TRIAGE_WEIGHTS;
+  private readonly SCORE_VERSION = 'v1.0.0';
+  private readonly MAX_AMOUNT = 100000; // Normalize amount up to 100k INR
 
-    // 1. SLA Proximity (0 to 100)
-    let slaProximityScore = 0;
-    const now = Date.now();
-    const dueTime = caseDoc.slaDueAt instanceof Date 
-      ? caseDoc.slaDueAt.getTime() 
-      : (caseDoc.slaDueAt?.toDate?.()?.getTime() || now);
+  public computeScore(caseData: Case): TriageScoreResult {
+    // 1. SLA Proximity (0 to 1) - Closer to due date = higher score, breached = 1
+    const nowMs = Date.now();
+    const openedMs = caseData.openedAt instanceof Timestamp ? caseData.openedAt.toMillis() : caseData.openedAt.getTime();
+    const dueMs = caseData.slaDueAt instanceof Timestamp ? caseData.slaDueAt.toMillis() : caseData.slaDueAt.getTime();
     
-    const remainingMs = dueTime - now;
-    const remainingHours = remainingMs / (1000 * 60 * 60);
-
-    if (remainingHours <= 0) {
-      slaProximityScore = 100; // Breached
-    } else if (remainingHours <= 24) {
-      slaProximityScore = 100 - (remainingHours / 24) * 100; // Urgent
-    } else if (remainingHours <= 72) {
-      slaProximityScore = 50 - ((remainingHours - 24) / 48) * 50; // Medium SLA urgency
+    let slaScore = 0;
+    if (nowMs >= dueMs) {
+      slaScore = 1; // Breached
     } else {
-      slaProximityScore = 10;
+      const totalWindow = dueMs - openedMs;
+      const elapsed = nowMs - openedMs;
+      slaScore = totalWindow > 0 ? Math.max(0, Math.min(1, elapsed / totalWindow)) : 1;
     }
 
-    // 2. Amount At Risk (0 to 100, normalized to 100k INR max)
-    const amountAtRiskScore = Math.min(caseDoc.amountAtRisk || 0, 100_000) / 1000;
+    // 2. Amount at Risk (0 to 1)
+    const amountScore = Math.min(1, (caseData.amountAtRisk || 0) / this.MAX_AMOUNT);
 
-    // 3. Customer Value (0 to 100)
-    // Placeholder logic: default to 50 if unknown
-    const customerValueScore = 50;
+    // 3. Customer Value (0 to 1) - Default to 0.5 for now, can be enriched via user service later
+    const valueScore = 0.5;
 
-    // 4. Fraud Likelihood (0 to 100)
-    const fraudLikelihoodScore = Math.min(caseDoc.riskScore || 0, 100);
+    // 4. Fraud Likelihood (0 to 1)
+    // riskScore is usually 0-100, normalize to 0-1
+    const fraudScore = Math.min(1, (caseData.riskScore || 0) / 100);
 
-    // 5. Data Completeness (0 to 100 penalty)
-    let dataCompletenessScore = 100;
-    if (!caseDoc.description) dataCompletenessScore -= 30;
-    if (caseDoc.linkedEntities.length === 0) dataCompletenessScore -= 30;
-    if (!caseDoc.title) dataCompletenessScore -= 20;
-    
-    const dataCompletenessPenaltyScore = 100 - dataCompletenessScore;
+    // 5. Data Completeness Penalty (0 to 1)
+    let completeness = 0;
+    if (caseData.description && caseData.description.length > 20) completeness += 0.5;
+    if (caseData.linkedEntities && caseData.linkedEntities.length > 0) completeness += 0.5;
+    // We want the penalty to reduce score, but the formula says `- e * Data_Completeness`
+    // Actually, completeness means lower penalty. The formula is: - e * completeness, so we just use completeness as a multiplier.
 
-    // Weighted sum
-    const totalScore = 
-      (slaProximity * slaProximityScore) +
-      (amountAtRisk * amountAtRiskScore) +
-      (customerValue * customerValueScore) +
-      (fraudLikelihood * fraudLikelihoodScore) -
-      (dataCompletenessPenalty * dataCompletenessPenaltyScore);
+    // Compute Weighted Parts
+    const bSla = slaScore * TRIAGE_WEIGHTS.slaProximity;
+    const bAmount = amountScore * TRIAGE_WEIGHTS.amountAtRisk;
+    const bValue = valueScore * TRIAGE_WEIGHTS.customerValue;
+    const bFraud = fraudScore * TRIAGE_WEIGHTS.fraudLikelihood;
+    const bCompleteness = completeness * TRIAGE_WEIGHTS.dataCompletenessPenalty;
+
+    const scoreTotal = bSla + bAmount + bValue + bFraud - bCompleteness;
 
     return {
-      slaProximityScore,
-      amountAtRiskScore,
-      customerValueScore,
-      fraudLikelihoodScore,
-      dataCompletenessPenaltyScore,
-      totalScore: parseFloat(totalScore.toFixed(2))
+      scoreTotal: Number(Math.max(0, scoreTotal).toFixed(4)),
+      scoreBreakdown: {
+        sla: Number(bSla.toFixed(4)),
+        amount: Number(bAmount.toFixed(4)),
+        value: Number(bValue.toFixed(4)),
+        fraud: Number(bFraud.toFixed(4)),
+        completeness: Number(bCompleteness.toFixed(4))
+      },
+      scoreVersion: this.SCORE_VERSION,
+      computedAt: new Date()
     };
   }
 }

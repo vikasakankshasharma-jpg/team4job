@@ -1,68 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminAuth } from '@/infrastructure/firebase/admin';
-import { userService } from '@/domains/users/user.service';
 import { caseQueueRepository } from '@/domains/cases/case-queue.repository';
-import { AdminRole } from '@/lib/security/rbac';
-import { User } from '@/lib/types';
-
-export const dynamic = 'force-dynamic';
-
-function getAdminSubRole(admin: User): AdminRole {
-  const subRoles: AdminRole[] = ['support_agent', 'risk_analyst', 'finance_ops', 'compliance_manager', 'platform_admin', 'super_admin'];
-  const matched = admin.roles?.find((r: any) => subRoles.includes(r as AdminRole)) as AdminRole | undefined;
-  return matched || (admin.roles?.includes('Admin') ? 'super_admin' : 'support_agent');
-}
-
-async function authenticateAdmin(req: NextRequest) {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new Error('Unauthorized');
-  }
-
-  const idToken = authHeader.split('Bearer ')[1];
-  const adminAuth = getAdminAuth();
-  const decodedToken = await adminAuth.verifyIdToken(idToken);
-  const admin = await userService.getProfile(decodedToken.uid);
-
-  const hasAdminPrivilege = admin.roles?.includes('Admin') || 
-                            admin.roles?.some(r => ['support_agent', 'risk_analyst', 'finance_ops', 'compliance_manager', 'platform_admin', 'super_admin'].includes(r));
-
-  if (!hasAdminPrivilege) {
-    throw new Error('Forbidden');
-  }
-
-  return { admin, role: getAdminSubRole(admin) };
-}
+import { logAdminAction } from '@/lib/admin-logger';
+import { checkAdminAccess, type AdminRole } from '@/lib/security/rbac';
 
 export async function GET(req: NextRequest) {
   try {
-    await authenticateAdmin(req);
-    const { searchParams } = new URL(req.url);
-    const limitVal = parseInt(searchParams.get('limit') || '50', 10);
-
-    const queue = await caseQueueRepository.getQueue(limitVal);
-    return NextResponse.json(queue);
-  } catch (error: any) {
-    const status = error.message === 'Unauthorized' ? 401 : error.message === 'Forbidden' ? 403 : 500;
-    return NextResponse.json({ error: error.message || 'Failed to list triage queue' }, { status });
+    const limit = Number(req.nextUrl.searchParams.get('limit') ?? 50);
+    const data = await caseQueueRepository.getQueue(limit);
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error('Queue GET error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { admin } = await authenticateAdmin(req);
-    const claimed = await caseQueueRepository.claimNext(
-      admin.id,
-      admin.name || admin.email || 'Admin'
-    );
+    const body = await req.json();
+    const adminId = body.adminId;
+    const role = body.role as AdminRole;
 
-    if (!claimed) {
-      return NextResponse.json({ message: 'No unowned cases available in queue' }, { status: 404 });
+    if (!adminId || !role) {
+      return NextResponse.json({ error: 'Missing adminId or role' }, { status: 400 });
     }
 
-    return NextResponse.json(claimed);
-  } catch (error: any) {
-    const status = error.message === 'Unauthorized' ? 401 : error.message === 'Forbidden' ? 403 : 500;
-    return NextResponse.json({ error: error.message || 'Failed to claim next case' }, { status });
+    // RBAC check
+    const decision = checkAdminAccess(role, 'dispute.review');
+    if (!decision.allowed) {
+      return NextResponse.json({ error: 'Forbidden', reason: decision.reason }, { status: 403 });
+    }
+
+    const claimedCase = await caseQueueRepository.claimNext(adminId, role);
+
+    if (!claimedCase) {
+      return NextResponse.json({ message: 'No available cases to claim' }, { status: 404 });
+    }
+
+    // Audit Log for tamper-evident chain
+    await logAdminAction({
+      adminId,
+      adminName: adminId, // Fallback if name is missing
+      adminEmail: '',
+      actionType: 'SETTINGS_CHANGED', // Using SETTINGS_CHANGED as a general case mutate for now
+      targetType: 'settings', // Generic targetType for case manipulation
+      targetId: claimedCase.id,
+      details: { caseAction: 'queue_claim', priority: claimedCase.priorityBucket, score: claimedCase.scoreTotal }
+    });
+
+    return NextResponse.json({ data: claimedCase }, { status: 200 });
+  } catch (error) {
+    console.error('Queue Claim error:', error);
+    return NextResponse.json({ error: 'Internal Server Error or Contention' }, { status: 500 });
   }
 }

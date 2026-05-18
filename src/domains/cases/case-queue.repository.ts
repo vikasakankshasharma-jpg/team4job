@@ -1,131 +1,118 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { caseRepository } from './case.repository';
-import { triageScoreService } from './triage-score.service';
 import { Case } from './case.types';
-import { Timestamp } from 'firebase-admin/firestore';
-import { applyEnvelope } from '@/lib/schema/schema-envelope';
+import { TriageScoreResult } from './triage-score.service';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-export interface QueueItem {
+export interface QueuedCase extends TriageScoreResult {
   id: string;
   caseId: string;
-  title: string;
-  type: Case['type'];
   status: Case['status'];
-  priority: Case['priority'];
-  score: number;
-  rank: number;
-  slaDueAt: Timestamp | Date;
+  priorityBucket: number; // 3: critical, 2: high, 1: medium, 0: low
+  openedAt: Timestamp | Date;
   ownerAdminId?: string;
-  amountAtRisk: number;
-  riskScore: number;
-  breakdown: Record<string, number>;
-  recomputedAt: Timestamp | Date;
+  claimedAt?: Timestamp | Date;
 }
 
+const PRIORITY_BUCKETS: Record<string, number> = {
+  critical: 3,
+  high: 2,
+  medium: 1,
+  low: 0
+};
+
 export class CaseQueueRepository {
-  private get queueCollection() {
+  private get collection() {
     return getAdminDb().collection('case_queue');
   }
 
-  async materializeQueue(): Promise<void> {
+  async materializeQueue(cases: (Case & { scoreResult: TriageScoreResult })[]): Promise<void> {
     const db = getAdminDb();
-    
-    // Get all open/active cases
-    const cases = await caseRepository.listAll();
-    const activeCases = cases.filter(c => c.status !== 'closed');
-
-    // Calculate scores
-    const items = activeCases.map(c => {
-      const breakdown = triageScoreService.calculateScore(c);
-      return {
-        caseDoc: c,
-        score: breakdown.totalScore,
-        breakdown
-      };
-    });
-
-    // Sort by score DESC
-    items.sort((a, b) => b.score - a.score);
-
-    // Batch write to case_queue collection
     const batch = db.batch();
 
-    // 1. Delete all existing items in the case_queue
-    const existingSnap = await this.queueCollection.get();
-    existingSnap.docs.forEach(doc => {
-      batch.delete(doc.ref);
-    });
+    for (const c of cases) {
+      const docRef = this.collection.doc(c.id);
+      const priorityBucket = PRIORITY_BUCKETS[c.priority] ?? 1;
 
-    // 2. Add newly ranked items
-    items.forEach((item, index) => {
-      const queueItem: Omit<QueueItem, 'id'> = {
-        caseId: item.caseDoc.id,
-        title: item.caseDoc.title,
-        type: item.caseDoc.type,
-        status: item.caseDoc.status,
-        priority: item.caseDoc.priority,
-        score: item.score,
-        rank: index + 1,
-        slaDueAt: item.caseDoc.slaDueAt,
-        ownerAdminId: item.caseDoc.ownerAdminId || undefined,
-        amountAtRisk: item.caseDoc.amountAtRisk,
-        riskScore: item.caseDoc.riskScore,
-        breakdown: item.breakdown as any,
-        recomputedAt: Timestamp.now()
+      const queuedItem: QueuedCase = {
+        id: c.id,
+        caseId: c.id,
+        status: c.status,
+        priorityBucket,
+        openedAt: c.openedAt,
+        ownerAdminId: c.ownerAdminId,
+        scoreTotal: c.scoreResult.scoreTotal,
+        scoreBreakdown: c.scoreResult.scoreBreakdown,
+        scoreVersion: c.scoreResult.scoreVersion,
+        computedAt: c.scoreResult.computedAt
       };
-      
-      const newDocRef = this.queueCollection.doc(item.caseDoc.id);
-      batch.set(newDocRef, applyEnvelope(queueItem));
-    });
+
+      batch.set(docRef, queuedItem, { merge: true });
+    }
 
     await batch.commit();
   }
 
-  async getQueue(limitVal: number = 50): Promise<QueueItem[]> {
-    const snapshot = await this.queueCollection
-      .orderBy('score', 'desc')
-      .limit(limitVal)
-      .get();
+  async claimNext(adminId: string, role: string, maxRetries = 3): Promise<QueuedCase | null> {
+    const db = getAdminDb();
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      // 1. Query top unclaimed row(s)
+      const snapshot = await this.collection
+        .where('ownerAdminId', '==', null)
+        .where('status', 'in', ['open', 'pending_review'])
+        .orderBy('scoreTotal', 'desc')
+        .orderBy('priorityBucket', 'desc')
+        .orderBy('openedAt', 'asc')
+        .orderBy('caseId', 'asc')
+        .limit(3)
+        .get();
+
+      if (snapshot.empty) return null;
+
+      // Try claiming the first one via Transaction
+      for (const doc of snapshot.docs) {
+        try {
+          const claimedDoc = await db.runTransaction(async (transaction) => {
+            const freshDoc = await transaction.get(doc.ref);
+            if (!freshDoc.exists) return null;
+            
+            const data = freshDoc.data() as QueuedCase;
+            // Compare and set
+            if (data.ownerAdminId) return null; // Already claimed
+
+            transaction.update(doc.ref, {
+              ownerAdminId: adminId,
+              claimedAt: FieldValue.serverTimestamp()
+            });
+
+            return { ...data, ownerAdminId: adminId, claimedAt: new Date() } as QueuedCase;
+          });
+
+          if (claimedDoc) {
+            return claimedDoc; // Successfully claimed
+          }
+        } catch (e) {
+          // Transaction failed (contention), will retry next doc or next outer loop
+          continue;
+        }
+      }
+      
+      // If we got here, all 3 top docs were contended, retry the outer loop
+    }
     
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QueueItem));
+    throw new Error('Failed to claim case after max retries due to high contention');
   }
 
-  async claimNext(adminId: string, adminName: string): Promise<QueueItem | null> {
-    const db = getAdminDb();
-    
-    // Find highest ranked case with NO owner
-    const snapshot = await this.queueCollection
-      .where('ownerAdminId', '==', null)
-      .orderBy('score', 'desc')
-      .limit(1)
+  async getQueue(limitVal = 50): Promise<QueuedCase[]> {
+    const snapshot = await this.collection
+      .where('status', 'in', ['open', 'pending_review'])
+      .orderBy('scoreTotal', 'desc')
+      .orderBy('priorityBucket', 'desc')
+      .orderBy('openedAt', 'asc')
+      .limit(limitVal)
       .get();
-
-    if (snapshot.empty) {
-      // Retry without the where filter in JS since Firestore might be strict about null equality on dynamic fields
-      const allQueue = await this.getQueue(100);
-      const unowned = allQueue.find(item => !item.ownerAdminId);
-      if (!unowned) return null;
-
-      // Claim case in real case collection
-      await caseRepository.update(unowned.caseId, { ownerAdminId: adminId });
       
-      // Update case_queue item
-      await this.queueCollection.doc(unowned.caseId).update({ ownerAdminId: adminId });
-      
-      // Return updated queue item
-      return { ...unowned, ownerAdminId: adminId };
-    }
-
-    const doc = snapshot.docs[0];
-    const item = { id: doc.id, ...doc.data() } as QueueItem;
-
-    // Claim case in real case collection
-    await caseRepository.update(item.caseId, { ownerAdminId: adminId });
-    
-    // Update case_queue item
-    await doc.ref.update({ ownerAdminId: adminId });
-    
-    return { ...item, ownerAdminId: adminId };
+    return snapshot.docs.map(doc => doc.data() as QueuedCase);
   }
 }
 
