@@ -185,7 +185,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await bidBtn.click();
         const bidDialog = page.locator('div[role="dialog"]').filter({ has: page.locator('input[name="amount"]') });
         await bidDialog.waitFor({ state: 'visible', timeout: 15000 });
-        await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
+        await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
+        await bidDialog.locator('input[name="amount"]').type(TEST_JOB_DATA.bidAmount.toString(), { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
         await bidDialog.getByRole('button', { name: /Place Bid/i }).click();
 
@@ -199,18 +200,15 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        // Click Bids tab if present, then retry waiting for bids (Firestore subscription lag)
-        const bidsTabPhase3 = page.getByTestId('bids-tab').or(page.getByRole('tab', { name: /Bids/i })).first();
-        if (await bidsTabPhase3.isVisible({ timeout: 3000 }).catch(() => false)) await bidsTabPhase3.click();
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const ok = await page.getByTestId('bid-card-wrapper').first().isVisible({ timeout: 20000 }).catch(() => false);
+        // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
+        for (let attempt = 0; attempt < 4; attempt++) {
+            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 20000 }).catch(() => false);
             if (ok) break;
-            console.log('[DEBUG] Bids not visible, reloading (attempt ' + (attempt + 1) + '/3)...');
+            console.log('[DEBUG] Offer button not visible, reloading (attempt ' + (attempt + 1) + '/4)...');
             await page.reload();
             await page.waitForTimeout(3000);
-            if (await bidsTabPhase3.isVisible({ timeout: 2000 }).catch(() => false)) await bidsTabPhase3.click();
         }
-        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: TIMEOUTS.long });
+        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: TIMEOUTS.long });
         
         const offerBtn = page.getByTestId('send-offer-button').first();
         await offerBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.medium });

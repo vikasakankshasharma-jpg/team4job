@@ -67,7 +67,8 @@ test.describe('Secured Variation Orders', () => {
         const bidDialog = page.locator('div[role="dialog"]').filter({ has: page.locator('input[name="amount"]') });
         await bidDialog.waitFor({ state: 'visible', timeout: 15000 });
 
-        await bidDialog.locator('input[name="amount"]').fill('5000');
+        await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
+        await bidDialog.locator('input[name="amount"]').type('5000', { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill('I am proposing a professional installation with variation support. I have extensive experience in CCTV systems.');
         
         const submitBidBtn = bidDialog.getByTestId('submit-bid-button').first();
@@ -88,27 +89,15 @@ test.describe('Secured Variation Orders', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.auth.waitForStability();
 
-        // Click Bids tab if present (some views hide bids behind a tab)
-        const bidsTab = page.getByTestId('bids-tab')
-            .or(page.getByRole('tab', { name: /Bids/i })).first();
-        if (await bidsTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await bidsTab.click();
-        }
-
-        // Wait for bids to load with retries
-        let bidVisible = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
-            bidVisible = await page.getByTestId('bid-card-wrapper').first()
-                .isVisible({ timeout: 20000 }).catch(() => false);
-            if (bidVisible) break;
-            console.log(`[WARN] Bids not visible (attempt ${attempt + 1}/3), reloading...`);
+        // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
+        for (let attempt = 0; attempt < 4; attempt++) {
+            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 20000 }).catch(() => false);
+            if (ok) break;
+            console.log(`[WARN] Offer button not visible (attempt ${attempt + 1}/4), reloading...`);
             await page.reload();
             await page.waitForTimeout(3000);
-            if (await bidsTab.isVisible({ timeout: 2000 }).catch(() => false)) {
-                await bidsTab.click();
-            }
         }
-        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 60000 });
+        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 60000 });
 
         await page.getByTestId('send-offer-button').first().click();
         await helper.job.handleAuthorizationModal();
