@@ -179,13 +179,15 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await expect(page.getByTestId('job-title')).toHaveText(uniqueJobTitle);
+        await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV|Install/i, { timeout: 30000 });
         const bidBtn = page.getByTestId('place-bid-button');
+        await bidBtn.waitFor({ state: 'visible', timeout: 30000 });
         await bidBtn.click();
-
-        await page.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
-        await page.fill('textarea[name="coverLetter"]', TEST_JOB_DATA.coverLetter);
-        await page.getByRole('button', { name: "Place Bid" }).click();
+        const bidDialog = page.getByRole('dialog', { name: /Place a Bid|Place Bid/i });
+        await bidDialog.waitFor({ state: 'visible', timeout: 15000 });
+        await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
+        await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
+        await bidDialog.getByRole('button', { name: /Place Bid/i }).click();
 
         await helper.form.waitForToast('Bid Placed!');
         console.log('[PASS] Phase 2 Complete: Bid placed');

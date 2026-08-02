@@ -1545,7 +1545,25 @@ export class NavigationHelper {
     }
 
     async goToPostJobForm(): Promise<boolean> {
-        return this.goToPostJob();
+        // Navigate to the direct post-job form, bypassing the wizard
+        const maxRetries = 2;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                console.log(`[NavigationHelper] Navigating to Post Job Form (Attempt ${attempt}/${maxRetries})...`);
+                await this.page.goto(ROUTES.postJobForm, {
+                    waitUntil: 'domcontentloaded',
+                    timeout: attempt === 1 ? 120000 : 60000
+                });
+                break;
+            } catch (e: any) {
+                console.warn(`[NavigationHelper] goToPostJobForm attempt ${attempt} failed: ${e.message}`);
+                if (attempt === maxRetries) throw e;
+                await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+                await this.page.waitForTimeout(3000);
+            }
+        }
+        await this.injectCookieHide();
+        return true;
     }
 
     async goToPostJob(): Promise<boolean> {

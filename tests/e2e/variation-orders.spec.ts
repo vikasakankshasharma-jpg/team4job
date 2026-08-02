@@ -63,8 +63,8 @@ test.describe('Secured Variation Orders', () => {
         await placeBidBtn.waitFor({ state: 'visible', timeout: 30000 });
         await placeBidBtn.click();
 
-        // Wait for bid dialog
-        const bidDialog = page.locator('div[role="dialog"]');
+        // Wait for bid dialog - use named role to avoid Next.js error overlay (strict mode)
+        const bidDialog = page.getByRole('dialog', { name: /Place a Bid|Place Bid/i });
         await bidDialog.waitFor({ state: 'visible', timeout: 10000 });
 
         await bidDialog.locator('input[name="amount"]').fill('5000');

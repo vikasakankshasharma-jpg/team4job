@@ -24,10 +24,6 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await page.goto('/dashboard/post-job').catch(() => { });
         await helper.form.discardDraftIfPresent();
 
-        // Clear any existing stale drafts before starting the test properly
-        await page.goto('/dashboard/post-job').catch(() => { });
-        await helper.form.discardDraftIfPresent();
-
         await helper.auth.loginAsClient();
         await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job/i)).first()).toBeVisible({ timeout: 60000 });
 
@@ -105,13 +101,14 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
             return;
         }
         await bidButton.click();
-        const bidDialog = page.locator('div[role="dialog"]');
+        // Use named role to avoid matching the Next.js error overlay dialog (strict mode)
+        const bidDialog = page.getByRole('dialog', { name: /Place a Bid|Place Bid/i });
         await bidDialog.waitFor({ state: 'visible' });
         await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
-        await bidDialog.getByTestId('submit-bid-button').click({ force: true }); // Submit
+        await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         await bidDialog.waitFor({ state: 'hidden' });
-        
+
         // Wait for either the toast or a page-state indicator that bid was placed
         await Promise.race([
             helper.form.waitForToast('Bid Placed!'),
@@ -123,7 +120,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
-        
+
         // Wait for bids to load via Firestore real-time subscription
         await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();

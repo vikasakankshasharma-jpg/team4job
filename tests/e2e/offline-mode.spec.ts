@@ -28,12 +28,16 @@ test.describe('Offline Mode (PWA)', () => {
 
     test('Critical actions are blocked or warn when offline', async ({ page }) => {
         await page.goto('/login');
+        // Wait for the page to fully hydrate before going offline to avoid detached DOM
+        await page.waitForLoadState('networkidle').catch(() => {});
+        await page.waitForTimeout(1500);
 
         await page.context().setOffline(true);
 
         const loginBtn = page.getByRole('button', { name: /Log In/i }).first();
         if (await loginBtn.isVisible()) {
-            await loginBtn.click({ force: true });
+            // Re-query after offline to avoid stale element reference
+            await page.getByRole('button', { name: /Log In/i }).first().click({ force: true });
             
             // Should show an error or be disabled
             const errorMsg = page.locator('text=/offline|network|connection/i').first();

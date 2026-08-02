@@ -190,7 +190,7 @@ test.describe('Universal Master Audit', () => {
             console.log('[Act 3] Clicking Place Bid button...');
             await placeBidBtn.click({ force: true });
             
-            const bidDialog = pageIN.locator('div[role="dialog"]');
+            const bidDialog = pageIN.getByRole('dialog', { name: /Place a Bid|Place Bid/i });
             await expect(bidDialog).toBeVisible({ timeout: 30000 });
             console.log('[Act 3] Filling bid details...');
             

@@ -28,8 +28,9 @@ test.describe('Wallet Withdrawals', () => {
 
         await page.goto('/dashboard/wallet');
 
-        // Click Withdraw button
+        // Click Withdraw button - wait for wallet page to fully render
         const withdrawBtn = page.getByRole('button', { name: /Withdraw/i }).first();
+        await withdrawBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.long });
         await withdrawBtn.click();
 
         // Fill withdrawal form

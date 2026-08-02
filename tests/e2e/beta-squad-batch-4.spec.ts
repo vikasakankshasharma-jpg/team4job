@@ -85,9 +85,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }
@@ -95,9 +93,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }
@@ -236,9 +232,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }
@@ -246,9 +240,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }
@@ -386,18 +378,14 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
-                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-                if (await confirmBtn.isVisible()) await confirmBtn.click();
+                await helper.job.handleAuthorizationModal();
                 offerClicked = true;
                 break;
             }

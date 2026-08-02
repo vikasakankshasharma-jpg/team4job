@@ -55,8 +55,8 @@ test.describe('Mobile Responsiveness', () => {
         // 4. Open Mobile Menu
         await mobileMenuTrigger.click();
 
-        // Verify Menu Content (Sheet)
-        const sheet = page.locator('div[role="dialog"]');
+        // Verify Menu Content (Sheet) - filter by hasText to avoid Next.js error overlay
+        const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
         await expect(sheet).toBeVisible();
         await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible();
         await expect(sheet.getByRole('link', { name: 'Post a Job' })).toBeVisible();
@@ -65,7 +65,7 @@ test.describe('Mobile Responsiveness', () => {
         // Close menu (click link or outside - clicking link navigates)
         // Let's click "Post a Job" to verify navigation
         await sheet.getByRole('link', { name: 'Post a Job' }).click();
-        await expect(page).toHaveURL(/.*\/post-job/);
+        await expect(page).toHaveURL(/.*\/(wizard|post-job)/);
         console.log('[Mobile] Navigated to Post Job via mobile menu');
 
         // 5. Handle "Resume your draft?" dialog if present
