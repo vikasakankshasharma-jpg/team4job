@@ -139,9 +139,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await sendOfferBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await sendOfferBtn.click();
-        const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
-        await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-        if (await confirmBtn.isVisible()) await confirmBtn.click();
+        await helper.job.handleAuthorizationModal();
+
+
         
         await helper.form.waitForToast('Offer Sent', 10000).catch(() => console.log('[Test] Missed Offer Sent toast, continuing...'));
 
