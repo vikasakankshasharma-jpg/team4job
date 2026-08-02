@@ -18,7 +18,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
     test('Complete Transaction Cycle: Full 8-Phase Flow', async ({ browser }) => {
         // Increase timeout for this specific heavy test (5 minutes)
-        test.setTimeout(300000);
+        test.setTimeout(480000); // 8-phase test needs 8 minutes
 
         (uniqueJobTitle as any) = `${TEST_JOB_DATA.title} - ${Date.now()} `;
 
