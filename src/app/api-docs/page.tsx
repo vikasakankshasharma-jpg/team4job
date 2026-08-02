@@ -16,7 +16,7 @@ const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
 
 export default function ApiDocsPage() {
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-background min-h-screen">
             <SwaggerUI spec={openApiSpec} />
         </div>
     );

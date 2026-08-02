@@ -32,6 +32,7 @@ const limiter = rateLimit({
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const token = request.cookies.get('auth-token');
 
     // 1. API Logic (Rate Limiting & Auth)
     if (pathname.startsWith('/api')) {
@@ -85,6 +86,14 @@ export async function proxy(request: NextRequest) {
             maxAge: 365 * 24 * 60 * 60,
         });
         return response;
+    }
+
+    // 3. Page Route Protection
+    const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/wizard');
+    if (isProtectedRoute && !token) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();

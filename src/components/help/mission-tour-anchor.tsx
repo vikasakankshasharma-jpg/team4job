@@ -56,7 +56,7 @@ export function MissionTourAnchor() {
         <div className="fixed inset-0 z-[200] pointer-events-none">
             {/* Dark Overlay with Circle cutout */}
             <div 
-                className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-all duration-500"
+                className="absolute inset-0 bg-foreground/60 backdrop-blur-[2px] transition-all duration-500"
                 style={{
                     clipPath: `path('M 0 0 h 4000 v 4000 h -4000 z M ${anchorRect.left - 10} ${anchorRect.top - 10} q 0 -10 10 -10 h ${anchorRect.width} q 10 0 10 10 v ${anchorRect.height} q 0 10 -10 10 h -${anchorRect.width} q -10 0 -10 -10 z')`,
                     fillRule: 'evenodd'

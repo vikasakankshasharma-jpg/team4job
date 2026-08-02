@@ -24,14 +24,14 @@ const TrustProofSection = dynamic(() => import('./landing/trust-proof').then(mod
 
 // Footer and CTA are also candidates for late loading
 const CTASection = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
-    <section className="py-24 md:py-32 bg-primary text-black">
+    <section className="py-24 md:py-32 bg-primary text-foreground">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase mb-6 leading-none">{t('ctaTitle')}</h2>
-            <p className="max-w-2xl mx-auto mb-12 text-lg font-bold uppercase tracking-widest opacity-70 italic">
+            <p className="max-w-2xl mx-auto mb-12 text-lg font-bold uppercase tracking-widest text-primary-foreground/90 italic">
                 {t('ctaDesc')}
             </p>
             <div className="flex justify-center gap-6">
-                <Button size="lg" variant="secondary" asChild className="h-16 px-10 rounded-[1.75rem] bg-black text-white font-black text-[10px] uppercase tracking-[0.4em] italic shadow-[0_25px_60px_-10px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 transition-all" onClick={() => trackFunnelEvent('cta_click', { source: 'footer_cta' })}>
+                <Button size="lg" asChild className="h-16 px-10 rounded-[1.75rem] bg-background text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-[0_25px_60px_-10px_rgba(0,0,0,0.4)] hover:scale-105 hover:bg-background/90 active:scale-95 transition-all" onClick={() => trackFunnelEvent('cta_click', { source: 'footer_cta' })}>
                     <Link href="/login?tab=signup">
                         {t('ctaButton') || "INITIALIZE JOIN"}
                     </Link>
@@ -50,7 +50,7 @@ const Footer = dynamic(() => Promise.resolve(({ t }: { t: any }) => (
                          <Logo className="h-10 w-10 text-primary group-hover:rotate-12 transition-transform duration-500" />
                          <span className="text-2xl font-black italic tracking-[0.2em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/40">Team4Job</span>
                      </Link>
-                     <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 italic leading-relaxed max-w-sm">Join the growing community of professionals and clients building a better, more secure future through high-authority signal verification.</p>
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 italic leading-relaxed max-w-sm">Join the growing community of professionals and clients building a better, more secure future through high-authority signal verification.</p>
                  </div>
                  <div>
                      <h4 className="text-[10px] font-black italic uppercase tracking-[0.4em] text-blue-600 dark:text-blue-400 mb-6">Platform</h4>
@@ -131,7 +131,7 @@ export default function HomeClient() {
                         </p>
                         
                         <div className="flex flex-col sm:flex-row justify-center gap-10 mb-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                            <Button size="lg" asChild className="h-24 px-14 text-2xl font-black italic tracking-tighter uppercase rounded-[3.5rem] bg-primary text-black shadow-primary/30 shadow-[0_45px_120px_-20px_rgba(var(--primary),0.4)] hover:translate-y-[-8px] hover:shadow-primary/60 active:scale-95 transition-all group" onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
+                            <Button size="lg" asChild className="h-24 px-14 text-2xl font-black italic tracking-tighter uppercase rounded-[3.5rem] bg-primary text-foreground shadow-primary/30 shadow-[0_45px_120px_-20px_rgba(var(--primary),0.4)] hover:translate-y-[-8px] hover:shadow-primary/60 active:scale-95 transition-all group" onClick={() => trackFunnelEvent('cta_click', { source: 'hero_primary' })}>
                                 <Link href="/login?tab=signup" className="flex items-center">
                                     {t('postJobButton')} <ArrowRight className="ml-4 h-8 w-8 group-hover:translate-x-3 transition-transform" />
                                 </Link>

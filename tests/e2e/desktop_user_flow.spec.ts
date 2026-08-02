@@ -32,7 +32,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job/i)).first()).toBeVisible({ timeout: 60000 });
 
         // ---------- Post a Job ----------
-        await helper.nav.goToPostJob();
+        await helper.nav.goToPostJobForm();
 
         await helper.form.completeWizard(
             TEST_JOB_DATA.category,
@@ -105,13 +105,17 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
             return;
         }
         await bidButton.click();
-        await page.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
-        await page.fill('textarea[name="coverLetter"]', TEST_JOB_DATA.coverLetter);
-        await page.getByRole('button', { name: /Place Bid/i }).click(); // Submit
+        const bidDialog = page.locator('div[role="dialog"]');
+        await bidDialog.waitFor({ state: 'visible' });
+        await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
+        await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
+        await bidDialog.getByTestId('submit-bid-button').click({ force: true }); // Submit
+        await bidDialog.waitFor({ state: 'hidden' });
+        
         // Wait for either the toast or a page-state indicator that bid was placed
         await Promise.race([
-            helper.form.waitForToast('Bid Placed!').catch(() => { }),
-            page.getByText(/Bid Placed|bid_placed|Your bid/i).waitFor({ state: 'visible', timeout: 15000 }).catch(() => { }),
+            helper.form.waitForToast('Bid Placed!'),
+            page.getByText(/Bid Placed|bid_placed|Your bid/i).waitFor({ state: 'visible', timeout: 15000 })
         ]);
         await page.waitForTimeout(1000);
 
@@ -123,11 +127,12 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         // Wait for bids to load via Firestore real-time subscription
         await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
+        await helper.job.handleAuthorizationModal();
         // Wait for either the toast or the page state to reflect the offer was sent
         await Promise.race([
-            helper.form.waitForToast('Offer Sent').catch(() => { }),
-            page.getByText('Retract Offer').waitFor({ state: 'visible', timeout: 15000 }).catch(() => { }),
-            page.getByText('bid_accepted').waitFor({ state: 'visible', timeout: 15000 }).catch(() => { }),
+            helper.form.waitForToast('Offer Sent'),
+            page.getByText('Retract Offer').waitFor({ state: 'visible', timeout: 15000 }),
+            page.getByText('bid_accepted').waitFor({ state: 'visible', timeout: 15000 })
         ]);
         await page.waitForTimeout(1000); // Allow state to settle
 
@@ -149,8 +154,8 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         }
         // Wait for either the toast or the page state to reflect acceptance
         await Promise.race([
-            helper.form.waitForToast('Job Accepted!').catch(() => { }),
-            page.getByText(/Pending Funding|accepted|in_progress/i).waitFor({ state: 'visible', timeout: 15000 }).catch(() => { }),
+            helper.form.waitForToast('Job Accepted!'),
+            page.getByText(/Pending Funding|accepted|in_progress/i).waitFor({ state: 'visible', timeout: 15000 })
         ]);
         await page.waitForTimeout(1000);
 

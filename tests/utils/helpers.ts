@@ -261,6 +261,7 @@ export class AuthHelper {
     }
 
     async login(email: string, password: string) {
+        await this.clearAuthPersistence();
         await this.seedTestUsers();
         let attempts = 0;
         const maxRetries = 2;
@@ -1543,6 +1544,10 @@ export class NavigationHelper {
         }).catch(() => { });
     }
 
+    async goToPostJobForm(): Promise<boolean> {
+        return this.goToPostJob();
+    }
+
     async goToPostJob(): Promise<boolean> {
         // ULTRA-GUARD: Fast Refresh / emulator flakiness can prevent the full "load" event.
         // Increase timeout to 120s and add an emergency reload on failure.
@@ -1684,6 +1689,14 @@ export class JobHelper {
         const url = this.page.url();
         const match = url.match(/\/jobs\/(JOB-[A-Z0-9-]+)/);
         return match ? match[1] : '';
+    }
+
+    async handleAuthorizationModal() {
+        const authModal = this.page.getByText('Official Authorization');
+        if (await authModal.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await this.page.getByTestId('auth-modal-sign').fill('Client Name');
+            await this.page.getByRole('button', { name: /Authorize Offer/i }).click();
+        }
     }
 
     async getJobIdFromCard(): Promise<string> {

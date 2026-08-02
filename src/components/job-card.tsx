@@ -215,7 +215,7 @@ export function JobCard({ job }: JobCardProps) {
                             {buttonText}
                         </span>
                         <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-2 relative z-10" />
-                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-background/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </Link>
                 </Button>
             </CardFooter>

@@ -4,13 +4,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
+const urlParams = new URLSearchParams(location.search);
 const firebaseConfig = {
-  apiKey: 'AIzaSyC0NaO2x65_mdXpe1S62l2bwoc3KZwjn3o',
-  authDomain: 'dodo-beta.firebaseapp.com',
-  projectId: 'dodo-beta',
-  storageBucket: 'dodo-beta.firebasestorage.app',
-  messagingSenderId: '912974459558',
-  appId: '1:912974459558:web:0d04a5c2d3373c28547a67',
+  apiKey: urlParams.get('apiKey'),
+  authDomain: urlParams.get('authDomain'),
+  projectId: urlParams.get('projectId'),
+  storageBucket: urlParams.get('storageBucket'),
+  messagingSenderId: urlParams.get('messagingSenderId'),
+  appId: urlParams.get('appId'),
 };
 
 firebase.initializeApp(firebaseConfig);

@@ -87,6 +87,7 @@ test.describe('Secured Variation Orders', () => {
         // Wait for bids to load and find the specific bid
         await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Offer Sent');
 
@@ -121,7 +122,7 @@ test.describe('Secured Variation Orders', () => {
         // Bypass payment using shim
         await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
         await page.evaluate(async () => {
-            await (window as any).e2e_directFundJob();
+            await page.getByTestId('e2e-direct-fund').click({ force: true });
         });
         await helper.form.waitForToast('Test Mode');
 

@@ -31,7 +31,14 @@ export class DisputeRepository {
     }
 
     async fetchByRequester(requesterId: string): Promise<Dispute[]> {
-        const snapshot = await this.collection.where('requesterId', '==', requesterId).orderBy('createdAt', 'desc').get();
+        const { Filter } = await import('firebase-admin/firestore');
+        const snapshot = await this.collection.where(
+            Filter.or(
+                Filter.where('requesterId', '==', requesterId),
+                Filter.where('parties.clientId', '==', requesterId),
+                Filter.where('parties.professionalId', '==', requesterId)
+            )
+        ).orderBy('createdAt', 'desc').get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispute));
     }
 

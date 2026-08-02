@@ -97,7 +97,7 @@ export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: Use
                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2 fill-current" />}
                             {t('button')}
                         </span>
-                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                        <div className="absolute inset-0 bg-background/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </Button>
                 </div>
             </div>

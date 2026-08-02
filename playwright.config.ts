@@ -73,14 +73,18 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
 
     /* Retry flaky tests caused by emulator timing (CI: 2, local: 2) */
-    /* In CI, retry once only — 2 retries × 180s timeout = massive queue buildup */
-    retries: process.env.CI ? 1 : 2,
+    /* In CI, retry once only. Locally, 0 to prevent emulator memory buildup */
+    retries: process.env.CI ? 1 : 0,
 
-    /* Single worker to prevent emulator state collisions */
+    /* Use multi workers to speed up execution */
     workers: 1,
 
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-    reporter: 'html',
+    reporter: [
+        ['list'],
+        ['html'],
+        ['./tests/utils/CustomProgressReporter.ts']
+    ],
 
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
@@ -98,10 +102,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 180 * 1000,
+        actionTimeout: 30 * 1000,
 
         /* Maximum time for navigation */
-        navigationTimeout: 300 * 1000,
+        navigationTimeout: 60 * 1000,
 
         /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
@@ -169,7 +173,7 @@ export default defineConfig({
      * process on port 3000, which fails with EADDRINUSE.
      */
     webServer: {
-        command: process.env.CI ? 'npm run start -- -p 3000' : 'cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
+        command: process.env.CI ? 'npm run start -- -p 3000' : 'npx rimraf .next && cross-env NODE_OPTIONS="--max-old-space-size=8192" npm run dev -- -H 127.0.0.1',
         url: 'http://127.0.0.1:3000',
         reuseExistingServer: true, // Always reuse — CI starts server manually
         stdout: 'pipe',
@@ -185,7 +189,7 @@ export default defineConfig({
      * - Keep at 8 min per test so a shard with 3-4 tests stays well within 60 min
      * - @slow tests (beta-squad, milestones) are excluded from the regression shard
      */
-    timeout: process.env.CI ? 5 * 60 * 1000 : 35 * 60 * 1000,
+    timeout: process.env.CI ? 15 * 60 * 1000 : 15 * 60 * 1000,
 
     /* Expect timeout */
     expect: {

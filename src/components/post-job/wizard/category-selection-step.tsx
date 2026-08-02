@@ -28,7 +28,7 @@ export function CategorySelectionStep({ categories, onSelect }: CategorySelectio
     return (
         <div className="space-y-8 max-w-4xl mx-auto p-4">
             <div className="text-center space-y-4 mb-20">
-                <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-none">Mission Orientation</h2>
+                <h2 className="text-4xl sm:text-5xl md:text-6xl font-black italic tracking-tighter uppercase leading-none">Mission Orientation</h2>
                 <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-50 italic">
                     Establish your operational sector to begin the intelligence-guided job creation.
                 </p>
@@ -44,7 +44,7 @@ export function CategorySelectionStep({ categories, onSelect }: CategorySelectio
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         >
                             <Card
-                                className="p-10 cursor-pointer border-none shadow-[0_45px_120px_rgba(0,0,0,0.2)] hover:shadow-[0_60px_150px_rgba(var(--primary),0.2)] transition-all h-full flex flex-col group relative overflow-hidden bg-card/40 backdrop-blur-3xl z-10 active:scale-[0.98] rounded-[3.5rem] ring-1 ring-white/5"
+                                className="p-6 sm:p-10 cursor-pointer border-none shadow-[0_45px_120px_rgba(0,0,0,0.2)] hover:shadow-[0_60px_150px_rgba(var(--primary),0.2)] transition-all h-full flex flex-col group relative overflow-hidden bg-card/40 backdrop-blur-3xl z-10 active:scale-[0.98] rounded-[2rem] sm:rounded-[3.5rem] ring-1 ring-white/5"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     onSelect(category.id);

@@ -185,7 +185,7 @@ export function StepIdentity() {
                       type="button"
                       onClick={handleInitiateVerification}
                       disabled={isLoading || field.value?.length !== 12}
-                      className="h-16 px-8 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                      className="h-16 px-8 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                     >
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('confirm')}
                     </Button>
@@ -214,7 +214,7 @@ export function StepIdentity() {
                   type="button"
                   onClick={handleConfirmVerification}
                   disabled={isLoading || (watch('otp') || "").length !== 6}
-                  className="w-full h-16 rounded-[1.5rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                  className="w-full h-16 rounded-[1.5rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                 >
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('verifyOtp')}
                 </Button>
@@ -262,7 +262,7 @@ export function StepIdentity() {
                       type="button"
                       onClick={handleVerifyPan}
                       disabled={isLoading || field.value?.length !== 10}
-                      className="h-16 px-8 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                      className="h-16 px-8 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                     >
                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('verifyPan')}
                     </Button>
@@ -276,7 +276,7 @@ export function StepIdentity() {
       </div>
 
       <div className="pt-12">
-        <Button variant="outline" onClick={() => setCurrentStep('contact')} className="h-16 w-full max-w-[200px] rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">{tAuth('back')}</Button>
+        <Button variant="outline" onClick={() => setCurrentStep('contact')} className="h-16 w-full max-w-[200px] rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">{tAuth('back')}</Button>
       </div>
     </motion.div>
   );

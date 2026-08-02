@@ -5,7 +5,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
             {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:block">
+            <aside className="w-64 bg-background dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:block">
                 <div className="p-6">
                     <h1 className="text-xl font-bold flex items-center gap-2">
                         <ShieldCheck className="h-6 w-6 text-amber-500" />

@@ -5,7 +5,8 @@ import { authService } from '@/domains/auth/auth.service';
 import { userService } from '@/domains/users/user.service';
 import { getAdminAuth } from '@/infrastructure/firebase/admin';
 
-import { Role } from '@/lib/types';
+import { Role, User } from '@/lib/types';
+import { logAdminAction } from '@/lib/admin-logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     // 1. Verify admin authorization
-    const adminId = await verifyAdminAuth(req);
-    if (!adminId) {
+    const admin = await verifyAdminAuth(req);
+    if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -44,6 +45,16 @@ export async function POST(req: NextRequest) {
     await authService.verifyEmail(uid);
 
     // 5. Log action
+    await logAdminAction({
+      adminId: admin.id,
+      adminName: admin.name || 'Admin',
+      adminEmail: admin.email,
+      actionType: 'TEAM_MEMBER_ADDED',
+      targetType: 'user',
+      targetId: uid,
+      targetName: name,
+      details: { role },
+    });
 
 
     return NextResponse.json({ success: true, uid });
@@ -64,7 +75,7 @@ export async function POST(req: NextRequest) {
 /**
  * Helper: Verify admin authentication
  */
-async function verifyAdminAuth(req: NextRequest): Promise<string | null> {
+async function verifyAdminAuth(req: NextRequest): Promise<User | null> {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
@@ -82,7 +93,7 @@ async function verifyAdminAuth(req: NextRequest): Promise<string | null> {
       return null;
     }
 
-    return user.id;
+    return user;
   } catch (error) {
 
     return null;

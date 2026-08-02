@@ -562,7 +562,7 @@ export default function VerifyProfessionalClient() {
 
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 p-4 rounded-lg border border-blue-100 dark:border-slate-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm">
+                    <div className="bg-background dark:bg-slate-700 p-1.5 rounded-full shadow-sm">
                       <Sparkles className="h-4 w-4 text-blue-600" />
                     </div>
                     <h4 className="font-semibold text-sm">Smart Equipment Audit</h4>
@@ -581,7 +581,7 @@ export default function VerifyProfessionalClient() {
 
                   {shopAudit ? (
                     <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                      <div className="bg-white/50 dark:bg-slate-900/50 p-2.5 rounded border border-blue-200/50 dark:border-slate-600">
+                      <div className="bg-background/50 dark:bg-slate-900/50 p-2.5 rounded border border-blue-200/50 dark:border-slate-600">
                         <p className="text-[11px] font-bold uppercase mb-1 text-blue-800 dark:text-blue-300">Tools Detected</p>
                         <div className="flex flex-wrap gap-1">
                           {shopAudit.recognizedEquipment.map(tool => (

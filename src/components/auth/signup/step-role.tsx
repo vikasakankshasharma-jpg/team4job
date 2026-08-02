@@ -57,7 +57,7 @@ export function StepRole() {
               trackFunnelEvent('role_selected', { role: item.id });
             }}
             className={cn(
-              "group relative p-10 rounded-[3rem] border-none transition-all duration-700 text-left overflow-hidden hover:shadow-[0_40px_100px_rgba(0,0,0,0.2)] hover:-translate-y-2 ring-1 ring-white/5",
+              "group relative p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border-none transition-all duration-700 text-left overflow-hidden hover:shadow-[0_40px_100px_rgba(0,0,0,0.2)] hover:-translate-y-2 ring-1 ring-white/5",
               role === item.id 
                 ? "bg-surface-container-low/60 shadow-2xl ring-primary/20" 
                 : "bg-surface-container-low/40 hover:bg-surface-container-low/60"
@@ -68,7 +68,7 @@ export function StepRole() {
             <div className="relative z-10 flex flex-col h-full">
               <div className={cn(
                 "w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-8 transition-all duration-700 group-hover:scale-110 group-hover:rotate-6 shadow-2xl",
-                role === item.id ? "bg-primary text-white" : "bg-white/5 text-on-surface/40 group-hover:bg-primary/20 group-hover:text-primary"
+                role === item.id ? "bg-primary text-white" : "bg-background/5 text-on-surface/40 group-hover:bg-primary/20 group-hover:text-primary"
               )}>
                 <item.icon className="h-8 w-8" />
               </div>

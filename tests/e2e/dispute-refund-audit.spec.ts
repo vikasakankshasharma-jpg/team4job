@@ -65,6 +65,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         // Wait for bids to load via Firestore real-time subscription
         await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
         await page.getByTestId('send-offer-button').first().click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent');
         await page.waitForTimeout(2000); // Wait for background triggers
         
@@ -78,7 +79,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await helper.job.waitForJobStatus('In Progress');
         startOtp = await page.getByTestId('start-otp-value').innerText();
 
@@ -89,7 +90,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         await page.locator('input[placeholder="Enter Code"]').fill(startOtp);
         await page.locator('button:has-text("Start"), button[data-testid="start-job-btn"]').first().click();
         
-        await page.getByTestId('Professional-completion-section').locator('input[type="file"]').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'poor_work.png', mimeType: 'image/png', buffer: Buffer.from('poor')
         });
         await page.getByTestId('submit-for-review-button').click();

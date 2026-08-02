@@ -65,10 +65,10 @@ const db = getFirestore();
 const auth = getAuth();
 
 const DUAL_ROLE_USER = {
-    email: 'dualrole@example.com',
+    email: 'anita.dual@team4job.com',
     password: 'TestUser_2026!',
-    displayName: 'Dual Role User',
-    roles: ['Job Giver', 'Installer'],
+    displayName: 'Anita Desai',
+    roles: ['Client', 'Professional'],
     profileData: {
         userType: 'Job Giver', // Default primary type
         firstName: 'Dual',

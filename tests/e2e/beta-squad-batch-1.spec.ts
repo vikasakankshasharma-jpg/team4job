@@ -1,4 +1,4 @@
-﻿
+
 import { test, expect, Page } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { getDateString, getDateTimeString, TIMEOUTS, TEST_JOB_DATA, TEST_ACCOUNTS } from '../fixtures/test-data';
@@ -16,7 +16,7 @@ const DEFAULT_FULL_ADDRESS = '123 Main Road, Bangalore';
 
 
 test.describe('Beta Squad - Beta Launch Protocol', () => {
-    // These tests share a mutable Firebase emulator â€” they MUST run serially
+    // These tests share a mutable Firebase emulator — they MUST run serially
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     });
 
     // -----------------------------------------------------------------------
-    // ðŸŸ¢ GROUP A: NORMAL CASES
+    // 🟢 GROUP A: NORMAL CASES
     // -----------------------------------------------------------------------
 
     test('Case 1: Standard Flow', async ({ browser }) => {
@@ -122,7 +122,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill(data.budget.toString());
         await page.fill('textarea[name="coverLetter"]', 'I can do this');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!').catch(() => console.log('[Test] Missed Bid Placed toast, continuing...'));
+        await helper.form.waitForToast('Bid Placed!', 10000).catch(() => console.log('[Test] Missed Bid Placed toast, continuing...'));
 
         console.log('--- Step 3: JG Award ---');
         await helper.auth.logout();
@@ -139,8 +139,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await sendOfferBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await sendOfferBtn.click();
+        const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+        await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+        if (await confirmBtn.isVisible()) await confirmBtn.click();
         
-        await helper.form.waitForToast('Offer Sent').catch(() => console.log('[Test] Missed Offer Sent toast, continuing...'));
+        await helper.form.waitForToast('Offer Sent', 10000).catch(() => console.log('[Test] Missed Offer Sent toast, continuing...'));
 
         console.log('--- Step 4: IN Accept ---');
         await helper.auth.logout();
@@ -161,7 +164,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Handle conflict dialog if present
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
         if (await conflictBtn.isVisible({ timeout: 3000 }).catch(() => false)) await conflictBtn.click();
-        await helper.form.waitForToast('Job Accepted!').catch(() => console.log('[Test] Missed Job Accepted toast, continuing...'));
+        await helper.form.waitForToast('Job Accepted!', 10000).catch(() => console.log('[Test] Missed Job Accepted toast, continuing...'));
 
         console.log('--- Step 5: JG Fund ---');
         await helper.auth.logout();
@@ -182,7 +185,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         
         console.log('[Test] Clicking e2e-direct-fund...');
         await page.getByTestId('e2e-direct-fund').click();
-        await helper.form.waitForToast('Test Mode: Payment Initiated').catch(() => console.log('[Test] Missed Payment Initiated toast, continuing...'));
+        await helper.form.waitForToast('Test Mode: Payment Initiated', 10000).catch(() => console.log('[Test] Missed Payment Initiated toast, continuing...'));
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText();
@@ -195,11 +198,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.getByRole('button', { name: 'Start' }).click();
         await helper.job.waitForJobStatus('In Progress');
 
-        await page.getByTestId('Professional-completion-section').locator('input[type="file"]').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'work.png', mimeType: 'image/png', buffer: Buffer.from('proof')
         });
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation').catch(() => console.log('[Test] Missed Submitted toast, continuing...'));
+        await helper.form.waitForToast('Submitted for Confirmation', 10000).catch(() => console.log('[Test] Missed Submitted toast, continuing...'));
         await helper.job.waitForJobStatus('Pending Confirmation');
 
         console.log('--- Step 7: JG Release Payment ---');
@@ -217,7 +220,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await releaseBtn.waitFor({ state: 'visible', timeout: 60000 });
         }
         await releaseBtn.click();
-        await helper.form.waitForToast('Job Approved & Payment Released!').catch(() => console.log('[Test] Missed Release toast, continuing...'));
+        await helper.form.waitForToast('Job Approved & Payment Released!', 10000).catch(() => console.log('[Test] Missed Release toast, continuing...'));
         await helper.job.waitForJobStatus('Completed');
 
         await context.close();
@@ -673,7 +676,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     });
 
     // -----------------------------------------------------------------------
-    // ðŸŸ¡ GROUP B: Client CASES
+    // 🟡 GROUP B: Client CASES
     // -----------------------------------------------------------------------
 
     // -----------------------------------------------------------------------

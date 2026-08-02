@@ -217,7 +217,7 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                                     <span className="relative z-10 flex items-center justify-center">
                                         Inject Capital
                                     </span>
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-background/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                                 </Button>
                             </motion.div>
                         )}
@@ -291,7 +291,7 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                                             {isLoading ? <Loader2 className="mr-3 h-8 w-8 animate-spin" /> : <Trophy className="mr-4 h-6 w-6" />}
                                             Authorize Final Release
                                         </span>
-                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                        <div className="absolute inset-0 bg-background/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                                     </Button>
 
                                     <div className="flex flex-1 gap-6">

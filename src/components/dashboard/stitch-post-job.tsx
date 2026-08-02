@@ -142,7 +142,7 @@ export function StitchPostJobClient() {
 </div>
 <label className="relative inline-flex items-center cursor-pointer">
 <input className="sr-only peer" type="checkbox" value="" />
-<div className="w-12 h-6 bg-surface-container-highest dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+<div className="w-12 h-6 bg-surface-container-highest dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-background after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
 </label>
 </div>
 {/* Technical Switch 2 */}
@@ -158,7 +158,7 @@ export function StitchPostJobClient() {
 </div>
 <label className="relative inline-flex items-center cursor-pointer">
 <input checked="" className="sr-only peer" type="checkbox" value="" />
-<div className="w-12 h-6 bg-surface-container-highest dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+<div className="w-12 h-6 bg-surface-container-highest dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-background after:rounded after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
 </label>
 </div>
 </div>

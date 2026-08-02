@@ -32,13 +32,16 @@ export function ThemeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
+          Classic Light (Day)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
+          Classic Dark
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("modern")}>
+          Modern Premium
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
+          System Default
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

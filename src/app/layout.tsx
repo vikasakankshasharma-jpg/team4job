@@ -12,11 +12,10 @@ import Script from 'next/script';
 import { GA_TRACKING_ID, ANALYTICS_DISABLED } from '@/lib/analytics';
 import { WebVitalsReporter } from "@/components/dashboard/analytics/web-vitals";
 import CookieBanner from "@/components/gdpr/cookie-banner";
+import { AnalyticsInjector } from "@/components/gdpr/analytics-injector";
 import { SystemStatusBanner } from "@/components/layout/system-status-banner";
 import ErrorBoundaryWrapper from "@/components/error-boundary-wrapper";
 import { OfflineDetector } from "@/components/layout/offline-detector";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.team4job.com"),
@@ -59,9 +58,6 @@ export const viewport = {
 };
 
 // Removed next-intl server imports - handling i18n client-side only
-
-// ... (existing imports)
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -100,7 +96,8 @@ export default async function RootLayout({
         </a>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="modern"
+          themes={['light', 'dark', 'modern', 'system']}
           enableSystem
           disableTransitionOnChange
         >
@@ -121,26 +118,7 @@ export default async function RootLayout({
           <Toaster />
         </ThemeProvider>
         {/* ... (rest of the file) */}
-        {/* Google Analytics - deferred for better performance */}
-        {analyticsEnabled && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
-              strategy="lazyOnload"
-              async
-            />
-            <Script id="google-analytics" strategy="lazyOnload">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_TRACKING_ID}', {
-                  page_path: window.location.pathname,
-                });
-              `}
-            </Script>
-          </>
-        )}
+        {/* Google Analytics & Vercel Insights - loaded dynamically after cookie consent */}
 
         {/* JSON-LD Structured Data */}
         <Script id="structured-data" type="application/ld+json">
@@ -192,12 +170,19 @@ export default async function RootLayout({
           strategy="lazyOnload"
           async
         />
-        {/* Service Worker Registration */}
         <Script id="register-sw" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                const params = new URLSearchParams({
+                  apiKey: '${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}',
+                  authDomain: '${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}',
+                  projectId: '${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}',
+                  storageBucket: '${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}',
+                  messagingSenderId: '${process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}',
+                  appId: '${process.env.NEXT_PUBLIC_FIREBASE_APP_ID}'
+                }).toString();
+                navigator.serviceWorker.register('/sw.js?' + params).catch(function(err) {
                   // Service Worker registration failed
                 });
               });
@@ -205,8 +190,7 @@ export default async function RootLayout({
           `}
         </Script>
         <CookieBanner />
-        <Analytics />
-        <SpeedInsights />
+        <AnalyticsInjector />
       </body>
     </html >
   );

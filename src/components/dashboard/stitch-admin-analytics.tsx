@@ -70,7 +70,7 @@ export function StitchAdminAnalytics() {
                         <HelpCircle className="h-5 w-5" />
                     </button>
                 </div>
-                <div className="h-10 w-[1px] bg-white/5 mx-2" />
+                <div className="h-10 w-[1px] bg-background/5 mx-2" />
                 <div className="flex items-center gap-3 pl-2 group cursor-pointer">
                     <div className="text-right hidden sm:block">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-200 leading-none">A. ARCHITECT</p>
@@ -108,7 +108,7 @@ export function StitchAdminAnalytics() {
                     <Link 
                         key={idx} 
                         href="#" 
-                        className={`flex items-center gap-4 px-6 py-3.5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest transition-all group ${item.active ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 italic' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+                        className={`flex items-center gap-4 px-6 py-3.5 rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest transition-all group ${item.active ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 italic' : 'text-slate-500 hover:bg-background/5 hover:text-slate-200'}`}
                     >
                         <item.icon className={`h-5 w-5 ${item.active ? 'text-primary-foreground' : 'group-hover:text-primary transition-colors'}`} />
                         <span>{item.label}</span>
@@ -140,7 +140,7 @@ export function StitchAdminAnalytics() {
                     {['24H', '7D', '30D', '1Y'].map((range, i) => (
                         <button 
                             key={i} 
-                            className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-[1.25rem] transition-all ${range === '7D' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}
+                            className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-[1.25rem] transition-all ${range === '7D' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-slate-500 hover:text-slate-200 hover:bg-background/5'}`}
                         >
                             {range}
                         </button>
@@ -169,7 +169,7 @@ export function StitchAdminAnalytics() {
                             <h2 className={`text-4xl font-black italic tracking-tighter ${kpi.color}`}>{kpi.value}</h2>
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-2 opacity-40">{kpi.sub}</p>
-                        <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="mt-8 h-1.5 w-full bg-background/5 rounded-full overflow-hidden">
                             <motion.div 
                                 initial={{ width: 0 }}
                                 animate={{ width: `${kpi.progress}%` }}
@@ -185,7 +185,7 @@ export function StitchAdminAnalytics() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 {/* Large Chart Section */}
                 <Card className="lg:col-span-8 border-none bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative ring-1 ring-white/5 group">
-                    <CardHeader className="p-10 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between space-y-0">
+                    <CardHeader className="p-10 border-b border-white/5 bg-background/5 flex flex-row items-center justify-between space-y-0">
                         <div className="flex items-center gap-4">
                             <div className="h-4 w-4 rounded-full bg-primary animate-pulse" />
                             <CardTitle className="text-xl font-black italic tracking-tighter uppercase">Platform Revenue & Volume</CardTitle>
@@ -227,8 +227,8 @@ export function StitchAdminAnalytics() {
                                     />
                                 ))}
                             </div>
-                            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/10" />
-                            <div className="absolute bottom-0 left-0 h-full w-[1px] bg-white/10" />
+                            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-background/10" />
+                            <div className="absolute bottom-0 left-0 h-full w-[1px] bg-background/10" />
                         </div>
                         <div className="flex justify-between text-[10px] font-black text-slate-500 mt-8 px-4 uppercase tracking-[0.2em] italic opacity-40">
                             <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
@@ -238,7 +238,7 @@ export function StitchAdminAnalytics() {
 
                 {/* Recent Disputes Feed */}
                 <div className="lg:col-span-4 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-3xl rounded-[3rem] flex flex-col border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative overflow-hidden group ring-1 ring-white/5">
-                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
+                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-background/5">
                         <h3 className="text-xl font-black italic tracking-tighter uppercase text-warning">Incident Feed</h3>
                         <Badge variant="warning" className="px-3 py-1 font-black text-[9px] uppercase tracking-widest bg-warning/20 border-warning/20">LIVE</Badge>
                     </div>
@@ -251,7 +251,7 @@ export function StitchAdminAnalytics() {
                             <motion.div 
                                 key={i}
                                 whileHover={{ scale: 1.02, x: 5 }}
-                                className="bg-white/5 p-6 rounded-[2rem] border-l-4 border-warning shadow-xl hover:bg-white/10 transition-all cursor-pointer relative group/item"
+                                className="bg-background/5 p-6 rounded-[2rem] border-l-4 border-warning shadow-xl hover:bg-background/10 transition-all cursor-pointer relative group/item"
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="text-[10px] font-black text-slate-100 italic">{dispute.id}</span>
@@ -286,7 +286,7 @@ export function StitchAdminAnalytics() {
                     <div className="text-[10px] text-primary font-black uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-full border border-primary/20">LIVE // GLOBAL_NODE_SYNC</div>
                 </div>
                 <div className="grid grid-cols-12 gap-8">
-                    <div className="col-span-12 lg:col-span-8 bg-black/40 h-80 rounded-[2.5rem] relative overflow-hidden border border-white/5 shadow-inner">
+                    <div className="col-span-12 lg:col-span-8 bg-foreground/40 h-80 rounded-[2.5rem] relative overflow-hidden border border-white/5 shadow-inner">
                         <div className="absolute inset-0 opacity-10 bg-[url('https://placeholder.pics/svg/800')] bg-cover grayscale" />
                         <div className="absolute top-[30%] left-[20%] w-4 h-4 bg-primary rounded-full animate-ping opacity-50" />
                         <div className="absolute top-[30%] left-[20%] w-2 h-2 bg-primary rounded-full shadow-[0_0_12px_rgba(var(--primary),0.8)]" />
@@ -301,7 +301,7 @@ export function StitchAdminAnalytics() {
                             { label: 'ASIA PACIFIC', val: '2,554', active: false },
                             { label: 'LATAM', val: '1,098', active: false },
                         ].map((region, i) => (
-                            <div key={i} className={`bg-white/5 p-6 rounded-[2rem] flex flex-col justify-center items-center text-center border ${region.active ? 'border-primary/20 bg-primary/5' : 'border-white/5'} transition-all hover:scale-105`}>
+                            <div key={i} className={`bg-background/5 p-6 rounded-[2rem] flex flex-col justify-center items-center text-center border ${region.active ? 'border-primary/20 bg-primary/5' : 'border-white/5'} transition-all hover:scale-105`}>
                                 <span className={`text-[9px] font-black uppercase tracking-widest mb-1 italic ${region.active ? 'text-primary' : 'text-slate-500'}`}>{region.label}</span>
                                 <span className="text-3xl font-black italic tracking-tighter text-slate-100">{region.val}</span>
                             </div>
@@ -312,13 +312,13 @@ export function StitchAdminAnalytics() {
 
             {/* Data Table Section */}
             <Card className="border-none bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5">
-                <div className="p-8 bg-white/5 flex justify-between items-center border-b border-white/5">
+                <div className="p-8 bg-background/5 flex justify-between items-center border-b border-white/5">
                     <div className="flex items-center gap-4">
                         <ShieldAlert className="h-6 w-6 text-primary" />
                         <h3 className="text-2xl font-black italic tracking-tighter uppercase">KYC Verification Queue</h3>
                     </div>
                     <div className="flex gap-4">
-                        <Button variant="outline" className="px-6 rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest border-white/10 hover:bg-white/5">
+                        <Button variant="outline" className="px-6 rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest border-white/10 hover:bg-background/5">
                             <Download className="mr-2 h-4 w-4" /> CSV Registry
                         </Button>
                         <Button className="px-6 rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest shadow-lg shadow-primary/20">
@@ -343,7 +343,7 @@ export function StitchAdminAnalytics() {
                                 { name: 'Amara Miller', role: 'Fullstack Node', tier: 'L1 ASSOCIATE', status: 'Identity Confirmed', time: '2024.05.12' },
                                 { name: 'Jaxon Drake', role: 'Data Architect', tier: 'L3 SENIOR', status: 'Missing Docs', time: '2024.05.11', err: true },
                             ].map((user, i) => (
-                                <tr key={i} className="hover:bg-white/5 transition-all border-b border-white/5 group">
+                                <tr key={i} className="hover:bg-background/5 transition-all border-b border-white/5 group">
                                     <td className="px-10 py-6">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-[1rem] bg-slate-800 flex items-center justify-center font-black italic text-primary border border-primary/20 group-hover:scale-110 transition-transform shadow-lg shadow-primary/10">
@@ -369,7 +369,7 @@ export function StitchAdminAnalytics() {
                                         <div className="flex items-center justify-end gap-2">
                                             <Button variant="ghost" className="h-9 px-4 rounded-[1rem] font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all underline underline-offset-4 decoration-primary/20">Audit</Button>
                                             <Button variant="ghost" className="h-9 px-4 rounded-[1rem] font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">Authorize</Button>
-                                            <Button variant="ghost" className="h-9 w-9 p-0 rounded-[1rem] hover:bg-white/10">
+                                            <Button variant="ghost" className="h-9 w-9 p-0 rounded-[1rem] hover:bg-background/10">
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </div>

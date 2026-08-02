@@ -13,6 +13,12 @@ const eslintConfig = [
             "playwright-report/**",
             "test-results/**",
             "functions/**",
+            "tmp/**",
+            "report*/**",
+            "ci-report*/**",
+            "smoke*/**",
+            "firebase-export*/**",
+            "trace-*/**",
         ],
     },
     // Next.js recommended rules (flat config array)

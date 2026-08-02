@@ -322,8 +322,7 @@ test.describe('Universal Master Audit', () => {
         
         // Bypass payment via shim
         console.log('[Act 4] Executing direct payment shim...');
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined, { timeout: 30000 });
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         
         await helper.job.waitForJobStatus('In Progress');
         

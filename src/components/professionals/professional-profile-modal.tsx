@@ -54,7 +54,7 @@ function PortfolioThumbnail({ item }: { item: PortfolioItem }) {
                     onError={() => setIsError(true)}
                 />
             )}
-            <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 text-white text-xs truncate opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-x-0 bottom-0 bg-foreground/60 p-2 text-white text-xs truncate opacity-0 group-hover:opacity-100 transition-opacity">
                 {item.title}
             </div>
         </div>
@@ -96,7 +96,7 @@ export function ProfessionalProfileModal({
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-[3rem] overflow-hidden border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.4)] ring-1 ring-white/5">
                 {/* Header Section */}
-                <div className="p-10 pb-8 border-b border-white/5 bg-white/5 relative">
+                <div className="p-10 pb-8 border-b border-white/5 bg-background/5 relative">
                     <div className="flex flex-col md:flex-row gap-8">
                         <div className="flex-shrink-0">
                             <Avatar className="h-28 w-28 border-[4px] border-background shadow-2xl ring-2 ring-primary/20 transition-transform duration-500 hover:scale-105">
@@ -213,7 +213,7 @@ export function ProfessionalProfileModal({
                                     </p>
                                 </div>
 
-                                <Separator className="bg-white/5" />
+                                <Separator className="bg-background/5" />
 
                                 <div>
                                     <h3 className="text-xs font-black italic tracking-tighter uppercase mb-4 flex items-center gap-2 text-primary">
@@ -236,7 +236,7 @@ export function ProfessionalProfileModal({
                                     </div>
                                 </div>
 
-                                <Separator className="bg-white/5" />
+                                <Separator className="bg-background/5" />
 
                                 <div>
                                     <h3 className="text-xs font-black italic tracking-tighter uppercase mb-4 flex items-center gap-2 text-primary">

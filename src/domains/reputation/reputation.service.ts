@@ -5,15 +5,29 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export class ReputationService {
     private readonly SETTINGS_PATH = 'settings/platform';
+    private settingsCache: any = null;
+    private settingsCacheTimestamp: number = 0;
+    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+    private async getSettings(): Promise<any> {
+        const now = Date.now();
+        if (this.settingsCache && (now - this.settingsCacheTimestamp < this.CACHE_TTL_MS)) {
+            return this.settingsCache;
+        }
+
+        const db = getAdminDb();
+        const settingsSnap = await db.doc(this.SETTINGS_PATH).get();
+        this.settingsCache = settingsSnap.data() || {};
+        this.settingsCacheTimestamp = now;
+        return this.settingsCache;
+    }
 
     /**
      * Calculates the points earned based on job completion and rating.
      * Uses platform settings with hardcoded defaults.
      */
     async calculatePointsForJob(rating?: number): Promise<number> {
-        const db = getAdminDb();
-        const settingsSnap = await db.doc(this.SETTINGS_PATH).get();
-        const settings = settingsSnap.data() || {};
+        const settings = await this.getSettings();
 
         const pointsForCompletion = settings.pointsForJobCompletion || 50;
         const pointsFor5Star = settings.pointsFor5StarRating || 20;
@@ -33,9 +47,7 @@ export class ReputationService {
      * Determines the tier based on total points.
      */
     async calculateTier(points: number): Promise<{ tier: ReputationTier; priority: number }> {
-        const db = getAdminDb();
-        const settingsSnap = await db.doc(this.SETTINGS_PATH).get();
-        const settings = settingsSnap.data() || {};
+        const settings = await this.getSettings();
 
         const silverTierPoints = settings.silverTierPoints || 500;
         const goldTierPoints = settings.goldTierPoints || 1000;

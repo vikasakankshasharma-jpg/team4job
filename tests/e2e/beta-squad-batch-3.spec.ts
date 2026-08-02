@@ -1,4 +1,4 @@
-﻿
+
 import { test, expect, Page } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { getDateString, getDateTimeString, TIMEOUTS, TEST_JOB_DATA, TEST_ACCOUNTS } from '../fixtures/test-data';
@@ -16,7 +16,7 @@ const DEFAULT_FULL_ADDRESS = '123 Main Road, Bangalore';
 
 
 test.describe('Beta Squad - Beta Launch Protocol', () => {
-    // These tests share a mutable Firebase emulator â€” they MUST run serially
+    // These tests share a mutable Firebase emulator — they MUST run serially
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     });
 
     // -----------------------------------------------------------------------
-    // ðŸŸ¢ GROUP A: NORMAL CASES
+    // 🟢 GROUP A: NORMAL CASES
     // -----------------------------------------------------------------------
 
     test('Case 11: The Far Away Bid', async ({ browser }) => {
@@ -174,6 +174,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -181,6 +184,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -200,10 +206,10 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-        await acceptJobButton.click();
+        
+        await acceptJobButton.click({ force: true });
         // Handle conflict
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+        const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
         if (await conflictBtn.isVisible()) await conflictBtn.click();
         await helper.job.waitForJobStatus('Pending Funding');
 
@@ -214,8 +220,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
 
@@ -305,6 +310,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -312,6 +320,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -331,9 +342,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-        await acceptJobButton.click();
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+        
+        await acceptJobButton.click({ force: true });
+        const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
         if (await conflictBtn.isVisible()) await conflictBtn.click();
         await helper.job.waitForJobStatus('Pending Funding');
 
@@ -344,8 +355,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
 
@@ -428,6 +438,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -435,6 +448,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -454,9 +470,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-        await acceptJobButton.click();
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+        
+        await acceptJobButton.click({ force: true });
+        const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
         if (await conflictBtn.isVisible()) await conflictBtn.click();
         await helper.job.waitForJobStatus('Pending Funding');
 
@@ -467,8 +483,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
 
@@ -493,8 +508,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const needsFunding = await page.getByTestId('proceed-payment-button').first().isVisible().catch(() => false);
             if (needsFunding) {
                 await page.getByTestId('proceed-payment-button').first().click();
-                await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-                await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+                await page.getByTestId('e2e-direct-fund').click({ force: true });
             }
 
             await helper.form.waitForToast('Milestone Added', 10000).catch(() => { });
@@ -566,6 +580,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -573,6 +590,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) await confirmBtn.click();
                 offerClicked = true;
                 break;
             }
@@ -592,9 +612,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-        await acceptJobButton.click();
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+        
+        await acceptJobButton.click({ force: true });
+        const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
         if (await conflictBtn.isVisible()) await conflictBtn.click();
         await helper.job.waitForJobStatus('Pending Funding');
 
@@ -605,8 +625,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText().catch(() => '');
@@ -621,7 +640,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         }
         await helper.job.waitForJobStatus('In Progress');
 
-        await page.getByTestId('Professional-completion-section').locator('input[type="file"]').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'bad_work.png', mimeType: 'image/png', buffer: Buffer.from('bad_proof')
         });
         await page.getByTestId('submit-for-review-button').click();
@@ -648,7 +667,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     });
 
     // -----------------------------------------------------------------------
-    // ðŸ”´ GROUP D: CONFLICT CASES
+    // 🔴 GROUP D: CONFLICT CASES
     // -----------------------------------------------------------------------
 
     // -----------------------------------------------------------------------

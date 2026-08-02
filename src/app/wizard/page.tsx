@@ -115,16 +115,20 @@ export default function SmartWizardPage() {
                     // Set base questions initially
                     setQuestions(catConfig.questions || []);
                 }
-
-                // 3. Proactive Pattern Analysis
-                const pRes = await analyzeUserPatternsAction();
-                if (pRes.success && pRes.data?.suggestion?.patternFound) {
-                    setPatternSuggestion(pRes.data.suggestion);
-                }
             } catch (err) {
                 toast({ title: "Error", description: "Failed to load category data.", variant: "destructive" });
             } finally {
                 setIsLoadingData(false);
+            }
+
+            // 3. Proactive Pattern Analysis (Non-blocking)
+            try {
+                const pRes = await analyzeUserPatternsAction();
+                if (pRes.success && pRes.data?.suggestion?.patternFound) {
+                    setPatternSuggestion(pRes.data.suggestion);
+                }
+            } catch (e) {
+                console.error("Pattern analysis failed silently", e);
             }
         }
         loadCategoryConfig();

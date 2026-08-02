@@ -28,7 +28,7 @@ export function BriefingSidebar() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => toggleSidebar(false)}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140]"
+                        className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[140]"
                     />
 
                     {/* Sidebar */}
@@ -50,7 +50,7 @@ export function BriefingSidebar() {
                                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1.5">Intel Hub // Mission Guidance</p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => toggleSidebar(false)} aria-label="Close Intelligence" className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
+                            <Button variant="ghost" size="icon" onClick={() => toggleSidebar(false)} aria-label="Close Intelligence" className="rounded-full h-12 w-12 hover:bg-background/5 transition-all">
                                 <X className="h-6 w-6" />
                             </Button>
                         </div>

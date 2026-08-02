@@ -7,7 +7,7 @@ import { CreateJobInput, JobFilters } from '@/domains/jobs/job.types';
 import { startWorkSchema } from '@/lib/validations/jobs';
 
 import { Role, Job, JobAttachment, User, Transaction } from '@/lib/types';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_cache } from 'next/cache';
 import { invoiceService } from '@/domains/jobs/invoice.service';
 import { AdminGuard } from '@/lib/auth/admin-guard';
 
@@ -203,9 +203,15 @@ export async function listJobsForClientAction(userId: string, limit = 50, lastPo
 
 export async function listOpenJobsAction(filters?: JobFilters, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
+        const fetchJobs = unstable_cache(
+            async (f?: JobFilters, l?: number, d?: Date) => jobService.listOpenJobs(f, l, d),
+            ['open-jobs', JSON.stringify(filters || {}), limit.toString(), lastPostedAt || ''],
+            { revalidate: 60, tags: ['open-jobs'] }
+        );
+
         // Add timeout to prevent SSR hangs
         const jobs = await Promise.race([
-            jobService.listOpenJobs(filters, limit, lastPostedAt ? new Date(lastPostedAt) : undefined),
+            fetchJobs(filters, limit, lastPostedAt ? new Date(lastPostedAt) : undefined),
             new Promise<never>((_, reject) => setTimeout(() => reject(new Error('List open jobs timeout')), 10000))
         ]);
         return { success: true, data: JSON.parse(JSON.stringify(jobs)) };

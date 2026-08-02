@@ -22,6 +22,26 @@ if (isCI !== 'true' && isCI !== '1' && isCI?.trim() !== 'true') {
     ],
 
     sendDefaultPii: true,
+    beforeSend(event, hint) {
+      const error = hint.originalException;
+      
+      // Ignore NEXT_REDIRECT errors
+      if (error && typeof error === 'object' && 'digest' in error) {
+        const digest = (error as any).digest;
+        if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT')) {
+          return null;
+        }
+      }
+
+      // Ignore 401 Unauthorized errors
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized') || error.message.includes('Firebase ID token has expired')) {
+          return null;
+        }
+      }
+
+      return event;
+    },
   });
 }
 

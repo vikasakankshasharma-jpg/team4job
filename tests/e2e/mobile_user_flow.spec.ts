@@ -95,8 +95,10 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await placeBidButton.scrollIntoViewIfNeeded();
     await placeBidButton.click();
 
-    await helper.form.fillInput('Bid Amount', TEST_JOB_DATA.bidAmount.toString());
-    await helper.form.fillTextarea('Cover Letter', TEST_JOB_DATA.coverLetter);
+    const bidDialog = page.locator('div[role="dialog"]');
+    await bidDialog.waitFor({ state: 'visible' });
+    await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
+    await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
 
     // Ensure previous toasts are gone so they don't obstruct the button
     const toast = page.locator('[role="status"]');
@@ -105,14 +107,11 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
       await toast.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => { });
     }
 
-    // Fallback to text selector since data-testid seems flaky in this env
-    // The dialog button is usually the last one in the DOM (Portal)
-    const bidBtn = page.locator('button').filter({ hasText: 'Place Bid' }).last();
-
-    // Ensure dialog is fully stable
+    // Submit the bid
+    const bidBtn = bidDialog.getByTestId('submit-bid-button');
     await expect(bidBtn).toBeVisible();
     await bidBtn.scrollIntoViewIfNeeded();
-    await bidBtn.click({ force: true }); // Try normal click first
+    await bidBtn.click({ force: true });
 
     await helper.form.waitForToast('Bid Placed!');
 
@@ -131,6 +130,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     }
 
     await page.getByTestId('send-offer-button').first().click();
+    await helper.job.handleAuthorizationModal();
     await helper.form.waitForToast('Offer Sent');
 
     // ---------- Professional Accepts ----------

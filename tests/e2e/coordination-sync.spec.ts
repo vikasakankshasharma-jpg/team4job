@@ -80,6 +80,7 @@ test.describe('Role Coordination & Real-time Sync', () => {
 
         console.log('--- Step 4: Customer Sends Offer and SP Sync Check ---');
         await coordinator.clientPage.getByTestId('send-offer-button').first().click();
+        await coordinator.clientHelper.job.handleAuthorizationModal();
         await coordinator.clientHelper.form.waitForToast('Offer Sent');
 
         // Check SP Page WITHOUT RELOAD

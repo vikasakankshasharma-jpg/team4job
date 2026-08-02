@@ -55,7 +55,7 @@ test.describe('Audit Chunk 3a: Professional Bidding', () => {
             await expect(placeBidBtn).toBeVisible({ timeout: 20000 });
             await placeBidBtn.click();
             
-            const bidDialog = page.locator('div[role="dialog"]');
+            const bidDialog = page.getByRole('dialog');
             await expect(bidDialog).toBeVisible({ timeout: 10000 });
             
             await bidDialog.locator('input[name="amount"]').fill('6000');

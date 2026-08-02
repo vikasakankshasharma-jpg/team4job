@@ -133,6 +133,7 @@ export const ROUTES = {
     login: '/login',
     dashboard: '/dashboard',
     postJob: '/wizard',
+    postJobForm: '/dashboard/post-job',
     postedJobs: '/dashboard/posted-jobs',
     browseJobs: '/dashboard/jobs',
     myBids: '/dashboard/my-bids',

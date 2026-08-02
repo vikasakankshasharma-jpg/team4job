@@ -235,9 +235,9 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                         <div className="inline-flex items-center justify-center h-20 w-20 rounded-[2rem] bg-primary/10 text-primary shadow-inner mb-2 animate-bounce-subtle">
                             <Wallet className="h-10 w-10" />
                         </div>
-                        <h2 className="text-4xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
+                        <DialogTitle className="text-4xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
                             {t('addFunds')}
-                        </h2>
+                        </DialogTitle>
                         <p className="text-muted-foreground font-medium text-lg leading-relaxed max-w-sm mx-auto">
                             Fund your project escrow to officially start the production cycle.
                         </p>
@@ -307,7 +307,7 @@ function AddFundsDialog({ job, user, open, onOpenChange, platformSettings }: { j
                                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
                                 Initiate Secure Payment
                             </span>
-                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                            <div className="absolute inset-0 bg-background/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                         </Button>
                         <p className="text-center text-[10px] font-black uppercase tracking-widest opacity-30 mt-6 italic">
                             PCI DSS Compliant • 256-bit Encryption Active
@@ -1059,7 +1059,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                             </div>
                                                         )}
                                                         <div className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-sm">
-                                                            <div className="h-16 w-16 flex items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md shadow-2xl border border-white/20 scale-50 group-hover:scale-100 transition-transform duration-500">
+                                                            <div className="h-16 w-16 flex items-center justify-center rounded-2xl bg-background/20 backdrop-blur-md shadow-2xl border border-white/20 scale-50 group-hover:scale-100 transition-transform duration-500">
                                                                 <Zap className="h-10 w-10 text-white animate-pulse" />
                                                             </div>
                                                         </div>
@@ -1114,7 +1114,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                     </div>
                                                     <Button className="h-20 px-14 rounded-[1.5rem] bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.3em] shadow-[0_20px_60px_-10px_rgba(99,102,241,0.5)] transition-all active:scale-95 group/boost">
                                                         <span className="relative z-10">Enable High-Authority Boost</span>
-                                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/boost:translate-y-0 transition-transform duration-500" />
+                                                        <div className="absolute inset-0 bg-background/20 translate-y-full group-hover/boost:translate-y-0 transition-transform duration-500" />
                                                     </Button>
                                                 </div>
                                             </div>
@@ -1197,7 +1197,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                                                                     <Button
                                                                         variant="ghost"
-                                                                        className="w-full sm:w-auto h-16 px-10 rounded-[1.5rem] bg-white/5 hover:bg-white/10 text-[11px] font-black uppercase tracking-[0.3em] transition-all group/btn"
+                                                                        className="w-full sm:w-auto h-16 px-10 rounded-[1.5rem] bg-background/5 hover:bg-background/10 text-[11px] font-black uppercase tracking-[0.3em] transition-all group/btn"
                                                                         onClick={() => {
                                                                             const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.professional)}`;
                                                                             window.open(contactUrl, '_blank');
@@ -1219,7 +1219,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                             <span className="relative z-10 flex items-center">
                                                                                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Authorize Offer"}
                                                                             </span>
-                                                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/award:translate-y-0 transition-transform duration-500" />
+                                                                            <div className="absolute inset-0 bg-background/20 translate-y-full group-hover/award:translate-y-0 transition-transform duration-500" />
                                                                         </Button>
                                                                     )}
                                                                 </div>
@@ -1271,13 +1271,13 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 data-testid="place-bid-button"
                                             >
                                                 <span className="relative z-10">{bids.some(b => getRefId(b.professional) === user?.id) ? "Proposal Submitted" : "Submit Technical Bid"}</span>
-                                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                                <div className="absolute inset-0 bg-background/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                                             </Button>
                                         )}
 
                                         {/* Reschedule Action */}
                                         {job.status === 'in_progress' && !job.workStartedAt && !job.dateChangeProposal?.status.includes('pending') && (
-                                            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border border-white/10 bg-white/5 font-black text-xs uppercase tracking-[0.2em] hover:bg-white/10" onClick={() => setIsRescheduleDialogOpen(true)}>
+                                            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border border-white/10 bg-background/5 font-black text-xs uppercase tracking-[0.2em] hover:bg-background/10" onClick={() => setIsRescheduleDialogOpen(true)}>
                                                 <Calendar className="mr-3 h-5 w-5 opacity-40" />
                                                 Adjust Logistics
                                             </Button>
@@ -1363,7 +1363,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 </Button>
 
                                                 <Button
-                                                    className="w-full h-12 rounded-[1.5rem] border-none bg-transparent hover:bg-white/5 font-black text-[9px] uppercase tracking-[0.4em] opacity-40 italic mt-2"
+                                                    className="w-full h-12 rounded-[1.5rem] border-none bg-transparent hover:bg-background/5 font-black text-[9px] uppercase tracking-[0.4em] opacity-40 italic mt-2"
                                                     variant="ghost"
                                                     onClick={() => window.open(`/dashboard/jobs/${job.id}/invoice?type=platform`, '_blank')}
                                                     data-testid="download-platform-invoice-button"
@@ -1668,9 +1668,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     <div className="inline-flex items-center justify-center h-20 w-20 rounded-[2rem] bg-primary/10 text-primary shadow-inner mb-2 animate-bounce-subtle">
                                         <Trophy className="h-10 w-10" />
                                     </div>
-                                    <h2 className="text-4xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
+                                    <DialogTitle className="text-4xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
                                         {t('awardJob')}
-                                    </h2>
+                                    </DialogTitle>
                                     <p className="text-muted-foreground font-medium text-lg leading-relaxed max-w-md mx-auto">
                                         Confirming this award establishes a secure production link with your chosen professional.
                                     </p>
@@ -1762,7 +1762,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                             <span className="relative z-10">
                                                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Official Authorization"}
                                             </span>
-                                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                                            <div className="absolute inset-0 bg-background/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                                         </Button>
                                     </div>
                                     <p className="text-center text-[10px] font-black uppercase tracking-[0.4em] opacity-20 mt-8 italic">

@@ -359,7 +359,7 @@ export function AdminDashboardView() {
                 <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
                     PLATFORM COMMAND CENTER {"//"} SYSTEM OS
                 </Badge>
-                <h1 className="text-6xl sm:text-7xl md:text-8xl font-black font-headline tracking-tighter text-on-surface leading-[0.85] italic uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black font-headline tracking-tighter text-on-surface leading-[0.85] italic uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
                     Command Command
                 </h1>
                 
@@ -424,12 +424,12 @@ export function AdminDashboardView() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="col-span-1">
                             <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 group">
-                                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                                <CardHeader className="p-6 sm:p-10 pb-4 sm:pb-6 border-b border-white/5 bg-background/5">
                                     <CardTitle className="text-sm font-black italic tracking-[0.3em] uppercase text-primary flex items-center gap-3">
                                         <Users className="h-5 w-5" /> {t('recentSignups') || "Recent Signups"}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-10">
+                                <CardContent className="p-6 sm:p-10">
                                     <div className="space-y-4">
                                         {[...allUsers].sort((a, b) => toDate(b.memberSince).getTime() - toDate(a.memberSince).getTime()).slice(0, 5).filter(u => u.id).map((u, index) => (
                                             <div key={u.id || `user-${index}`} className="flex items-center gap-5 p-4 rounded-[2rem] bg-background/20 backdrop-blur-md border border-white/5 hover:bg-background/40 transition-all hover:translate-x-2 shadow-inner group/user ring-1 ring-white/5">
@@ -462,27 +462,27 @@ export function AdminDashboardView() {
             {activeTab === 'cases' && (
                 <div className="space-y-6 animate-in fade-in-50 duration-300">
                     <div className="grid gap-4 sm:grid-cols-3">
-                        <div className="p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
+                        <div className="p-6 sm:p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
                             <p className="text-xs font-black italic tracking-widest text-primary uppercase">Open Cases</p>
-                            <p className="text-5xl font-black italic tracking-tighter mt-2">{cases.filter(c => c.status !== 'closed').length}</p>
+                            <p className="text-4xl sm:text-5xl font-black italic tracking-tighter mt-2">{cases.filter(c => c.status !== 'closed').length}</p>
                         </div>
-                        <div className="p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
+                        <div className="p-6 sm:p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
                             <p className="text-xs font-black italic tracking-widest text-red-400 uppercase">High Priority</p>
-                            <p className="text-5xl font-black italic tracking-tighter mt-2 text-red-400">{cases.filter(c => c.priority === 'high' && c.status !== 'closed').length}</p>
+                            <p className="text-4xl sm:text-5xl font-black italic tracking-tighter mt-2 text-red-400">{cases.filter(c => c.priority === 'high' && c.status !== 'closed').length}</p>
                         </div>
-                        <div className="p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
+                        <div className="p-6 sm:p-8 rounded-[2rem] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 ring-1 ring-white/5">
                             <p className="text-xs font-black italic tracking-widest text-green-400 uppercase">Resolved (All time)</p>
-                            <p className="text-5xl font-black italic tracking-tighter mt-2 text-green-400">{cases.filter(c => c.status === 'closed').length}</p>
+                            <p className="text-4xl sm:text-5xl font-black italic tracking-tighter mt-2 text-green-400">{cases.filter(c => c.status === 'closed').length}</p>
                         </div>
                     </div>
 
                     {/* New Case Creator */}
                     <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                        <CardHeader className="p-10">
+                        <CardHeader className="p-6 sm:p-10">
                             <CardTitle className="text-xl font-black italic tracking-widest uppercase text-primary">Open Manual System Case</CardTitle>
                             <CardDescription className="text-foreground/60">Generate a custom administrative investigation and resolution pipeline.</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-10 pt-0 space-y-4">
+                        <CardContent className="p-6 sm:p-10 pt-0 space-y-4">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black tracking-widest uppercase text-primary/80">Case Title</label>
@@ -567,12 +567,12 @@ export function AdminDashboardView() {
 
                     {/* Active Cases List */}
                     <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                        <CardHeader className="p-10">
+                        <CardHeader className="p-6 sm:p-10">
                             <CardTitle className="text-sm font-black italic tracking-[0.3em] uppercase text-primary flex items-center gap-3">
                                 <Briefcase className="h-5 w-5" /> Case Investigations Portfolio
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-10 pt-0">
+                        <CardContent className="p-6 sm:p-10 pt-0">
                             <div className="space-y-4">
                                 {cases.length === 0 ? (
                                     <p className="text-foreground/50 text-sm italic py-4">No cases registered on this node.</p>
@@ -581,7 +581,7 @@ export function AdminDashboardView() {
                                         <div 
                                             key={c.id || index}
                                             onClick={() => setSelectedCase(c)}
-                                            className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-[2rem] bg-background/25 hover:bg-background/45 border border-white/5 transition-all cursor-pointer shadow-inner"
+                                            className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 rounded-[2rem] bg-background/25 hover:bg-background/45 border border-white/5 transition-all cursor-pointer shadow-inner"
                                         >
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-3">
@@ -611,9 +611,9 @@ export function AdminDashboardView() {
 
                     {/* Case Detail Modal */}
                     {selectedCase && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in-20 duration-300">
+                        <div className="fixed inset-0 bg-foreground/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in-20 duration-300">
                             <Card className="w-full max-w-4xl bg-slate-900 border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
-                                <CardHeader className="p-10 border-b border-white/5">
+                                <CardHeader className="p-6 sm:p-10 border-b border-white/5">
                                     <div className="flex items-center justify-between">
                                         <Badge className="bg-primary/20 text-primary px-4 py-1.5 rounded-full font-black text-[9px] tracking-widest uppercase">
                                             Case {selectedCase.id.substring(0, 8)}
@@ -628,7 +628,7 @@ export function AdminDashboardView() {
                                     <CardTitle className="text-2xl font-black italic uppercase tracking-tight text-white mt-4">{selectedCase.title}</CardTitle>
                                     <CardDescription className="text-foreground/60 mt-2">{selectedCase.description}</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-10 max-h-[60vh] overflow-y-auto space-y-6">
+                                <CardContent className="p-6 sm:p-10 max-h-[60vh] overflow-y-auto space-y-6">
                                     {/* Timeline entries */}
                                     <div className="space-y-4">
                                         <h3 className="text-xs font-black uppercase tracking-widest text-primary">Immutable Case Timeline</h3>
@@ -636,7 +636,7 @@ export function AdminDashboardView() {
                                             <p className="text-sm italic text-foreground/50">No operations executed yet.</p>
                                         ) : (
                                             selectedCase.timeline.map((entry: any, index: number) => (
-                                                <div key={index} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                                <div key={index} className="flex gap-4 p-4 rounded-2xl bg-background/5 border border-white/5">
                                                     <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                                     <div className="space-y-1">
                                                         <p className="text-xs font-black uppercase tracking-wider text-white">
@@ -660,19 +660,19 @@ export function AdminDashboardView() {
             {activeTab === 'queue' && (
                 <div className="space-y-6 animate-in fade-in-50 duration-300">
                     <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                        <CardHeader className="p-10 flex flex-wrap justify-between items-center gap-4">
+                        <CardHeader className="p-6 sm:p-10 flex flex-wrap justify-between items-center gap-4">
                             <div>
                                 <CardTitle className="text-xl font-black italic tracking-widest uppercase text-primary">Prioritized Triage Queue</CardTitle>
                                 <CardDescription className="text-foreground/60">Dynamic rank computation based on values-at-risk, SLA proximity, fraud metrics, and completeness penalties.</CardDescription>
                             </div>
                             <button 
                                 onClick={handleClaimCase}
-                                className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-black italic tracking-widest text-xs uppercase hover:scale-105 transition-all shadow-lg"
+                                className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-black italic tracking-widest text-xs uppercase hover:scale-105 transition-all shadow-lg w-full sm:w-auto"
                             >
                                 Claim Highest Urgent Case
                             </button>
                         </CardHeader>
-                        <CardContent className="p-10 pt-0">
+                        <CardContent className="p-6 sm:p-10 pt-0">
                             <div className="space-y-4">
                                 {queueItems.length === 0 ? (
                                     <p className="text-foreground/50 text-sm italic py-4">Triage queue empty. Run recompute cron to materialize.</p>
@@ -680,7 +680,7 @@ export function AdminDashboardView() {
                                     [...queueItems].sort((a,b) => b.score - a.score).map((item, index) => (
                                         <div 
                                             key={item.id || index}
-                                            className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-[2rem] bg-background/25 border border-white/5 hover:bg-background/35 transition-all shadow-inner"
+                                            className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 rounded-[2rem] bg-background/25 border border-white/5 hover:bg-background/35 transition-all shadow-inner"
                                         >
                                             <div className="space-y-1">
                                                 <div className="flex items-center gap-3">
@@ -749,7 +749,7 @@ export function AdminDashboardView() {
                                                 <p className="text-base font-black italic uppercase text-foreground leading-none tracking-tight">
                                                     Action: {req.actionType.toUpperCase()}
                                                 </p>
-                                                <p className="text-xs text-foreground/60">Requester: {req.requesterName} // Job ID: {req.payload?.jobId}</p>
+                                                <p className="text-xs text-foreground/60">Requester: {req.requesterName} | Job ID: {req.payload?.jobId}</p>
                                                 <p className="text-xs text-foreground/60">Reason: {req.reason || 'No description provided'}</p>
                                             </div>
                                             <div className="flex gap-2">
@@ -790,7 +790,7 @@ export function AdminDashboardView() {
                                         >
                                             <div className="space-y-1">
                                                 <p className="text-base font-black italic uppercase text-red-400 leading-none tracking-tight">{exc.type.toUpperCase()}</p>
-                                                <p className="text-xs text-foreground/70">Txn: {exc.transactionId} // Status: {exc.status}</p>
+                                                <p className="text-xs text-foreground/70">Txn: {exc.transactionId} | Status: {exc.status}</p>
                                                 <p className="text-xs text-foreground/50">{exc.notes}</p>
                                             </div>
                                             <div className="text-right">

@@ -85,6 +85,7 @@ test.describe('Role Switching System', () => {
 
         // Close menu to reset state for switching
         await page.keyboard.press('Escape');
+        await page.waitForTimeout(500); // Wait for Radix UI closing animation
 
         if (isClient) {
             // SWITCH TO Professional

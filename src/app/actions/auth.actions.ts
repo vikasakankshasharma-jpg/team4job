@@ -10,7 +10,7 @@ export async function updateSessionTokenAction(token: string) {
     cookieStore.set('auth-token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         path: '/',
         maxAge: 3600 // 1 hour
     });

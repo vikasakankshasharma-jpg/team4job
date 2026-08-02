@@ -69,7 +69,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await helper.form.selectWizardCategory('Security & Surveillance');
         
         // Wait for and verify the suggestion banner
-        await expect(page.getByText('Frequent CCTV Installation')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Frequent Technical Installation')).toBeVisible({ timeout: 15000 });
         await expect(page.getByText('Based on your recent 3 Delhi office jobs.')).toBeVisible();
     });
 });

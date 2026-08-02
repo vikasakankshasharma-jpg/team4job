@@ -71,7 +71,7 @@ export function StepDetails({ isMapLoaded }: { isMapLoaded: boolean }) {
                 <FormItem className="space-y-4">
                   <FormLabel className="text-[10px] font-black italic uppercase tracking-[0.5em] text-on-surface/40 ml-4">Verified Channel (Email)</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled className="h-16 bg-white/5 border-none rounded-[1.25rem] px-8 font-black italic opacity-40 text-sm tracking-tighter ring-1 ring-white/5" />
+                    <Input {...field} disabled className="h-16 bg-background/5 border-none rounded-[1.25rem] px-8 font-black italic opacity-40 text-sm tracking-tighter ring-1 ring-white/5" />
                   </FormControl>
                 </FormItem>
               )}
@@ -83,7 +83,7 @@ export function StepDetails({ isMapLoaded }: { isMapLoaded: boolean }) {
                 <FormItem className="space-y-4">
                   <FormLabel className="text-[10px] font-black italic uppercase tracking-[0.5em] text-on-surface/40 ml-4">Verified Signal (Mobile)</FormLabel>
                   <FormControl>
-                    <Input {...field} disabled className="h-16 bg-white/5 border-none rounded-[1.25rem] px-8 font-black italic opacity-40 text-sm tracking-tighter ring-1 ring-white/5" />
+                    <Input {...field} disabled className="h-16 bg-background/5 border-none rounded-[1.25rem] px-8 font-black italic opacity-40 text-sm tracking-tighter ring-1 ring-white/5" />
                   </FormControl>
                 </FormItem>
               )}
@@ -181,7 +181,7 @@ export function StepDetails({ isMapLoaded }: { isMapLoaded: boolean }) {
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
-                  className="mt-1 flex-shrink-0 w-8 h-8 rounded-xl border-none ring-1 ring-white/10 bg-white/5 data-[state=checked]:bg-primary data-[state=checked]:text-black transition-all"
+                  className="mt-1 flex-shrink-0 w-8 h-8 rounded-xl border-none ring-1 ring-white/10 bg-background/5 data-[state=checked]:bg-primary data-[state=checked]:text-foreground transition-all"
                 />
               </FormControl>
               <div className="space-y-3 leading-none">
@@ -206,13 +206,13 @@ export function StepDetails({ isMapLoaded }: { isMapLoaded: boolean }) {
       </div>
 
       <div className="pt-12 flex gap-6">
-        <Button variant="outline" type="button" onClick={() => setCurrentStep(role === 'Professional' ? 'skills' : 'photo')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">
+        <Button variant="outline" type="button" onClick={() => setCurrentStep(role === 'Professional' ? 'skills' : 'photo')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">
           {tAuth('back')}
         </Button>
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {isLoading ? (
             <>

@@ -51,11 +51,8 @@ export class UserService {
             updates.isMobileVerified = false;
             updates.restrictedUntil = Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000));
             
-            const { sendWhatsAppTemplate } = await import("@/lib/whatsapp");
-            if (oldMobile) {
-                await sendWhatsAppTemplate(oldMobile, "security_alert", ["Mobile Number Change", "Your mobile number is being changed."]);
-            }
-            await sendWhatsAppTemplate(data.mobile, "security_alert", ["Mobile Number Change", "Your mobile number has been updated. A 48-hour cooling period is active."]);
+            // Replaced whatsapp notification with standard logging as whatsapp module was removed
+            console.log(`Security Alert: Mobile number changed for user ${userId} from ${oldMobile} to ${data.mobile}`);
             securityAlerts.push("Mobile number was changed. 48-hour cooling period applied.");
         }
 

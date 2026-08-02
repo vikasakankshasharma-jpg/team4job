@@ -99,7 +99,7 @@ function PersonalSettingsCard() {
     return (
         <div className="space-y-10 group/settings">
             <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-background/5">
                     <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">VISUAL INTERFACE // PROTOCOLS</CardTitle>
                     <CardDescription className="text-sm font-black italic tracking-tighter uppercase opacity-60">Appearance & Sensory Synchronization</CardDescription>
                 </CardHeader>
@@ -109,7 +109,7 @@ function PersonalSettingsCard() {
             </Card>
 
             <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-background/5">
                     <CardTitle className="flex items-center gap-4 text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">
                         <Bell className="h-6 w-6" /> COMM // TELEMETRY
                     </CardTitle>
@@ -159,7 +159,7 @@ function PersonalSettingsCard() {
             </Card>
 
             <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5">
-                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                <CardHeader className="p-10 pb-6 border-b border-white/5 bg-background/5">
                     <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-primary mb-1">ACCOUNT // CORE MANAGEMENT</CardTitle>
                     <CardDescription className="text-sm font-black italic tracking-tighter uppercase opacity-60">Credentials & Data Sovereignty</CardDescription>
                 </CardHeader>

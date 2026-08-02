@@ -276,7 +276,7 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate?: (u
                                 </>
                             )}
                         </span>
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-background/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
                     </Button>
                 </CardFooter>
             </Card>

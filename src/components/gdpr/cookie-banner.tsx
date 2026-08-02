@@ -24,6 +24,11 @@ export default function CookieBanner() {
             declineButtonText="Essential Only"
             enableDeclineButton
             cookieName="dodo-cookie-consent"
+            onAccept={() => {
+                if (typeof window !== "undefined") {
+                    window.dispatchEvent(new Event('analytics_consent_given'));
+                }
+            }}
             style={{
                 background: isDark ? "#1e293b" : "#f1f5f9", // slate-800 : slate-100
                 color: isDark ? "#f8fafc" : "#0f172a", // slate-50 : slate-900

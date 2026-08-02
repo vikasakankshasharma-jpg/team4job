@@ -4,6 +4,8 @@ import { CreatePaymentOrderInput, Transaction, PaymentStatus } from './payment.t
 import { paymentRepository } from './payment.repository';
 
 import { Timestamp } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+import * as Sentry from '@sentry/nextjs';
 import { userRepository } from '../users/user.repository';
 import { platformEventEmitter } from '@/lib/events/event-emitter';
 
@@ -44,10 +46,10 @@ export class PaymentService {
                 else if (tierPriority === 2) commissionRate = 0.04;
             }
 
-            // Calculate fees
-            const commission = data.amount * commissionRate;
-            const clientFee = data.amount * 0.02; // 2% client fee
-            const totalPaidByClient = data.amount + clientFee + (data.travelTip || 0);
+            // Calculate fees (rounded to 2 decimal places to avoid floating point errors)
+            const commission = Math.round(data.amount * commissionRate * 100) / 100;
+            const clientFee = Math.round(data.amount * 0.02 * 100) / 100; // 2% client fee
+            const totalPaidByClient = Math.round((data.amount + clientFee + (data.travelTip || 0)) * 100) / 100;
 
             // Create transaction record
             const transactionData: Partial<Transaction> = {
@@ -147,7 +149,7 @@ export class PaymentService {
             if (job?.awardedProfessionalId) {
                 userRepository.incrementStats(job.awardedProfessionalId, {
                     projectedEarnings: transactionResult.data.payoutToProfessional
-                }).catch(e => { /* Failed to increment projectedEarnings */ });
+                }).catch(e => { console.error('Failed to increment projectedEarnings', e); Sentry.captureException(e); });
             }
         } catch (error) {
             throw error;
@@ -160,44 +162,65 @@ export class PaymentService {
     async releaseFunds(jobId: string, professionalId: string): Promise<void> {
         try {
             const transactions = await paymentRepository.findByJobId(jobId);
-            const transaction = transactions.find(t => t.status === 'funded');
+            const transactionDoc = transactions.find(t => t.status === 'funded');
 
-            if (!transaction) {
+            if (!transactionDoc) {
                 throw new Error('No funded transaction found for this job');
             }
 
             // Verify the transaction belongs to this job and amount matches
-            if (transaction.jobId !== jobId) {
+            if (transactionDoc.jobId !== jobId) {
                 throw new Error('Security violation: Transaction job ID mismatch');
             }
 
-            // Create payout
             const transferId = `transfer_${jobId}_${Date.now()}`;
-            if (this.isEmulatorMode()) {
-                // Skiping Cashfree payout in emulator mode
-            } else {
-                await cashfreeClient.createPayout({
-                    beneficiaryId: professionalId,
-                    amount: transaction.payoutToProfessional,
-                    transferId,
+            const db = getAdminDb();
+            const txRef = db.collection('transactions').doc(transactionDoc.id);
+
+            // Phase 1: Atomically lock the transaction by changing its status
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(txRef);
+                if (!doc.exists) throw new Error('Transaction document not found');
+                if (doc.data()?.status !== 'funded') {
+                    throw new Error('Transaction is no longer in funded status (possibly already released)');
+                }
+                t.update(txRef, {
+                    status: 'payout_initiated', // intermediate state to prevent double execution
+                    payoutTransferId: transferId,
+                    payeeId: professionalId,
                 });
+            });
+
+            // Phase 2: External API call
+            if (!this.isEmulatorMode()) {
+                try {
+                    await cashfreeClient.createPayout({
+                        beneficiaryId: professionalId,
+                        amount: transactionDoc.payoutToProfessional,
+                        transferId,
+                    });
+                } catch (payoutError) {
+                    // Rollback if payout fails synchronously
+                    await txRef.update({ status: 'funded', payoutTransferId: null, payeeId: null });
+                    throw payoutError;
+                }
             }
 
-            // Update transaction
-            await paymentRepository.update(transaction.id, {
+            // Phase 3: Mark as released
+            await txRef.update({
                 status: 'released',
-                releasedAt: Timestamp.now() as any,
-                payoutTransferId: transferId,
-                payeeId: professionalId,
+                releasedAt: Timestamp.now()
             });
 
             // Data Aggregation: Transition Projected to Total Earnings
             userRepository.incrementStats(professionalId, {
-                projectedEarnings: -transaction.payoutToProfessional,
-                totalEarnings: transaction.payoutToProfessional
-            }).catch(e => { /* Failed to update earnings aggregation */ });
+                projectedEarnings: -transactionDoc.payoutToProfessional,
+                totalEarnings: transactionDoc.payoutToProfessional
+            }).catch(e => { console.error('Failed to update earnings', e); Sentry.captureException(e); });
 
         } catch (error) {
+            console.error('[PaymentService] releaseFunds failed', error);
+            Sentry.captureException(error);
             throw error;
         }
     }
@@ -237,6 +260,11 @@ export class PaymentService {
                 throw new Error('No refundable transaction found');
             }
 
+            if (transaction.status === 'initiated') {
+                await paymentRepository.update(transaction.id, { status: 'cancelled' });
+                return;
+            }
+
             // Process refund
             const refundId = `refund_${jobId}_${Date.now()}`;
             await cashfreeClient.processRefund({
@@ -259,7 +287,7 @@ export class PaymentService {
                 if (job?.awardedProfessionalId) {
                     userRepository.incrementStats(job.awardedProfessionalId, {
                         projectedEarnings: -transaction.payoutToProfessional
-                    }).catch(e => { /* Failed to rollback projectedEarnings */ });
+                    }).catch(e => { console.error('Failed to rollback projectedEarnings', e); Sentry.captureException(e); });
                 }
             }
         } catch (error) {
@@ -271,18 +299,27 @@ export class PaymentService {
     /**
      * Get transaction history for a user (both as payer and payee)
      */
-    async getTransactionHistory(userId: string): Promise<Transaction[]> {
+    async getTransactionHistory(userId: string, limit = 50, startAfter?: any): Promise<Transaction[]> {
         try {
+            // Note: In a real app with large data, this requires a composite index or complex queries.
+            // For now, fetch and slice in-memory if we have to, or update repository to accept limits.
             const [payerTransactions, payeeTransactions] = await Promise.all([
-                paymentRepository.findByPayerId(userId),
-                paymentRepository.findByPayeeId(userId)
+                paymentRepository.findByPayerId(userId, limit),
+                paymentRepository.findByPayeeId(userId, limit)
             ]);
 
             const txMap = new Map<string, Transaction>();
             payerTransactions.forEach(t => txMap.set(t.id, t));
             payeeTransactions.forEach(t => txMap.set(t.id, t));
 
-            return Array.from(txMap.values());
+            const combined = Array.from(txMap.values());
+            combined.sort((a, b) => {
+                const dateA = (a.createdAt as any)?._seconds || 0;
+                const dateB = (b.createdAt as any)?._seconds || 0;
+                return dateB - dateA;
+            });
+            
+            return combined.slice(0, limit);
         } catch (error) {
             throw error;
         }
@@ -312,7 +349,8 @@ export class PaymentService {
                 releasedAt: transactionRecord.data.releasedAt || Timestamp.now() as any
             });
         } catch (error) {
-            // Failed to record payout success
+            console.error('[PaymentService] Failed to record payout success', error);
+            Sentry.captureException(error);
         }
     }
 }

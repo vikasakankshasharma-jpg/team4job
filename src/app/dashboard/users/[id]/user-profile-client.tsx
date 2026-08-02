@@ -160,7 +160,7 @@ function ManageSubscriptionDialog({ user, onSubscriptionUpdate }: { user: User, 
             </div>
         </div>
         <DialogFooter className="gap-3">
-          <DialogClose asChild><Button variant="ghost" className="h-14 px-8 rounded-[1.25rem] font-black text-xs uppercase tracking-widest italic hover:bg-white/5">ABORT COMMAND</Button></DialogClose>
+          <DialogClose asChild><Button variant="ghost" className="h-14 px-8 rounded-[1.25rem] font-black text-xs uppercase tracking-widest italic hover:bg-background/5">ABORT COMMAND</Button></DialogClose>
           <Button onClick={handleGrantAccess} className="h-14 px-8 rounded-[1.25rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 italic hover:scale-105 active:scale-95 transition-all">GRANT ACCESS</Button>
         </DialogFooter>
       </DialogContent>
@@ -260,7 +260,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
                                 <Input type="number" value={suspensionDays} onChange={(e) => setSuspensionDays(parseInt(e.target.value))} className="h-16 rounded-2xl bg-background/50 border-none ring-1 ring-white/5 font-black text-xl" />
                             </div>
                             <DialogFooter className="gap-4">
-                                <Button variant="ghost" onClick={() => setIsSuspendOpen(false)} className="h-14 font-black italic rounded-[1.25rem] hover:bg-white/5 px-8">ABORT</Button>
+                                <Button variant="ghost" onClick={() => setIsSuspendOpen(false)} className="h-14 font-black italic rounded-[1.25rem] hover:bg-background/5 px-8">ABORT</Button>
                                 <Button variant="destructive" className="h-14 px-10 rounded-[1.25rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-destructive/20 italic hover:scale-105 transition-all" onClick={() => setStatus('suspended', new Date(Date.now() + suspensionDays * 86400000))} disabled={isLoading}>REVOKE ACCESS</Button>
                             </DialogFooter>
                         </DialogContent>
@@ -288,7 +288,7 @@ function AdminActionsCard({ user, onUserUpdate }: { user: User, onUserUpdate: (d
                             <Input placeholder="Authorization Code" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} className="h-16 rounded-2xl bg-destructive/5 border-none ring-1 ring-destructive/20 font-black text-xl text-destructive" />
                         </div>
                         <AlertDialogFooter className="gap-4">
-                            <Button variant="ghost" onClick={() => setDeleteConfirmation('')} className="h-14 font-black italic rounded-[1.25rem] hover:bg-white/5 px-8">ABORT TERMINATION</Button>
+                            <Button variant="ghost" onClick={() => setDeleteConfirmation('')} className="h-14 font-black italic rounded-[1.25rem] hover:bg-background/5 px-8">ABORT TERMINATION</Button>
                             <Button className="h-14 px-12 rounded-[1.25rem] bg-destructive text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-destructive/40 italic hover:scale-105 transition-all" onClick={handleDelete} disabled={deleteConfirmation !== 'PURGE' || isLoading}>CONFIRM PURGE</Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -498,7 +498,7 @@ export default function UserProfileClient() {
                     </Button>
                   )}
                   {subscription && (
-                    <div className="p-8 bg-white/5 dark:bg-black/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 ring-1 ring-white/5 flex flex-col gap-1 shadow-2xl">
+                    <div className="p-8 bg-background/5 dark:bg-foreground/40 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 ring-1 ring-white/5 flex flex-col gap-1 shadow-2xl">
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 italic">ACCESS LEVEL</p>
                         <p className="font-black text-2xl italic tracking-tight uppercase">{subscription.planName}</p>
                         <div className="flex items-center gap-2 text-[10px] text-primary font-black mt-2 tracking-[0.2em] uppercase italic">
@@ -527,7 +527,7 @@ export default function UserProfileClient() {
                         <div className="absolute top-0 right-0 p-10 opacity-5 scale-150 rotate-12 pointer-events-none group-hover:rotate-45 transition-transform duration-1000">
                             <Award className="h-32 w-32 text-primary" />
                         </div>
-                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-background/5">
                             <CardTitle className="text-2xl font-black italic tracking-[0.4em] uppercase text-on-surface/40 flex items-center gap-4">
                                 PROFESSIONAL REPUTATION
                                 <div className="h-1.5 flex-1 bg-gradient-to-r from-primary/20 to-transparent rounded-full" />
@@ -596,7 +596,7 @@ export default function UserProfileClient() {
                                     <div className="space-y-6">
                                         <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-40 italic flex items-center gap-4">
                                             CORE COMPETENCIES
-                                            <div className="h-[1px] flex-1 bg-white/5" />
+                                            <div className="h-[1px] flex-1 bg-background/5" />
                                         </h4>
                                         <div className="flex flex-wrap gap-4">
                                             {(professionalProfile.skills || []).map(skill => (
@@ -639,7 +639,7 @@ export default function UserProfileClient() {
                 <div className="space-y-12 h-fit">
                     {/* Activity Feed / Compact Sidebar */}
                     <Card className="border-none shadow-[0_45px_120px_rgba(0,0,0,0.3)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/10">
-                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-white/5">
+                        <CardHeader className="p-10 pb-6 border-b border-white/5 bg-background/5">
                             <CardTitle className="text-xl font-black italic tracking-[0.4em] uppercase text-on-surface/40">ACTIVE LOGS</CardTitle>
                         </CardHeader>
                         <CardContent className="p-10 pt-10 space-y-6">

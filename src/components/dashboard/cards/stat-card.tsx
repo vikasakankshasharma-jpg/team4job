@@ -21,7 +21,7 @@ export const StatCard = ({ title, value, description, icon: Icon, href, iconBgCo
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 min-w-0 p-10">
                     <CardTitle className="text-[10px] font-black italic tracking-[0.3em] uppercase text-muted-foreground/30 mr-2 group-hover:text-primary transition-colors">{title}</CardTitle>
                     <div className={cn("p-5 rounded-[1.5rem] transition-all duration-700 group-hover:scale-110 shadow-lg shadow-black/5 relative overflow-hidden group/icon", iconBgColor)}>
-                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/icon:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-background/10 opacity-0 group-hover/icon:opacity-100 transition-opacity" />
                         <Icon className={cn("h-7 w-7 relative z-10", iconColor)} />
                     </div>
                 </CardHeader>

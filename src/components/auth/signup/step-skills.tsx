@@ -56,13 +56,13 @@ export function StepSkills() {
       </div>
 
       <div className="pt-12 flex gap-6">
-        <Button variant="outline" onClick={() => setCurrentStep('photo')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">
+        <Button variant="outline" onClick={() => setCurrentStep('photo')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">
           {tAuth('back')}
         </Button>
         <Button 
           onClick={() => setCurrentStep('details')} 
           disabled={selectedSkills.length === 0}
-          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {tAuth('next') || "CONFIRM SKILLS"}
           <ArrowRight className="ml-3 h-5 w-5" />

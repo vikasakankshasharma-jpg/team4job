@@ -233,7 +233,7 @@ export default function ChatClient() {
                             <button
                                 key={conv.id}
                                 onClick={() => setActiveConversationId(conv.id)}
-                                className={`w-full text-left p-6 rounded-[2rem] flex items-center space-x-6 transition-all duration-500 ${activeConversationId === conv.id ? 'bg-primary/10 text-primary ring-1 ring-primary/20 shadow-2xl' : 'hover:bg-white/5 opacity-60 hover:opacity-100'
+                                className={`w-full text-left p-6 rounded-[2rem] flex items-center space-x-6 transition-all duration-500 ${activeConversationId === conv.id ? 'bg-primary/10 text-primary ring-1 ring-primary/20 shadow-2xl' : 'hover:bg-background/5 opacity-60 hover:opacity-100'
                                     }`}
                             >
                                 <Avatar className="h-14 w-14 border border-white/10 shadow-xl ring-1 ring-white/5">

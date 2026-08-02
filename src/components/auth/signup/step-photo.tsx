@@ -107,7 +107,7 @@ export function StepPhoto() {
             <>
               <video ref={videoRef} className="w-full h-full object-cover grayscale-[0.5] hover:grayscale-0 transition-all duration-700 scale-105" autoPlay muted playsInline />
               {!hasCameraPermission && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-xl p-8 text-center">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-foreground/80 backdrop-blur-xl p-8 text-center">
                   <AlertCircle className="h-12 w-12 text-destructive mb-6" />
                   <h4 className="font-black text-[10px] uppercase tracking-[0.3em] mb-2">{tAuth('cameraAccessRequired')}</h4>
                   <p className="text-[10px] font-medium opacity-60 leading-relaxed uppercase tracking-widest">{tAuth('cameraAccessRequiredDesc')}</p>
@@ -120,11 +120,11 @@ export function StepPhoto() {
 
       <div className="flex gap-4 justify-center">
         {photo ? (
-          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="h-16 px-10 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">
+          <Button variant="outline" onClick={() => { setPhoto(null); startCamera(); }} className="h-16 px-10 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">
             {tAuth('retakePhoto') || "RECALIBRATE SENSOR"}
           </Button>
         ) : (
-          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="h-16 px-10 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+          <Button onClick={handleCapture} disabled={!hasCameraPermission} className="h-16 px-10 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
             <Camera className="mr-3 h-5 w-5" />
             {tAuth('capturePhoto') || "CAPTURE BIOMETRIC"}
           </Button>
@@ -132,10 +132,10 @@ export function StepPhoto() {
       </div>
 
       <div className="pt-12 flex gap-6">
-        <Button variant="outline" onClick={() => setCurrentStep(role === 'Client' ? 'contact' : 'verification')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">
+        <Button variant="outline" onClick={() => setCurrentStep(role === 'Client' ? 'contact' : 'verification')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">
           {tAuth('back')}
         </Button>
-        <Button onClick={() => setCurrentStep(role === 'Professional' ? 'skills' : 'details')} className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all" disabled={!photo}>
+        <Button onClick={() => setCurrentStep(role === 'Professional' ? 'skills' : 'details')} className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all" disabled={!photo}>
           {tAuth('next') || "CONFIRM IDENTITY"}
         </Button>
       </div>

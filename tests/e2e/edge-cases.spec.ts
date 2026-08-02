@@ -111,7 +111,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with minimum required fields only', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const uniqueTitle = generateUniqueJobTitle();
 
@@ -141,7 +141,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with extremely long description', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const longDescription = 'A'.repeat(5000);
             const uniqueTitle = generateUniqueJobTitle();
@@ -172,7 +172,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with invalid budget range (min > max)', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
             await page.fill('[data-testid="job-title-input"]', generateUniqueJobTitle());
@@ -191,7 +191,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with past deadline date', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             await helper.form.selectDropdown('Job Category', TEST_JOB_DATA.category);
             const pastDate = new Date();
@@ -207,7 +207,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with special characters in title', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const specialTitle = generateUniqueJobTitle('Job Title !@#$%');
 
@@ -239,7 +239,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Job posting with invalid pincode', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             await page.locator('[data-testid="pincode-input"]').pressSequentially('000000', { delay: 50 });
             // Wait for loading to finish
@@ -299,7 +299,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Upload file with invalid type', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const fileInput = page.getByTestId('file-upload-input');
             await fileInput.waitFor({ state: 'attached' });
@@ -317,7 +317,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Upload file exceeding size limit', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const fileInput = page.getByTestId('file-upload-input');
             await fileInput.waitFor({ state: 'attached' });
@@ -371,7 +371,7 @@ test.describe('Edge Case Tests @edge', () => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
 
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
             await expect(page).toHaveURL(/.*\/post-job/);
 
             await page.goto('/dashboard/posted-jobs');
@@ -387,7 +387,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Application handles page refresh during form fill', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const uniqueTitle = 'Persistent Job Title';
             await page.fill('input[name="jobTitle"]', uniqueTitle);
@@ -403,7 +403,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('XSS prevention in user inputs', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const xssPayload = '<script>alert("xss")</script><img src=x onerror=alert(1)>';
             await page.fill('input[name="jobTitle"]', xssPayload);
@@ -435,7 +435,7 @@ test.describe('Edge Case Tests @edge', () => {
         test('Unicode and emoji handling', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
-            await helper.nav.goToPostJob();
+            await helper.nav.goToPostJobForm();
 
             const unicodeTitle = generateUniqueJobTitle('Job 🚀 🛠️');
             await page.fill('[data-testid="job-title-input"]', unicodeTitle);

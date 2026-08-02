@@ -238,7 +238,7 @@ export function StepContact() {
                           type="button" 
                           onClick={handleSendMobileOtp} 
                           disabled={isLoading || !field.value || field.value.length !== 10} 
-                          className="h-16 px-8 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                          className="h-16 px-8 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                         >
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('sendOtp')}
                         </Button>
@@ -255,7 +255,7 @@ export function StepContact() {
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="p-10 rounded-[2.5rem] bg-surface-container-low/60 border-none ring-1 ring-primary/20 space-y-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] backdrop-blur-3xl"
+                        className="p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] bg-surface-container-low/60 border-none ring-1 ring-primary/20 space-y-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] backdrop-blur-3xl"
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-black italic uppercase tracking-[0.3em] text-primary">{tAuth('enterMobileOtp') || "ENTRY CODE"}</span>
@@ -280,7 +280,7 @@ export function StepContact() {
                           <Button 
                             onClick={handleVerifyMobileOtp} 
                             disabled={isLoading || mobileOtp.length !== 6}
-                            className="flex-1 h-16 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                            className="flex-1 h-16 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                           >
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('verifyOtp')}
                           </Button>
@@ -288,7 +288,7 @@ export function StepContact() {
                             variant="outline" 
                             onClick={handleSendMobileOtp} 
                             disabled={isLoading || mobileResendTimer > 0}
-                            className="h-16 px-8 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.2em] italic hover:bg-white/5 transition-colors"
+                            className="h-16 px-8 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.2em] italic hover:bg-background/5 transition-colors"
                           >
                             {mobileResendTimer > 0 ? tAuth('resendIn', { seconds: mobileResendTimer }) : tAuth('resend')}
                           </Button>
@@ -325,7 +325,7 @@ export function StepContact() {
                           type="button" 
                           onClick={handleSendEmailOtp} 
                           disabled={isLoading || !field.value || !field.value.includes('@')} 
-                          className="h-16 px-8 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                          className="h-16 px-8 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                         >
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('sendOtp')}
                         </Button>
@@ -342,7 +342,7 @@ export function StepContact() {
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="p-10 rounded-[2.5rem] bg-surface-container-low/60 border-none ring-1 ring-primary/20 space-y-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] backdrop-blur-3xl"
+                        className="p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] bg-surface-container-low/60 border-none ring-1 ring-primary/20 space-y-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] backdrop-blur-3xl"
                       >
                         <div className="flex justify-between items-center">
                           <span className="text-[10px] font-black italic uppercase tracking-[0.3em] text-primary">{tAuth('enterEmailOtp') || "CREDENTIAL KEY"}</span>
@@ -367,7 +367,7 @@ export function StepContact() {
                           <Button 
                             onClick={handleVerifyEmailOtp} 
                             disabled={isLoading || emailOtp.length !== 6}
-                            className="flex-1 h-16 rounded-[1.25rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                            className="flex-1 h-16 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
                           >
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('verifyOtp')}
                           </Button>
@@ -375,7 +375,7 @@ export function StepContact() {
                             variant="outline" 
                             onClick={handleSendEmailOtp} 
                             disabled={isLoading || emailResendTimer > 0}
-                            className="h-16 px-8 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.2em] italic hover:bg-white/5 transition-colors"
+                            className="h-16 px-8 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.2em] italic hover:bg-background/5 transition-colors"
                           >
                             {emailResendTimer > 0 ? tAuth('resendIn', { seconds: emailResendTimer }) : tAuth('resend')}
                           </Button>
@@ -391,7 +391,7 @@ export function StepContact() {
       </div>
 
       <div className="pt-12 flex gap-6">
-        <Button variant="outline" onClick={() => setCurrentStep('role')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-white/5 transition-colors">{tAuth('back')}</Button>
+        <Button variant="outline" onClick={() => setCurrentStep('role')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">{tAuth('back')}</Button>
         <Button 
           type="button"
           onClick={() => {
@@ -400,7 +400,7 @@ export function StepContact() {
               }
           }}
           disabled={!isMobileVerified || !isEmailVerified}
-          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-black font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+          className="h-16 flex-[2] rounded-[1.5rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
         >
           {tAuth('next') || "NEXT PROTOCOL"}
           <ArrowRight className="ml-3 h-5 w-5" />

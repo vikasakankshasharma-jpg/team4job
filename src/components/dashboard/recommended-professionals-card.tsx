@@ -72,7 +72,7 @@ export function RecommendedProfessionalsCard({ userId, currentUser }: Recommende
     return (
         <>
         <Card className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] shadow-[0_45px_120px_rgba(0,0,0,0.2)] ring-1 ring-white/10 overflow-hidden group">
-                <CardHeader className="pb-6 px-10 pt-10 border-b border-white/5 bg-white/5">
+                <CardHeader className="pb-6 px-10 pt-10 border-b border-white/5 bg-background/5">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <CardTitle className="text-sm font-black italic tracking-[0.4em] uppercase text-primary mb-1">INTELLIGENCE // MATCHING ENGINE</CardTitle>

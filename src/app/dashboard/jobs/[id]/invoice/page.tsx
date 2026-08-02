@@ -167,7 +167,7 @@ function InvoiceContent() {
         const gstAmt = feeAmount - taxableAmount;
 
         return (
-            <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-white pt-12 pb-20 transition-all">
+            <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all">
                 <motion.div 
                     initial={{ opacity: 0, y: 30, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -294,7 +294,7 @@ function InvoiceContent() {
     const serviceAmount = transaction?.amount || 0;
 
     return (
-        <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-white pt-12 pb-20 transition-all selection:bg-primary selection:text-white">
+        <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all selection:bg-primary selection:text-white">
             <motion.div 
                 initial={{ opacity: 0, y: 30, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -70,6 +70,7 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('send-offer-button').first().click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent');
         console.log('[SETUP] Offer Sent');
 
@@ -101,7 +102,7 @@ test.describe('Dashboard Financials E2E', () => {
         await page.getByTestId('proceed-payment-button').click();
         await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
         await page.evaluate(async () => {
-            await (window as any).e2e_directFundJob();
+            await page.getByTestId('e2e-direct-fund').click({ force: true });
         });
         await helper.form.waitForToast('Test Mode: Payment Initiated');
         await helper.job.waitForJobStatus('In Progress');

@@ -49,18 +49,18 @@ export class PaymentRepository {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
     }
 
-    async findByPayerId(userId: string): Promise<Transaction[]> {
-        const snapshot = await this.collection
-            .where("payerId", "==", userId)
-            .get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+    async findByPayerId(userId: string, limit?: number): Promise<Transaction[]> {
+        let query: any = this.collection.where("payerId", "==", userId);
+        if (limit) query = query.limit(limit);
+        const snapshot = await query.get();
+        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Transaction));
     }
 
-    async findByPayeeId(userId: string): Promise<Transaction[]> {
-        const snapshot = await this.collection
-            .where("payeeId", "==", userId)
-            .get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+    async findByPayeeId(userId: string, limit?: number): Promise<Transaction[]> {
+        let query: any = this.collection.where("payeeId", "==", userId);
+        if (limit) query = query.limit(limit);
+        const snapshot = await query.get();
+        return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Transaction));
     }
 
     async findByPayoutTransferId(transferId: string): Promise<{ id: string; data: Transaction } | null> {

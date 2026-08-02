@@ -48,7 +48,7 @@ export default async function ClientDashboard() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
     return (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-background p-4 rounded-lg shadow">
             <div className="text-sm text-gray-600">{label}</div>
             <div className="text-2xl font-bold">{value}</div>
         </div>
@@ -57,7 +57,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 function JobCard({ job }: { job: any }) {
     return (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-background p-6 rounded-lg shadow">
             <div className="flex justify-between items-start">
                 <div>
                     <h3 className="text-xl font-semibold">{job.title}</h3>

@@ -73,7 +73,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             }
         );
 
-        await helper.nav.goToPostJob();
+        await helper.nav.goToPostJobForm();
         await expect(page).toHaveURL(/\/post-job/);
 
         const categorySelect = page.getByTestId('job-category-select');
@@ -209,6 +209,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         const offerBtn = page.getByTestId('send-offer-button').first();
         await offerBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.medium });
         await offerBtn.click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent');
         console.log('[PASS] Phase 3 Complete: Offer sent');
 
@@ -274,7 +275,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
         await page.evaluate(async () => {
             console.log("Triggering e2e_directFundJob from Playwright");
-            await (window as any).e2e_directFundJob();
+            await page.getByTestId('e2e-direct-fund').click({ force: true });
         });
         await helper.form.waitForToast('Test Mode: Payment Initiated');
         await helper.form.waitForToast('Test Mode: Payment Initiated');
@@ -326,9 +327,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // --- PHASE 7: Professional COMPLETES WORK ---
         console.log('--- START: Phase 7 - Professional completes work ---');
-        const completionSection = page.getByTestId('Professional-completion-section');
+        
         await expect(completionSection).toBeVisible();
-        await completionSection.locator('input[type="file"]').setInputFiles({
+        await page.locator('input[type="file"]').first().setInputFiles({
             name: 'proof.png',
             mimeType: 'image/png',
             buffer: Buffer.from('test')

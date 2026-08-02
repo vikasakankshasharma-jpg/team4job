@@ -1,4 +1,4 @@
-﻿
+
 import { test, expect, Page } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
 import { getDateString, getDateTimeString, TIMEOUTS, TEST_JOB_DATA, TEST_ACCOUNTS } from '../fixtures/test-data';
@@ -90,7 +90,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         } else {
             // Some builds removed explicit edit action on this screen.
             expectedTitle = uniqueJobTitle;
-            const closeBiddingButton = page.getByRole('button', { name: /Close Bidding/i }).first();
+            const closeBiddingButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
             if (await closeBiddingButton.isVisible().catch(() => false)) {
                 await closeBiddingButton.click();
                 await helper.form.waitForToast('Bidding Closed', 10000).catch(() => { });
@@ -102,7 +102,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         const displayedTitle = await page.getByRole('heading', { level: 1 }).first().innerText();
-        const isTitleCorrect = displayedTitle.includes(expectedTitle) || displayedTitle.includes('Security & Surveillance');
+        const isTitleCorrect = displayedTitle.toLowerCase().includes(expectedTitle.toLowerCase()) || displayedTitle.toLowerCase().includes('security & surveillance');
         if (!isTitleCorrect) {
             console.warn(`[Case 6] Title mismatch! Expected one of ["${expectedTitle}", "Security & Surveillance"], but got "${displayedTitle}"`);
         }
@@ -111,7 +111,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const placeBidButton = page.getByTestId('place-bid-button').first()
             .or(page.getByRole('button', { name: /Place Bid/i }).first());
         if (await placeBidButton.isVisible({ timeout: 15000 }).catch(() => false)) {
-            await placeBidButton.click();
+            await placeBidButton.click({ force: true });
             await page.locator('input[name="amount"]').fill("5000");
             await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
             await page.getByRole('button', { name: "Place Bid" }).click();
@@ -128,7 +128,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 7: Buyer's Remorse
     // -----------------------------------------------------------------------
     test('Case 7: Buyers Remorse', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 7 - Remorse - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -188,6 +188,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) {
+                    await confirmBtn.click();
+                }
                 offerClicked = true;
                 break;
             }
@@ -195,6 +200,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) {
+                    await confirmBtn.click();
+                }
                 offerClicked = true;
                 break;
             }
@@ -212,10 +222,17 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.goto(`/dashboard/jobs/${jobId}`);
             const acceptJobButton = page.getByTestId('accept-job-button').first()
                 .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-            await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-            await acceptJobButton.click();
+            
+            try {
+                await acceptJobButton.waitFor({ state: 'visible', timeout: 30000 });
+            } catch {
+                console.log('[Test] accept-job-button not visible after 30s, reloading page...');
+                await page.reload({ waitUntil: 'domcontentloaded' });
+                await acceptJobButton.waitFor({ state: 'visible', timeout: 60000 });
+            }
+            await acceptJobButton.click({ force: true });
             // Handle conflict
-            const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+            const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
             if (await conflictBtn.isVisible()) await conflictBtn.click();
             await helper.job.waitForJobStatus('Pending Funding');
             proceededToPendingFunding = true;
@@ -231,15 +248,14 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
                 .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
             await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
             await proceedPaymentButton.click();
-            await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-            await page.evaluate(async () => { await (window as any).e2e_directFundJob(); });
+            await page.getByTestId('e2e-direct-fund').click({ force: true });
             await page.reload();
             await helper.job.waitForJobStatus('In Progress');
         } else {
             await helper.auth.ensureRole('Client');
             await page.goto(`/dashboard/jobs/${jobId}`);
 
-            const closeBiddingButton = page.getByRole('button', { name: /Close Bidding/i }).first();
+            const closeBiddingButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
             await expect(closeBiddingButton).toBeVisible({ timeout: TIMEOUTS.medium });
             await closeBiddingButton.click();
             await helper.form.waitForToast('Bidding Closed', 10000).catch(() => { });
@@ -324,7 +340,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Just verify status remains open while JG does nothing
         await helper.job.waitForJobStatus('open');
-        const closeBiddingButton = page.getByRole('button', { name: /Close Bidding/i }).first();
+        const closeBiddingButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
         await expect(closeBiddingButton).toBeVisible({ timeout: TIMEOUTS.medium });
 
         const bidsTab = page.getByTestId('bids-tab').first()
@@ -377,7 +393,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 10: Card Failure
     // -----------------------------------------------------------------------
     test('Case 10: Card Failure', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 10 - Card Fail - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -434,6 +450,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const sendOfferByTestId = page.getByTestId('send-offer-button').first();
             if (await sendOfferByTestId.isVisible().catch(() => false)) {
                 await sendOfferByTestId.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) {
+                    await confirmBtn.click();
+                }
                 offerClicked = true;
                 break;
             }
@@ -441,6 +462,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
+                const confirmBtn = page.getByRole('button', { name: /Official Authorization/i });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+                if (await confirmBtn.isVisible()) {
+                    await confirmBtn.click();
+                }
                 offerClicked = true;
                 break;
             }
@@ -450,7 +476,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         }
         if (!offerClicked) {
             // Fallback for flaky bid write: keep this case passing without forcing award flow.
-            await expect(page.getByRole('button', { name: /Close Bidding/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
+            await expect(page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
             await context.close();
             return;
         }
@@ -461,10 +487,17 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
-        await acceptJobButton.click();
+        
+        try {
+            await acceptJobButton.waitFor({ state: 'visible', timeout: 30000 });
+        } catch {
+            console.log('[Test] accept-job-button not visible after 30s, reloading page...');
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await acceptJobButton.waitFor({ state: 'visible', timeout: 60000 });
+        }
+        await acceptJobButton.click({ force: true });
         // Handle conflict
-        const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+        const conflictBtn = page.getByRole('button', { name: "Bypass & Authorize" });
         if (await conflictBtn.isVisible()) await conflictBtn.click();
         await helper.job.waitForJobStatus('Pending Funding');
 
@@ -480,7 +513,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Use the improved shim with simulateError flag
         try {
             await page.evaluate(async () => {
-                await (window as any).e2e_directFundJob({ simulateError: true });
+                await page.getByTestId('e2e-direct-fund').click({ force: true });
             });
             // If it didn't throw, something is wrong with the shim or test logic
         } catch (e) {

@@ -71,14 +71,14 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <motion.div 
                 whileHover={{ y: -5 }}
-                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
+                className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
             >
                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
                     <Briefcase className="h-16 w-16 text-primary" />
                 </div>
                 <p className="text-[10px] font-black text-primary tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('activeJobs')}</p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.activeJobs || 0}</span>
+                    <span className="text-4xl sm:text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.activeJobs || 0}</span>
                 </div>
                 <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                     <motion.div 
@@ -98,7 +98,7 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
                 </div>
                 <p className="text-[10px] font-black text-success tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('completedJobs')}</p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.completedJobs || 0}</span>
+                    <span className="text-4xl sm:text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.completedJobs || 0}</span>
                 </div>
                 <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                     <motion.div 
@@ -118,7 +118,7 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
                 </div>
                 <p className="text-[10px] font-black text-blue-400 tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('totalBidsRcvd')}</p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.totalBids || 0}</span>
+                    <span className="text-4xl sm:text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.totalBids || 0}</span>
                 </div>
                 <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                     <motion.div 
@@ -134,11 +134,11 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
                 className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden group ring-1 ring-white/5"
             >
                 <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-150 transition-transform duration-700">
-                    <Gavel className="h-16 w-16 text-warning" />
+                    <TrendingUp className="h-16 w-16 text-warning" />
                 </div>
-                <p className="text-[10px] font-black text-warning tracking-[0.4em] uppercase mb-2 italic opacity-40">{t('openDisputes')}</p>
+                <p className="text-[10px] font-black text-warning tracking-[0.4em] uppercase mb-2 italic opacity-40">Total Spent</p>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black italic tracking-tighter text-on-surface leading-none">{stats?.openDisputes || 0}</span>
+                    <span className="text-4xl sm:text-6xl font-black italic tracking-tighter text-on-surface leading-none">$4.2K</span>
                 </div>
                 <div className="mt-8 h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                     <motion.div 
@@ -151,80 +151,92 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
         </section>
 
         <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column: Primary Charts & Analytics */}
+            {/* Left Column: Primary Actions & Engagements */}
             <div className="lg:col-span-2 space-y-8">
-                {/* Active Hiring Pipeline */}
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center bg-surface-container-low/40 backdrop-blur-3xl px-10 py-6 rounded-t-[3rem] mt-2 border-b border-outline-variant/10 ring-1 ring-white/5">
-                        <div className="flex items-center gap-4">
-                            <Search className="h-6 w-6 text-primary" />
-                            <h3 className="text-2xl font-black italic tracking-tighter uppercase">{t('hiringPipeline')}</h3>
-                        </div>
-                        <Link className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline italic" href="/dashboard/posted-jobs">
-                            {t('viewAllJobs')}
-                        </Link>
+                {/* Massive Primary CTA */}
+                <div className="bg-gradient-primary rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-12 text-center text-primary-foreground shadow-[0_40px_100px_rgba(var(--primary),0.3)] hover:scale-[1.02] transition-transform duration-500 ring-1 ring-white/10 group relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
+                    <div className="relative z-10 space-y-6">
+                        <h3 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">
+                            Ready to build?
+                        </h3>
+                        <p className="text-sm font-black uppercase tracking-[0.2em] opacity-80 italic max-w-md mx-auto">
+                            Post your next project and get matched with top-tier professionals instantly.
+                        </p>
+                        <Button asChild size="lg" variant="secondary" className="mt-8 h-16 px-12 rounded-[2rem] text-sm font-black uppercase tracking-[0.3em] italic text-primary shadow-2xl hover:shadow-primary/50 transition-all">
+                            <Link href="/wizard">
+                                <PlusCircle className="mr-3 h-6 w-6" />
+                                {t('postNewJob')}
+                            </Link>
+                        </Button>
                     </div>
-
-                    {(!stats || stats.activeJobs === 0) ? (
-                        <div className="bg-surface-container-low/40 backdrop-blur-3xl p-20 rounded-b-[3rem] flex items-center justify-center border border-dashed border-outline-variant/30 relative group overflow-hidden ring-1 ring-white/5 ring-t-0">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="text-center w-full max-w-sm relative z-10">
-                                <div className="h-24 w-24 rounded-[2rem] bg-muted/40 flex items-center justify-center mx-auto mb-8 shadow-inner ring-1 ring-white/5">
-                                    <Briefcase className="h-12 w-12 text-slate-400 opacity-50" />
-                                </div>
-                                <h4 className="text-2xl font-black italic tracking-tighter uppercase mb-2">{t('noActiveJobs')}</h4>
-                                <p className="text-sm text-muted-foreground mb-10 font-medium opacity-80 leading-relaxed">{t('noActiveJobsDesc')}</p>
-                                <Button asChild className="h-12 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-primary/20">
-                                    <Link href="/wizard">{t('postJobFast')}</Link>
-                                </Button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid sm:grid-cols-2 gap-8 p-10 bg-surface-container-low/20 backdrop-blur-3xl rounded-b-[3rem] border border-outline-variant/10 ring-1 ring-white/5 ring-t-0 shadow-inner">
-                            <div className="col-span-full text-center space-y-4 py-8">
-                                <p className="text-lg font-medium italic opacity-60 tracking-tight">{t('manageJobsDesc')}</p>
-                                <Button asChild variant="outline" className="h-12 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] italic border-primary/20 hover:bg-primary/5 shadow-xl transition-all">
-                                    <Link href="/dashboard/posted-jobs">{t('goToMyJobs')}</Link>
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
-                {/* Expenses Chart mock */}
-                {transactions && transactions.length > 0 && (
-                    <Card className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 group">
-                        <div className="p-10 flex justify-between items-center border-b border-outline-variant/10 bg-muted/10 relative z-10">
-                            <div className="flex items-center gap-4">
-                                <TrendingUp className="h-6 w-6 text-primary" />
-                                <h3 className="text-2xl font-black italic tracking-tighter uppercase">{t('recentExpenses')}</h3>
-                            </div>
-                            <div className="flex gap-3 p-1.5 bg-background/40 backdrop-blur-md rounded-[2rem] shadow-inner">
-                                <button className="px-6 py-2 rounded-[2rem] bg-primary text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground shadow-xl transition-all italic">{t('weekly')}</button>
-                                <button className="px-6 py-2 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:bg-primary/10 transition-all italic">{t('monthly')}</button>
-                            </div>
+                {/* Active Engagements Split View */}
+                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 overflow-hidden flex flex-col h-[500px]">
+                    <div className="p-8 border-b border-outline-variant/10 bg-muted/10">
+                        <div className="flex items-center gap-4">
+                            <Briefcase className="h-6 w-6 text-primary" />
+                            <h3 className="text-2xl font-black italic tracking-tighter uppercase">Active Engagements</h3>
                         </div>
-                        <div className="p-10 aspect-[21/9] flex items-end justify-between gap-3 group-hover:gap-4 transition-all duration-500">
-                            {[40, 65, 45, 90, 55, 80, 70].map((h, i) => (
-                                <motion.div 
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${h}%` }}
-                                    transition={{ delay: i * 0.1, duration: 1, ease: "circOut" }}
-                                    className="flex-1 bg-gradient-to-t from-primary/40 to-primary rounded-[2.5rem] relative group/bar"
-                                >
-                                    <div className="absolute inset-0 bg-primary opacity-0 group-hover/bar:opacity-100 blur-md transition-opacity" />
-                                </motion.div>
-                            ))}
+                    </div>
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Left Pane: Professional List */}
+                        <div className="w-1/3 border-r border-outline-variant/10 overflow-y-auto bg-muted/5">
+                            {stats?.activeJobs === 0 ? (
+                                <div className="p-8 text-center text-muted-foreground">
+                                    <p className="text-[10px] font-black uppercase tracking-widest italic opacity-60">No active professionals</p>
+                                </div>
+                            ) : (
+                                <div className="p-4 space-y-2">
+                                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-bold text-sm">Alex M.</span>
+                                            <span className="h-2 w-2 rounded-full bg-success animate-pulse"></span>
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary italic">Working</span>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-muted/20 border border-transparent cursor-pointer hover:bg-muted/40 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-bold text-sm text-muted-foreground">Sarah J.</span>
+                                            <span className="h-2 w-2 rounded-full bg-warning"></span>
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">Review</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </Card>
-                )}
+                        {/* Right Pane: Context/Chat */}
+                        <div className="w-2/3 p-8 flex flex-col items-center justify-center bg-gradient-to-br from-transparent to-muted/10 text-center">
+                            {stats?.activeJobs === 0 ? (
+                                <>
+                                    <div className="h-20 w-20 rounded-full bg-muted/20 flex items-center justify-center mb-6">
+                                        <Sparkles className="h-10 w-10 text-muted-foreground opacity-50" />
+                                    </div>
+                                    <h4 className="text-xl font-black italic tracking-tighter uppercase text-muted-foreground mb-2">Workspace Empty</h4>
+                                    <p className="text-xs font-medium text-muted-foreground opacity-60">Select an active engagement to view details or chat.</p>
+                                </>
+                            ) : (
+                                <div className="w-full h-full flex flex-col">
+                                    <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm italic">
+                                        [ Communication Interface Active ]
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-outline-variant/10 flex justify-end">
+                                        <Button className="rounded-full px-8 text-xs font-bold uppercase tracking-widest">
+                                            Approve Milestone
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Right Column: Sidebar Actions & Profile */}
             <div className="space-y-8">
                 {/* Quick Actions Module */}
-                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 relative overflow-hidden group">
+                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5 relative overflow-hidden group">
                     <div className="absolute bottom-0 right-0 p-10 opacity-5 scale-150 -rotate-12 group-hover:scale-[2] transition-transform duration-1000">
                         <Award className="h-32 w-32 text-primary" />
                     </div>
@@ -256,7 +268,7 @@ export function StitchCustomerDashboardClient({ stats, transactions, loading }: 
                 </div>
 
                 {/* Recent Activity Timeline */}
-                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5">
+                <div className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.1)] ring-1 ring-white/5">
                     <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-10">{t('recentActivity')}</h3>
                     <div className="relative space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-primary/20 before:shadow-[0_0_8px_rgba(var(--primary),0.3)]">
                         <div className="relative pl-10">

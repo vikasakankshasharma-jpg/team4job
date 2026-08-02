@@ -8,7 +8,8 @@ export type PaymentStatus =
     | 'failed'
     | 'released'
     | 'refunded'
-    | 'disputed';
+    | 'disputed'
+    | 'cancelled';
 
 export interface Transaction {
     id: string;

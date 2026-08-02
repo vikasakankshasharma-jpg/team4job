@@ -71,6 +71,9 @@ export async function POST(req: NextRequest) {
       const transaction = transactionSnap.data() as Transaction;
 
       if (data.type === 'PAYMENT_SUCCESS_WEBHOOK') {
+        if (transaction.status === 'funded') {
+          return NextResponse.json({ status: 'success', message: 'Transaction already funded' });
+        }
         const startOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await transactionRef.update({
@@ -165,6 +168,9 @@ export async function POST(req: NextRequest) {
 
 
       } else if (data.type === 'PAYMENT_FAILED_WEBHOOK') {
+        if (transaction.status === 'failed') {
+          return NextResponse.json({ status: 'success', message: 'Transaction already failed' });
+        }
         await transactionRef.update({
           status: 'failed',
           failedAt: Timestamp.now() as any,
@@ -211,13 +217,22 @@ export async function POST(req: NextRequest) {
 
         if (event === 'transfer_success') {
           const isRefund = transferId.startsWith('REFUND_');
+          const targetStatus = isRefund ? 'refunded' : 'released';
+          
+          if (transactionDoc.data().status === targetStatus) {
+             return NextResponse.json({ status: 'success', message: `Transaction already ${targetStatus}` });
+          }
+
           await transactionDoc.ref.update({
-            status: isRefund ? 'refunded' : 'released',
+            status: targetStatus,
             [isRefund ? 'refundedAt' : 'releasedAt']: Timestamp.now() as any,
           });
 
 
         } else if (event === 'transfer_failed' || event === 'transfer_reversed') {
+          if (transactionDoc.data().status === 'failed') {
+             return NextResponse.json({ status: 'success', message: 'Transaction already failed' });
+          }
           await transactionDoc.ref.update({
             status: 'failed',
             failedAt: Timestamp.now() as any,

@@ -436,8 +436,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
            setTimeout(() => checkForDraft(retries - 1), 2500);
         } else if (isWizardCompleted) {
            console.warn("[PostJob] Wizard completed but no draft found in Firestore after extended retries.");
-        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true' && !userLoading) {
-          // Safety: only redirect if definitely no draft and not coming from wizard
+        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true' && !userLoading && user?.roles?.includes('Client')) {
+          // Safety: only redirect if definitely no draft, not coming from wizard, and user is a Client
           console.log("[PostJob] No draft found and no special params. Redirecting to wizard.");
           router.replace('/wizard');
         }
@@ -948,7 +948,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
           <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
-            <CardHeader className="p-12 bg-white/5 border-b border-white/5">
+            <CardHeader className="p-12 bg-background/5 border-b border-white/5">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">{tJob('jobDetails')}</CardTitle>
@@ -1280,7 +1280,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             </CardContent>
           </Card>
           <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
-            <CardHeader className="p-12 bg-white/5 border-b border-white/5">
+            <CardHeader className="p-12 bg-background/5 border-b border-white/5">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">{tJob('budget')}</CardTitle>
@@ -1351,7 +1351,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           </Card>
           {!isEditMode && (
             <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
-              <CardHeader className="p-12 bg-white/5 border-b border-white/5">
+              <CardHeader className="p-12 bg-background/5 border-b border-white/5">
                 <div className="space-y-2">
                   <CardTitle className="flex items-center gap-4 text-4xl font-black italic tracking-tighter uppercase leading-none">
                     <UserPlus className="h-8 w-8 text-primary" />

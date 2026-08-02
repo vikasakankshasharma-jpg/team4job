@@ -260,16 +260,11 @@ export default function DisputeDetailPage() {
     if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
     setIsRefunding(true);
     try {
-      // Get the current user's ID token to pass as Bearer token provided we are admin.
-      // But this is client-side code. 'axios' calls on client side send cookies usually if configured, 
-      // but here we need to send the Authorization header explicitly because our API route validates 'Bearer <token>'.
-
       const token = await auth?.currentUser?.getIdToken();
 
-      await axios.post('/api/cashfree/payouts/request-transfer', {
-        transactionId: transaction.id,
-        userId: transaction.payerId, // The user to refund is the payer (Client)
-        transferType: 'refund',
+      await axios.post('/api/escrow/resolve-dispute', {
+        disputeId: dispute.id,
+        resolution: 'REFUND',
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -293,14 +288,13 @@ export default function DisputeDetailPage() {
     if (!transaction) return toast({ title: "Transaction not found", variant: "destructive" });
     setIsReleasing(true);
     try {
-      // Admin Force Release
-      // We should use resolve-dispute for this, logic handles payouts.
-      // But if explicit release needed:
+      const token = await auth?.currentUser?.getIdToken();
       await axios.post('/api/escrow/resolve-dispute', {
         disputeId: dispute.id,
-        resolutionType: 'Payout',
-        splitPercentage: 100, // Full Payout
+        resolution: 'RELEASE',
         adminNotes: 'Manual Admin Release'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast({ title: "Funds Released", description: "The payment has been released to the professional.", variant: "default" });
       setTransaction(prev => prev ? { ...prev, status: 'released' } : null);

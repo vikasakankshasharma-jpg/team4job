@@ -100,7 +100,7 @@ const editProfileSchema = z.object({
 });
 
 function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) => void }) {
-    const { db } = useFirebase();
+    const { db, auth } = useFirebase();
     const { toast } = useToast();
     const t = useTranslations('profile');
     const isProfessional = user.roles.includes('Professional');
@@ -142,8 +142,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
         }
 
         try {
-            // @ts-ignore
-            const token = await user.getIdToken();
+            const token = await auth?.currentUser?.getIdToken();
             const updateData: any = {
                 name: values.name,
                 email: values.email,
@@ -177,6 +176,7 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                     : t('profileUpdatedDesc'),
                 variant: shouldUnverify ? "destructive" : "default",
             });
+            document.getElementById('edit-profile-cancel-btn')?.click();
         } catch (error) {
             toast({
                 title: t('updateFailed'),
@@ -301,11 +301,9 @@ function EditProfileForm({ user, onSave }: { user: User, onSave: (values: any) =
                     )}
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="button" variant="secondary">{t('cancel')}</Button>
+                            <Button type="button" variant="secondary" id="edit-profile-cancel-btn">{t('cancel')}</Button>
                         </DialogClose>
-                        <DialogClose asChild>
-                            <Button type="submit">{t('saveChanges')}</Button>
-                        </DialogClose>
+                        <Button type="submit">{t('saveChanges')}</Button>
                     </DialogFooter>
                 </form>
             </Form>
@@ -523,7 +521,7 @@ function PayoutsCard({ user, onUpdate }: { user: User, onUpdate: () => void }) {
     }
 
     return (
-        <Card className="border-none bg-card/40 backdrop-blur-xl shadow-2xl rounded-[2.5rem] overflow-hidden">
+        <Card className="border-none bg-card/40 backdrop-blur-3xl shadow-2xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden ring-1 ring-white/10">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-xl font-bold tracking-tight"><Banknote className="h-5 w-5 text-primary" /> {t('payoutSettings')}</CardTitle>
                 <CardDescription>{t('payoutSettingsDesc')}</CardDescription>
@@ -611,7 +609,7 @@ function ReferralCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-200/20 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+        <Card className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-200/20 shadow-2xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden backdrop-blur-3xl ring-1 ring-white/10">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-indigo-900 text-xl font-bold tracking-tight">
                     <Gift className="h-5 w-5 text-indigo-600" />
@@ -623,8 +621,8 @@ function ReferralCard({ user }: { user: User }) {
             </CardHeader>
             <CardContent>
                 <div className="flex gap-2">
-                    <Input value={referralLink} readOnly className="bg-white/50 border-indigo-200 text-indigo-900" />
-                    <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0 border-indigo-200 hover:bg-white hover:text-indigo-700">
+                    <Input value={referralLink} readOnly className="bg-background/50 border-indigo-200 text-indigo-900" />
+                    <Button variant="outline" size="icon" onClick={handleCopy} className="shrink-0 border-indigo-200 hover:bg-background hover:text-indigo-700">
                         <Copy className="h-4 w-4" />
                     </Button>
                 </div>
@@ -687,7 +685,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
     }
 
     return (
-        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl">
+        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden backdrop-blur-3xl ring-1 ring-red-500/10">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-red-900 text-xl font-bold tracking-tight">
                     <ShieldCheck className="h-5 w-5 text-red-600" />
@@ -701,7 +699,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
                 {user.emergencyContacts && user.emergencyContacts.length > 0 ? (
                     <div className="grid gap-3">
                         {user.emergencyContacts.map((contact, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-4 bg-white/40 border border-white/5 shadow-inner rounded-[1rem] backdrop-blur-sm group/contact">
+                            <div key={idx} className="flex items-center justify-between p-4 bg-background/40 border border-white/5 shadow-inner rounded-[1rem] backdrop-blur-sm group/contact">
                                 <div>
                                     <p className="font-black italic tracking-tighter uppercase text-sm text-red-900/80">{contact.name} <span className="text-muted-foreground/50 text-[10px] lowercase tracking-normal">({contact.relation})</span></p>
                                     <p className="text-[10px] font-bold tracking-widest text-muted-foreground/60 font-mono mt-0.5">{contact.mobile}</p>
@@ -718,7 +716,7 @@ function EmergencyContactsCard({ user, onUpdate }: { user: User, onUpdate: () =>
 
                 {isAdding ? (
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-4 p-6 border border-white/5 rounded-[1.5rem] bg-white/60 backdrop-blur-md">
+                        <form onSubmit={form.handleSubmit(handleAddContact)} className="space-y-4 p-6 border border-white/5 rounded-[1.5rem] bg-background/60 backdrop-blur-md">
                             <h4 className="text-xs font-black italic tracking-tighter uppercase mb-4 text-red-900">{t('newContact')}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 <FormField name="name" control={form.control} render={({ field }) => (
@@ -802,7 +800,7 @@ function DeleteAccountCard({ user }: { user: User }) {
     };
 
     return (
-        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2.5rem] overflow-hidden backdrop-blur-xl mt-8">
+        <Card className="border-red-200/20 bg-red-500/5 shadow-2xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden backdrop-blur-3xl mt-8 ring-1 ring-red-500/10">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400 text-xl font-bold tracking-tight">
                     <AlertTriangle className="h-5 w-5" />
@@ -1013,7 +1011,7 @@ export default function ProfileClient() {
             transition={{ duration: 0.5 }}
             className="grid gap-8 max-w-full overflow-x-hidden px-4 mb-12 font-sans selection:bg-blue-500 selection:text-white bg-surface dark:bg-slate-950 text-on-surface min-h-screen pt-8 pb-16"
         >
-            <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
+            <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden ring-1 ring-white/10">
                 <div className="h-2 w-full bg-gradient-to-r from-primary via-primary/50 to-accent" />
                 <CardHeader>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
@@ -1154,7 +1152,7 @@ export default function ProfileClient() {
             
             {role === "Professional" && professionalProfile && (
                 <div className="grid gap-8">
-                    <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                    <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden ring-1 ring-white/10">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-2xl font-bold tracking-tight">{t('ProfessionalReputation')}</CardTitle>
                             <CardDescription className="text-base">{t('ProfessionalReputationDesc')}</CardDescription>
@@ -1287,7 +1285,7 @@ export default function ProfileClient() {
                     </Card>
 
                     <div className="grid md:grid-cols-2 gap-8">
-                        <Card className="border-none shadow-xl shadow-black/5 bg-surface-container-low dark:bg-slate-900 rounded-[2.5rem] overflow-hidden">
+                        <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[2rem] sm:rounded-[3rem] overflow-hidden ring-1 ring-white/10">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-xl font-bold tracking-tight">{t('mySkills')}</CardTitle>
                                 <CardDescription>{t('mySkillsDesc')}</CardDescription>
@@ -1308,7 +1306,7 @@ export default function ProfileClient() {
             {user && <ReferralCard user={user} />}
 
             {isclientOnly && (
-                <Card className="bg-surface-container dark:bg-slate-900 border-dashed">
+                <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border-dashed rounded-[2rem] sm:rounded-[3rem] ring-1 ring-white/10">
                     <CardHeader>
                         <CardTitle>{t('expandOpportunities')}</CardTitle>
                         <CardDescription>{t('expandOpportunitiesDesc')}</CardDescription>
@@ -1324,7 +1322,7 @@ export default function ProfileClient() {
             )}
 
             {isProfessionalOnly && (
-                <Card className="bg-surface-container dark:bg-slate-900 border-dashed">
+                <Card className="bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl border-dashed rounded-[2rem] sm:rounded-[3rem] ring-1 ring-white/10">
                     <CardHeader>
                         <CardTitle>{t('readyToHire')}</CardTitle>
                         <CardDescription>{t('readyToHireDesc')}</CardDescription>

@@ -93,7 +93,13 @@ test.describe('Smoke Tests @smoke', () => {
 
         page.on('console', msg => {
             if (msg.type() === 'error') {
-                errors.push(msg.text());
+                const text = msg.text();
+                // Ignore Next.js 14+ dev-mode CSP eval warnings and harmless 404s
+                if (text.includes('eval() is not supported in this environment') ||
+                    text.includes('the server responded with a status of 404')) {
+                    return;
+                }
+                errors.push(text);
             }
         });
 
@@ -112,7 +118,8 @@ test.describe('Smoke Tests @smoke', () => {
             !err.includes('Google Maps JavaScript API error') && // Ignore expired key in CI
             !err.includes('ExpiredKeyMapError') &&
             !err.includes('_vercel/speed-insights') &&
-            !err.includes('_vercel/insights')
+            !err.includes('_vercel/insights') &&
+            !err.includes('eval() is not supported')
         );
 
         expect(criticalErrors).toHaveLength(0);

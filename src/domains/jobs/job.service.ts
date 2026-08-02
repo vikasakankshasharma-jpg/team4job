@@ -516,10 +516,7 @@ export class JobService {
         const clientId = job.clientId;
         userRepository.incrementStats(clientId, { activeJobs: -1, completedJobs: 1 });
 
-        // Find amount for Professional earnings
-        const finalBid = job.bids?.find(b => (typeof b.professional === 'string' ? b.professional : b.professional?.id) === professionalId);
-        const amount = finalBid?.amount || 0;
-        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 });
 
 
 
@@ -567,10 +564,7 @@ export class JobService {
 
         // Data Aggregation: Update Stats
         userRepository.incrementStats(userId, { activeJobs: -1, completedJobs: 1 });
-
-        const winningBid = job.bids?.find(b => (typeof b.professional === 'string' ? b.professional : b.professional?.id) === professionalId);
-        const amount = winningBid?.amount || 0;
-        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1, totalEarnings: amount });
+        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 });
 
 
 
@@ -614,6 +608,22 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'Cancelled', userId, reason);
+
+        // Auto-refund if funded
+        const escrow = await paymentService.getEscrowStatus(jobId);
+        if (escrow.status === 'funded' || escrow.status === 'initiated') {
+            try {
+                await paymentService.processRefund(jobId, reason);
+            } catch (e) {
+                console.error('[JobService] Failed to auto-refund cancelled job', e);
+            }
+        }
+
+        // Decrement active jobs stats
+        userRepository.incrementStats(job.clientId, { activeJobs: -1 }).catch(() => {});
+        if (job.awardedProfessionalId) {
+            userRepository.incrementStats(job.awardedProfessionalId, { activeJobs: -1 }).catch(() => {});
+        }
     }
 
     /**

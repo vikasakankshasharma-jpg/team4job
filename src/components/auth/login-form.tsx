@@ -144,7 +144,7 @@ export function LoginForm() {
                    placeholder={t('emailMobilePlaceholder')} 
                    {...field} 
                    disabled={!!lockoutUntil} 
-                   className="h-20 rounded-[1.5rem] bg-surface-container-low/40 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 font-black text-lg italic tracking-tight" 
+                   className="h-20 rounded-[1.5rem] bg-surface-container-low/40 dark:bg-slate-900/60 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 font-black text-lg italic tracking-tight text-foreground" 
                    autoComplete="off" 
                    aria-label={t('emailMobileLabel')} 
                    data-testid="login-identifier" 
@@ -167,7 +167,7 @@ export function LoginForm() {
                     placeholder={t('passwordPlaceholder')}
                     {...field}
                     disabled={!!lockoutUntil}
-                    className="h-20 rounded-[1.5rem] bg-surface-container-low/40 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 pr-20 font-black text-lg italic tracking-tight"
+                    className="h-20 rounded-[1.5rem] bg-surface-container-low/40 dark:bg-slate-900/60 border-none ring-1 ring-white/5 focus:ring-primary/20 focus:bg-surface-container-low transition-all px-8 pr-20 font-black text-lg italic tracking-tight text-foreground"
                     autoComplete="new-password"
                     aria-label={t('passwordLabel')}
                     data-testid="login-password"

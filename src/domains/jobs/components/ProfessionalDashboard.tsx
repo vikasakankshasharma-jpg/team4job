@@ -134,7 +134,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                     <Badge variant="outline" className="px-6 py-2 rounded-full border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.5em] bg-primary/10 backdrop-blur-3xl italic">
                         COMMANDER // ACTIVE PRODUCTION HUB
                     </Badge>
-                    <h1 className="text-6xl sm:text-7xl md:text-8xl font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85] mb-4">
+                    <h1 className="text-4xl sm:text-6xl md:text-8xl font-black italic tracking-tighter uppercase bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent leading-[0.85] mb-4">
                         {tDash('welcomeUser', { name: user?.name || 'User' })}
                     </h1>
                     <div className="flex items-center gap-3 text-muted-foreground font-medium text-lg italic opacity-70 decoration-primary/20 underline underline-offset-8">
@@ -157,7 +157,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                 >
                 <Card className="border-none bg-warning/5 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden relative group ring-1 ring-warning/20">
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-warning to-transparent opacity-30" />
-                    <CardHeader className="flex-row items-center gap-8 space-y-0 p-12">
+                    <CardHeader className="flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-8 space-y-0 p-6 sm:p-12">
                         <div className="p-6 rounded-[2rem] bg-warning/10 shadow-inner group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700 relative overflow-hidden">
                             <div className="absolute inset-0 bg-warning/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                             <ShieldCheck className="h-12 w-12 text-warning relative z-10" />
@@ -167,7 +167,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                             <CardDescription className="text-lg text-muted-foreground font-medium leading-relaxed opacity-60 italic">{tDash('verifyProfessionalDesc')}</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent className="px-12 pb-12">
+                    <CardContent className="px-6 pb-6 sm:px-12 sm:pb-12 flex justify-center sm:justify-start">
                         <Button asChild variant="warning" className="h-16 px-12 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-warning/20 hover:shadow-warning/40 transition-all italic">
                             <Link href="/dashboard/verify-professional" className="flex items-center">
                                 {tDash('verifyNow')} <ArrowRight className="ml-4 h-6 w-6" />
@@ -221,7 +221,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
 
                 <div className="flex flex-col gap-8">
                     <motion.div whileHover={{ y: -5 }} className="h-full">
-                        <Card className="flex flex-col justify-center items-center text-center p-12 border-none bg-success/5 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[3rem] relative overflow-hidden group ring-1 ring-white/5 shadow-inner h-full">
+                        <Card className="flex flex-col justify-center items-center text-center p-6 sm:p-12 border-none bg-success/5 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[2rem] sm:rounded-[3rem] relative overflow-hidden group ring-1 ring-white/5 shadow-inner h-full">
                             <div className="absolute top-0 right-0 p-10 opacity-5 scale-150 rotate-12 group-hover:scale-[2] transition-transform duration-1000">
                                 <TrendingUp className="h-32 w-32 text-success" />
                             </div>
@@ -230,13 +230,13 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                                 <IndianRupee className="h-14 w-14 text-success relative z-10" />
                             </div>
                             <p className="text-[10px] font-black tracking-[0.4em] text-success uppercase italic opacity-40 mb-2">{t('totalEarnings')}</p>
-                            <h3 className="text-7xl font-black italic tracking-tighter text-on-surface leading-none">₹{totalEarnings.toLocaleString()}</h3>
+                            <h3 className="text-5xl sm:text-7xl font-black italic tracking-tighter text-on-surface leading-none">₹{totalEarnings.toLocaleString()}</h3>
                             <p className="text-[10px] text-muted-foreground/40 mt-6 font-black uppercase tracking-[0.2em] italic">{t('totalEarningsDesc')}</p>
                         </Card>
                     </motion.div>
 
                     <motion.div whileHover={{ y: -5 }} className="h-full">
-                        <Card className="flex flex-col justify-center items-center text-center p-12 border-none bg-primary/5 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[3rem] relative overflow-hidden group ring-1 ring-white/5 shadow-inner h-full">
+                        <Card className="flex flex-col justify-center items-center text-center p-6 sm:p-12 border-none bg-primary/5 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[2rem] sm:rounded-[3rem] relative overflow-hidden group ring-1 ring-white/5 shadow-inner h-full">
                             <div className="absolute top-0 right-0 p-10 opacity-5 scale-150 rotate-12 group-hover:scale-[2] transition-transform duration-1000">
                                 <Clock className="h-32 w-32 text-primary" />
                             </div>
@@ -245,7 +245,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                                 <Zap className="h-14 w-14 text-primary relative z-10" />
                             </div>
                             <p className="text-[10px] font-black tracking-[0.4em] text-primary uppercase italic opacity-40 mb-2">{t('projectedEarnings')}</p>
-                            <h3 className="text-7xl font-black italic tracking-tighter text-on-surface leading-none">₹{pendingPayments.toLocaleString()}</h3>
+                            <h3 className="text-5xl sm:text-7xl font-black italic tracking-tighter text-on-surface leading-none">₹{pendingPayments.toLocaleString()}</h3>
                             <p className="text-[10px] text-muted-foreground/40 mt-6 font-black uppercase tracking-[0.2em] italic">{t('projectedEarningsDesc')}</p>
                         </Card>
                     </motion.div>
@@ -259,9 +259,9 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
 
             {/* Bottom action cards */}
             <section className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
-                <Card data-tour="find-project-card" className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden group ring-1 ring-white/5 relative">
+                <Card data-tour="find-project-card" className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[2rem] sm:rounded-[3rem] overflow-hidden group ring-1 ring-white/5 relative">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-transparent opacity-30" />
-                    <CardHeader className="p-12 pb-6">
+                    <CardHeader className="p-6 pb-4 sm:p-12 sm:pb-6">
                         <div className="flex items-center gap-6 mb-4">
                             <div className="p-5 rounded-[1.25rem] bg-primary/10 text-primary shadow-inner group-hover:scale-110 transition-transform">
                                 <Briefcase className="h-8 w-8" />
@@ -272,7 +272,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                             {t('findNextProjectDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="px-12 pb-12">
+                    <CardContent className="px-6 pb-6 sm:px-12 sm:pb-12">
                         <Button asChild className="h-16 px-12 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all italic">
                             <Link href="/dashboard/jobs">
                                 {t('browseJobs')} <ArrowRight className="ml-4 h-6 w-6 transition-transform group-hover:translate-x-2" />
@@ -283,9 +283,9 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
 
                 <RecentActivity />
 
-                <Card data-tour="manage-profile-card" className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden group ring-1 ring-white/5 relative">
+                <Card data-tour="manage-profile-card" className="border-none bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl shadow-[0_40px_100px_rgba(0,0,0,0.1)] rounded-[2rem] sm:rounded-[3rem] overflow-hidden group ring-1 ring-white/5 relative">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-accent to-transparent opacity-30" />
-                    <CardHeader className="p-12 pb-6">
+                    <CardHeader className="p-6 pb-4 sm:p-12 sm:pb-6">
                         <div className="flex items-center gap-6 mb-4">
                             <div className="p-5 rounded-[1.25rem] bg-accent/10 text-accent shadow-inner group-hover:scale-110 transition-transform">
                                 <User2 className="h-8 w-8" />
@@ -296,7 +296,7 @@ export function ProfessionalDashboard({ stats, transactions, loading = false }: 
                             {tDash('manageProfileDesc')}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="px-12 pb-12">
+                    <CardContent className="px-6 pb-6 sm:px-12 sm:pb-12">
                         <Button asChild variant="outline" className="h-16 px-12 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.4em] border-primary/20 hover:bg-primary/5 transition-all shadow-xl italic">
                             <Link href="/dashboard/profile">
                                 {tDash('goToProfile')} <ArrowRight className="ml-4 h-6 w-6 transition-transform group-hover:translate-x-2" />

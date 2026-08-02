@@ -129,7 +129,7 @@ export default function CalendarClient() {
                             {selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : t('selectDate')}
                         </CardTitle>
                         <CardDescription>
-                            {t('jobsScheduled', { count: selectedJobs.length })}
+                            {t('jobsScheduled', { count: selectedJobs.length, s: selectedJobs.length === 1 ? '' : 's' })}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

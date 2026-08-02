@@ -87,7 +87,7 @@ export const ReputationPointCard = ({ points, tier, history, className }: Reputa
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
                             <div className={cn("p-5 rounded-[1.5rem] shadow-inner backdrop-blur-md relative overflow-hidden group/icon", config.bg)}>
-                                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover/icon:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-background/5 opacity-0 group-hover/icon:opacity-100 transition-opacity" />
                                 <config.icon className={cn("h-8 w-8 relative z-10", config.color)} />
                             </div>
                             <div>

@@ -7,48 +7,49 @@
  * lambda instances. For production, use an external store like Redis/Upstash.
  */
 
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+
 interface RateLimitConfig {
     interval: number; // Window size in milliseconds
-    uniqueTokenPerInterval: number; // Max unique users per interval (to prevent memory leaks)
-}
-
-interface RateLimitContext {
-    check: (limit: number, token: string) => Promise<void>;
+    uniqueTokenPerInterval: number; // Max unique users per interval
 }
 
 export function rateLimit(config: RateLimitConfig) {
-    const tokenCache = new Map<string, number[]>();
-    let intervalStart = Date.now();
-
     return {
-        check: (limit: number, token: string) =>
-            new Promise<void>((resolve, reject) => {
-                // Bypass rate limiting in E2E mode to prevent flakiness during automated tests
-                if (process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NODE_ENV === 'test') {
-                    return resolve();
-                } else {
+        check: async (limit: number, token: string) => {
+            // Bypass rate limiting in E2E mode to prevent flakiness during automated tests
+            if (process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NODE_ENV === 'test') {
+                return;
+            }
+
+            try {
+                const db = getAdminDb();
+                const sanitizedToken = token.replace(/[^a-zA-Z0-9_-]/g, '_');
+                const ref = db.collection('_system_rate_limits').doc(sanitizedToken);
+
+                await db.runTransaction(async (t) => {
+                    const doc = await t.get(ref);
+                    const now = Date.now();
+                    const startWindow = now - config.interval;
+
+                    let timestamps: number[] = doc.exists ? (doc.data()?.timestamps || []) : [];
+                    // Filter timestamps within the current sliding window
+                    timestamps = timestamps.filter(ts => ts > startWindow);
+
+                    if (timestamps.length >= limit) {
+                        throw new Error('Rate limit exceeded');
+                    }
+
+                    timestamps.push(now);
+                    t.set(ref, { timestamps, updatedAt: now }, { merge: true });
+                });
+            } catch (error: any) {
+                if (error.message === 'Rate limit exceeded') {
+                    throw error;
                 }
-
-                const now = Date.now();
-
-                // Reset interval if needed to prune memory
-                if (now - intervalStart > config.interval) {
-                    intervalStart = now;
-                    tokenCache.clear();
-                }
-
-                const timestampHistory = tokenCache.get(token) || [];
-                // Filter timestamps within the current sliding window [now - interval, now]
-                const startWindow = now - config.interval;
-                const windowTimestamps = timestampHistory.filter(timestamp => timestamp > startWindow);
-
-                if (windowTimestamps.length >= limit) {
-                    reject(new Error('Rate limit exceeded'));
-                } else {
-                    windowTimestamps.push(now);
-                    tokenCache.set(token, windowTimestamps);
-                    resolve();
-                }
-            }),
+                // If Firestore fails (e.g. timeout), allow request to pass rather than blocking legitimate traffic
+                console.warn('[RateLimit] Distributed check failed, bypassing:', error);
+            }
+        },
     };
 }

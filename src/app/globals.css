@@ -63,16 +63,64 @@
     --trust-blocked: 0 84.2% 60.2%;
   }
 
+  /* Classic Dark Mode - Pure Black & White, minimal distraction */
   .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144 61% 91%;
+    --warning: 48 96% 89%;
+    --warning-foreground: 38 92% 50%;
+    --info: 217.2 91.2% 59.8%;
+    --info-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 98%;
+    --chart-1: 0 0% 98%;
+    --chart-2: 0 0% 70%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 30%;
+    --chart-5: 0 0% 15%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 98%;
+
+    --status-open: 0 0% 98%;
+    --status-awarded: 0 0% 70%;
+    --status-in-progress: 0 0% 50%;
+    --status-completed: 142.1 70.6% 45.3%;
+    --status-cancelled: 0 84% 60%;
+    --status-pending: 0 0% 30%;
+  }
+
+  /* Modern Mode - Premium Glassmorphism & Neon Accents */
+  .modern {
     --background: 240 5% 6%;
-    /* Softer dark background */
     --foreground: 0 0% 98%;
     --card: 240 5% 8%;
     --card-foreground: 0 0% 98%;
     --popover: 240 5% 6%;
     --popover-foreground: 0 0% 98%;
-    --primary: 226 70% 58%;
-    /* Punchy Premium Blue (#4F46E5 style) */
+    --primary: 226 70% 58%; /* Punchy Premium Blue */
     --primary-foreground: 0 0% 100%;
     --secondary: 240 3.7% 12%;
     --secondary-foreground: 0 0% 98%;
@@ -105,7 +153,6 @@
     --sidebar-border: 240 3.7% 16%;
     --sidebar-ring: 226 70% 58%;
 
-    /* Dark mode status colors */
     --status-open: 217.2 91.2% 59.8%;
     --status-awarded: 47.9 95.8% 53.1%;
     --status-in-progress: 263.4 70% 50.4%;

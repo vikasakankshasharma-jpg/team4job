@@ -16,7 +16,7 @@ export async function POST(request: Request) {
             cookieStore.set('auth-token', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                sameSite: 'strict',
                 path: '/',
                 maxAge: 3600 // 1 hour
             });
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, message: 'Token removed' });
         }
     } catch (error: any) {
+        console.error('[Session API Route] Error setting token:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 }

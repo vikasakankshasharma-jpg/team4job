@@ -368,7 +368,7 @@ export type Transaction = Partial<SchemaEnvelope> & {
   clientFee: number; // The fee charged to the client
   totalPaidByClient: number; // The total amount charged to the client (amount + clientFee + travelTip)
   payoutToProfessional: number; // The net amount paid out to the Professional (amount - commission + travelTip)
-  status: 'initiated' | 'funded' | 'released' | 'refunded' | 'failed' | 'disputed';
+  status: 'initiated' | 'funded' | 'released' | 'refunded' | 'failed' | 'disputed' | 'cancelled';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
   payoutTransferId?: string;

@@ -186,12 +186,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
           
-          await fetch('/api/auth/session', {
+          const response = await fetch('/api/auth/session', {
             method: 'POST',
             body: JSON.stringify({ token }),
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal
-          }).finally(() => clearTimeout(timeoutId));
+          });
+          clearTimeout(timeoutId);
+          if (!response.ok) {
+            const errText = await response.text();
+            console.error('[useUser] Session sync returned non-OK status:', response.status, errText);
+          }
         } catch (e: any) {
           // Token revoked, expired, or user disabled — sign out and let onAuthStateChanged handle redirect
           const isAuthError = e?.code?.startsWith('auth/') ||
@@ -527,12 +532,17 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
           
-          await fetch('/api/auth/session', {
+          const response = await fetch('/api/auth/session', {
             method: 'POST',
             body: JSON.stringify({ token }),
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal
-          }).finally(() => clearTimeout(timeoutId));
+          });
+          clearTimeout(timeoutId);
+          if (!response.ok) {
+            const errText = await response.text();
+            console.error('[useUser] login() Session sync returned non-OK status:', response.status, errText);
+          }
         } catch (err) {
           console.error('[useUser] Session sync failed or timed out:', err);
         }
