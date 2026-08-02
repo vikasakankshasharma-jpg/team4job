@@ -96,7 +96,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await placeBidButton.click();
 
     // Use named role to avoid strict mode violation from Next.js error overlay dialog
-    const bidDialog = page.getByRole('dialog', { name: /Place a Bid|Place Bid/i });
+    const bidDialog = page.locator('div[role="dialog"]').filter({ has: page.locator('input[name="amount"]') });
     await bidDialog.waitFor({ state: 'visible' });
     await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
     await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
@@ -121,14 +121,18 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await helper.auth.loginAsClient();
     await page.goto(`/dashboard/jobs/${jobId}`);
 
-    // Wait for bids to load via Firestore real-time subscription
-    try {
-        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 15000 });
-    } catch {
-        console.log('[Mobile] Bids not visible, reloading page...');
+    // Click Bids tab if present, then retry waiting for bids (Firestore subscription lag)
+    const bidsTab = page.getByTestId('bids-tab').or(page.getByRole('tab', { name: /Bids/i })).first();
+    if (await bidsTab.isVisible({ timeout: 3000 }).catch(() => false)) await bidsTab.click();
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const ok = await page.getByTestId('bid-card-wrapper').first().isVisible({ timeout: 20000 }).catch(() => false);
+        if (ok) break;
+        console.log(`[Mobile] Bids not visible (attempt ${attempt + 1}/3), reloading...`);
         await page.reload();
-        await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+        await page.waitForTimeout(3000);
+        if (await bidsTab.isVisible({ timeout: 2000 }).catch(() => false)) await bidsTab.click();
     }
+    await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 60000 });
 
     await page.getByTestId('send-offer-button').first().click();
     await helper.job.handleAuthorizationModal();
