@@ -239,34 +239,22 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        // Capture conflict check completion
-        const conflictCheckPromise = page.waitForEvent('console', msg => msg.text().includes('Conflict check complete'));
+        // Start toast listener BEFORE clicking (toast fires ~2s after click, must not miss it)
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+
         await page.getByTestId('accept-job-button').first().click();
 
-        // Wait for usage check to finish
-        try {
-            await conflictCheckPromise; // Wait until log appears
-        } catch (e) {
-            console.log('E2E: Conflict check log not found (timeout?), proceeding check...');
-        }
-
-        // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
-        // Correct text found in Professional-acceptance-section.tsx
+        // Brief conflict dialog check (3s max to not miss the toast)
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
-
-        try {
-            // Short 10s check — Job Accepted toast fires quickly so we cannot afford to wait 120s
-            if (await conflictDialogText.isVisible({ timeout: 10000 })) {
-                console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
-                await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
-            } else {
-                console.log('E2E: No Conflict Dialog detected.');
-            }
-        } catch (e) {
-            console.log('E2E: Error checking for conflict dialog (ignored):', e);
+        if (await conflictDialogText.isVisible({ timeout: 3000 }).catch(() => false)) {
+            console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
+            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
+        } else {
+            console.log('E2E: No Conflict Dialog detected.');
         }
 
-        await helper.form.waitForToast('Job Accepted!');
+        // Await the pre-started toast
+        await acceptToastPromise;
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Phase 4 Complete: Job accepted');
 

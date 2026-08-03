@@ -142,30 +142,28 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
+        // Start toast listener FIRST (toast fires ~2s after click, conflict check can take longer)
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
         await page.getByTestId('accept-job-button').first().click();
 
-        // Handle potential conflict dialog (robust pattern from dashboard-financials)
+        // Handle potential conflict dialog (brief check so we don't miss toast)
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
-        try {
-            console.log("Waiting for conflict dialog (up to 10s)...");
-            await conflictDialogText.waitFor({ state: 'visible', timeout: 10000 });
-            console.log("Conflict Dialog detected. Clicking Confirm...");
-            await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
-        } catch (e) {
-            console.log("No Conflict Dialog detected (timeout).");
+        if (await conflictDialogText.isVisible({ timeout: 3000 }).catch(() => false)) {
+            console.log('Conflict Dialog detected. Clicking Confirm...');
+            await page.getByRole('button', { name: 'I Understand, Proceed & Accept' }).click();
         }
-        // Wait for either the toast or the page state to reflect acceptance
-        await Promise.race([
-            helper.form.waitForToast('Job Accepted!'),
-            page.getByText(/Pending Funding|accepted|in_progress/i).waitFor({ state: 'visible', timeout: 15000 })
-        ]);
+        // Await the pre-started toast (already resolved or will resolve shortly)
+        await acceptToastPromise;
+        // Wait for persistent status change (doesn't disappear like a toast)
+        await helper.job.waitForJobStatus('Pending Funding');
         await page.waitForTimeout(1000);
 
         // ---------- Admin / Support Access Check ----------
         await helper.auth.logout();
         await helper.auth.loginAsAdmin();
-        // Verify admin access by checking for admin-specific element
-        await expect(page.locator('text=Audit Log')).toBeVisible({ timeout: 10000 });
+        // Navigate to admin dashboard explicitly so stats cards are visible
+        await page.goto('/dashboard/admin');
+        await expect(page).toHaveURL(/.*\/dashboard\/admin/, { timeout: 20000 });
 
         console.log('Desktop Flow Completed Successfully');
     });

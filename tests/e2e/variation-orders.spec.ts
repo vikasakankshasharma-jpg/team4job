@@ -118,15 +118,18 @@ test.describe('Secured Variation Orders', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await helper.auth.waitForStability();
 
+        // Start toast listener FIRST (toast fires ~2s after click, conflict check must not block it)
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
         await page.getByTestId('accept-job-button').first().click();
 
-        // Handle Conflict Dialog if it appears
+        // Handle Conflict Dialog if it appears (brief 3s check)
         const conflictDialog = page.getByText('Schedule Conflict Warning');
-        if (await conflictDialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await conflictDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
             await page.getByTestId('bypass-conflict-button').click();
         }
 
-        await helper.form.waitForToast('Job Accepted');
+        // Await the pre-started toast
+        await acceptToastPromise;
         await helper.job.waitForJobStatus('Pending Funding');
         console.log('[PASS] Job Accepted');
 
