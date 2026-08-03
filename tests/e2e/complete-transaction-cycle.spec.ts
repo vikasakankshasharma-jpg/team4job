@@ -251,13 +251,12 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         }
 
         // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
-        // Handle potential Conflict Dialog (if previous test runs left awarded jobs)
         // Correct text found in Professional-acceptance-section.tsx
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
 
         try {
-            // Short timeout to check presence - extended to 120s because conflict check query can be VERY slow
-            if (await conflictDialogText.isVisible({ timeout: 120000 })) {
+            // Short 10s check — Job Accepted toast fires quickly so we cannot afford to wait 120s
+            if (await conflictDialogText.isVisible({ timeout: 10000 })) {
                 console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
                 await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
             } else {

@@ -110,11 +110,8 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         await bidDialog.waitFor({ state: 'hidden' });
 
-        // Wait for either the toast or a page-state indicator that bid was placed
-        await Promise.race([
-            helper.form.waitForToast('Bid Placed!'),
-            page.getByText(/Bid Placed|bid_placed|Your bid/i).waitFor({ state: 'visible', timeout: 15000 })
-        ]);
+        // Wait for bid placed toast (strict: only toast locator)
+        await helper.form.waitForToast('Bid Placed!');
         await page.waitForTimeout(1000);
 
         // ---------- Client Awards ----------
