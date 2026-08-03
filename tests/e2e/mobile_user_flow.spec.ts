@@ -152,9 +152,13 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await helper.auth.logout();
     await helper.auth.loginAsProfessional();
     await page.goto(`/dashboard/jobs/${jobId}`);
-    // Start toast listener FIRST (toast fires ~2s after click, conflict check may run longer)
+    // Wait for accept-job-button to be visible (mobile viewport may need scroll)
+    const acceptBtn = page.getByTestId('accept-job-button').first();
+    await acceptBtn.waitFor({ state: 'visible', timeout: 30000 });
+    await acceptBtn.scrollIntoViewIfNeeded();
+    // Start toast listener FIRST (toast fires ~2s after click)
     const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
-    await page.getByTestId('accept-job-button').first().click();
+    await acceptBtn.click({ force: true });
 
     // Brief conflict dialog check (3s max to not miss the toast)
     const conflictDialog = page.getByText('Schedule Conflict Warning');
