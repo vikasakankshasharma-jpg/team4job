@@ -1710,10 +1710,12 @@ export class JobHelper {
     }
 
     async handleAuthorizationModal() {
-        const authModal = this.page.getByText('Official Authorization');
-        if (await authModal.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await this.page.getByTestId('auth-modal-sign').fill('Client Name');
-            await this.page.getByRole('button', { name: /Authorize Offer/i }).click();
+        // The award confirmation dialog has NO signature input — just a confirm button.
+        // Button text is "Official Authorization" (not "Authorize Offer").
+        // Toast on success is "MISSION AUTHORIZED".
+        const authBtn = this.page.getByRole('button', { name: /Official Authorization/i });
+        if (await authBtn.isVisible({ timeout: 10000 }).catch(() => false)) {
+            await authBtn.click();
         }
     }
 

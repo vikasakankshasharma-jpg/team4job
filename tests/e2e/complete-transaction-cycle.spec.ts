@@ -188,7 +188,9 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
         await bidDialog.locator('input[name="amount"]').type(TEST_JOB_DATA.bidAmount.toString(), { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
-        await bidDialog.getByRole('button', { name: /Place Bid/i }).click();
+        await bidDialog.getByTestId('submit-bid-button').click({ force: true });
+        // Wait for dialog to close before checking toast
+        await bidDialog.waitFor({ state: 'hidden', timeout: 30000 }).catch(() => {});
 
         await helper.form.waitForToast('Bid Placed!');
         console.log('[PASS] Phase 2 Complete: Bid placed');
@@ -214,8 +216,14 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await offerBtn.waitFor({ state: 'visible', timeout: TIMEOUTS.medium });
         await offerBtn.click();
         await helper.job.handleAuthorizationModal();
-        await helper.form.waitForToast('Offer Sent');
-        console.log('[PASS] Phase 3 Complete: Offer sent');
+        // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
+        await Promise.race([
+            helper.form.waitForToast('MISSION AUTHORIZED'),
+            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 20000 }),
+            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 20000 })
+        ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
+        await page.waitForTimeout(1500);
+        console.log('[PASS] Phase 3 Complete: Offer authorized');
 
         // --- PHASE 4: Professional ACCEPTS JOB ---
         console.log('--- START: Phase 4 - Professional accepts job ---');

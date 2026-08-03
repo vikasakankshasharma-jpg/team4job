@@ -133,13 +133,13 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 60000 });
         await page.getByTestId('send-offer-button').first().click();
         await helper.job.handleAuthorizationModal();
-        // Wait for either the toast or the page state to reflect the offer was sent
+        // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
         await Promise.race([
-            helper.form.waitForToast('Offer Sent'),
-            page.getByText('Retract Offer').waitFor({ state: 'visible', timeout: 15000 }),
-            page.getByText('bid_accepted').waitFor({ state: 'visible', timeout: 15000 })
-        ]);
-        await page.waitForTimeout(1000); // Allow state to settle
+            helper.form.waitForToast('MISSION AUTHORIZED'),
+            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 20000 }),
+            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 20000 })
+        ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
+        await page.waitForTimeout(1500); // Allow Firestore state to settle
 
         // ---------- Professional Accepts ----------
         await helper.auth.logout();

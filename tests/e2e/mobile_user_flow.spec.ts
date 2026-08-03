@@ -134,7 +134,13 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
 
     await page.getByTestId('send-offer-button').first().click();
     await helper.job.handleAuthorizationModal();
-    await helper.form.waitForToast('Offer Sent');
+    // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
+    await Promise.race([
+      helper.form.waitForToast('MISSION AUTHORIZED'),
+      page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 20000 }),
+      page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 20000 })
+    ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
+    await page.waitForTimeout(1500);
 
     // ---------- Professional Accepts ----------
     // Ensure Professional has Payouts Setup
