@@ -324,7 +324,17 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // --- PHASE 7: Professional COMPLETES WORK ---
         console.log('--- START: Phase 7 - Professional completes work ---');
         
-        await expect(completionSection).toBeVisible();
+        // completionSection was previously undefined — define it here
+        const completionSection = page.getByTestId('professional-completion-section');
+        // The section appears after status is In Progress; may need a reload
+        try {
+            await expect(completionSection).toBeVisible({ timeout: 15000 });
+        } catch {
+            console.log('[INFO] Phase 7: Completion section not visible, reloading...');
+            await page.reload();
+            await helper.job.waitForJobStatus('In Progress');
+            await expect(completionSection).toBeVisible({ timeout: TIMEOUTS.long });
+        }
         await page.locator('input[type="file"]').first().setInputFiles({
             name: 'proof.png',
             mimeType: 'image/png',
