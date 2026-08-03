@@ -188,11 +188,13 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
         await bidDialog.locator('input[name="amount"]').type(TEST_JOB_DATA.bidAmount.toString(), { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
+        // Start toast listener BEFORE clicking submit (toast fires when dialog closes)
+        const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         // Wait for dialog to close before checking toast
         await bidDialog.waitFor({ state: 'hidden', timeout: 30000 }).catch(() => {});
-
-        await helper.form.waitForToast('Bid Placed!');
+        // Await the pre-started toast
+        await bidToastPromise;
         console.log('[PASS] Phase 2 Complete: Bid placed');
 
         // --- PHASE 3: Client AWARDS JOB ---

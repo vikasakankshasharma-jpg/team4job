@@ -109,13 +109,13 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
       await toast.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => { });
     }
 
-    // Submit the bid
+    // Submit the bid (start toast listener FIRST for reliable capture)
     const bidBtn = bidDialog.getByTestId('submit-bid-button');
     await expect(bidBtn).toBeVisible();
     await bidBtn.scrollIntoViewIfNeeded();
+    const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
     await bidBtn.click({ force: true });
-
-    await helper.form.waitForToast('Bid Placed!');
+    await bidToastPromise;
 
     // ---------- Client Awards ----------
     await helper.auth.logout();

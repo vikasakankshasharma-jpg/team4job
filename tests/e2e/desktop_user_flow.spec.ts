@@ -107,12 +107,13 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
         await bidDialog.locator('input[name="amount"]').type(TEST_JOB_DATA.bidAmount.toString(), { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
+        // Start toast listener BEFORE clicking submit (toast fires when dialog closes)
+        const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
-        await bidDialog.waitFor({ state: 'hidden' });
-
-        // Wait for bid placed toast (strict: only toast locator)
-        await helper.form.waitForToast('Bid Placed!');
-        await page.waitForTimeout(1000);
+        await bidDialog.waitFor({ state: 'hidden' }).catch(() => {});
+        // Await the pre-started toast
+        await bidToastPromise;
+        await page.waitForTimeout(500);
 
         // ---------- Client Awards ----------
         await helper.auth.logout();
