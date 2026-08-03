@@ -270,13 +270,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // Wait for dialog to open
         await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15000 });
 
-        // Bypass payment form using global shim
-        await page.waitForFunction(() => (window as any).e2e_directFundJob !== undefined);
-        await page.evaluate(async () => {
-            console.log("Triggering e2e_directFundJob from Playwright");
-            await page.getByTestId('e2e-direct-fund').click({ force: true });
-        });
-        await helper.form.waitForToast('Test Mode: Payment Initiated');
+        // Bypass payment form using E2E direct-fund button
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await helper.form.waitForToast('Test Mode: Payment Initiated');
 
         await page.waitForTimeout(5000); // Stabilization

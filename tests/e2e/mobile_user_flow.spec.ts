@@ -152,40 +152,24 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await helper.auth.logout();
     await helper.auth.loginAsProfessional();
     await page.goto(`/dashboard/jobs/${jobId}`);
+    // Start toast listener FIRST (toast fires ~2s after click, conflict check may run longer)
+    const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
     await page.getByTestId('accept-job-button').first().click();
 
-    // Wait for React state to settle after button click
-    await page.waitForTimeout(1500);
-
-    // Verify conflict dialog appears - check multiple times to handle async rendering
+    // Brief conflict dialog check (3s max to not miss the toast)
     const conflictDialog = page.getByText('Schedule Conflict Warning');
-    console.log("Waiting for conflict dialog...");
-    let dialogVisible = false;
-
-    // Try multiple times with short waits to catch the dialog as it appears
-    for (let i = 0; i < 3; i++) {
-      dialogVisible = await conflictDialog.isVisible({ timeout: 5000 }).catch(() => false);
-      if (dialogVisible) break;
-      await page.waitForTimeout(1000);
-    }
-
-    if (dialogVisible) {
-      console.log("Conflict dialog visible!");
-      const btn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
+    if (await conflictDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('Conflict dialog visible! Clicking Proceed...');
+      const btn = page.getByRole('button', { name: 'I Understand, Proceed & Accept' });
       await btn.click();
-      console.log("Clicked Proceed button.");
-      await expect(conflictDialog).not.toBeVisible({ timeout: 10000 });
-      console.log("Dialog closed.");
     } else {
-      console.log("Info: Conflict dialog NOT visible (No conflict detected).");
+      console.log('Info: Conflict dialog NOT visible (No conflict detected).');
     }
 
-    // Wait for acceptance to complete - backend processing
-    await page.waitForTimeout(3000);
-
-    // Conflict resolution involves backend batch writes, can be slow
-    // Wait for UI to update instead of relying on toast
-    await expect(page.getByText('Pending Funding')).toBeVisible({ timeout: 30000 });
+    // Await the pre-started toast
+    await acceptToastPromise;
+    // Use data-status attribute (reliable regardless of CSS text-transform)
+    await helper.job.waitForJobStatus('Pending Funding');
 
     // ---------- Admin / Support Access Check ----------
     await helper.auth.logout();
