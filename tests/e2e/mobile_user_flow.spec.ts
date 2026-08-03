@@ -151,6 +151,8 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
 
     await helper.auth.logout();
     await helper.auth.loginAsProfessional();
+    // Wait for dashboard redirect to complete (matches CTC Phase 4 pattern that passes)
+    await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
     await page.goto(`/dashboard/jobs/${jobId}`);
     // Wait for accept-job-button to be visible (mobile viewport may need scroll)
     const acceptBtn = page.getByTestId('accept-job-button').first();

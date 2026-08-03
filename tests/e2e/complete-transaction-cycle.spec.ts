@@ -408,8 +408,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // Wait for invoice page to fully load and render content
         await invoicePage.waitForTimeout(1000);
 
-        // Check for content in the new tab
-        await expect(invoicePage.getByText('Billed To (Client):')).toBeVisible({ timeout: TIMEOUTS.medium });
+        // Check for content in the new tab (no trailing colon — source renders "Billed To (Client)" without colon)
+        await expect(invoicePage.getByText(/Billed To.*Client/i)).toBeVisible({ timeout: TIMEOUTS.medium });
         console.log('[PASS] Service Invoice Page Verified');
         await invoicePage.close();
 
