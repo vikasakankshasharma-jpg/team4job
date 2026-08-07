@@ -915,6 +915,8 @@ jobs:
           DO_FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           NEXT_PUBLIC_USE_EMULATOR: true
           NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
+          ALLOW_E2E_SEED: true
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
@@ -923,7 +925,7 @@ jobs:
         run: |
           echo "Waiting for Next.js on port 3000..."
           for i in $(seq 1 60); do
-            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
               echo "Next.js is ready!"
               break
             fi
@@ -936,7 +938,7 @@ jobs:
           done
           echo "Waiting for Firebase Auth Emulator on port 9099..."
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:9099 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1; then
               echo "Firebase Emulator is ready!"
               break
             fi
