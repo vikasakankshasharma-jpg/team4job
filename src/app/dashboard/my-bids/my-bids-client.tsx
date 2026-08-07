@@ -72,7 +72,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
   const myBidStatus = getMyBidStatus(job, user);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
-  const canWithdraw = job.status === 'Open for Bidding';
+  const canWithdraw = job.status === 'Open for Bidding' || job.status?.toLowerCase() === 'open';
 
   const handleDelete = async () => {
     if (!confirm(t('withdrawConfirm'))) return;
@@ -130,7 +130,7 @@ function MyBidRow({ bid, job, user, onWithdraw }: BidItemProps) {
           </div>
         ) : (
           canWithdraw ? (
-            <Button variant="ghost" size="sm" className="h-9 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10 font-bold transition-all" onClick={handleDelete} disabled={isDeleting}>
+            <Button variant="ghost" size="sm" className="h-9 rounded-full text-destructive hover:text-destructive hover:bg-destructive/10 font-bold transition-all" onClick={handleDelete} disabled={isDeleting} data-testid="withdraw-bid-button">
               {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
               {t('withdraw')}
             </Button>
@@ -152,7 +152,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
   const router = useRouter();
   const myBidStatus = getMyBidStatus(job, user);
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const canWithdraw = job.status === 'Open for Bidding';
+  const canWithdraw = job.status === 'Open for Bidding' || job.status?.toLowerCase() === 'open';
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -173,6 +173,7 @@ function MyBidCard({ bid, job, user, onWithdraw }: BidItemProps) {
                 className="absolute top-4 right-4 h-10 w-10 rounded-full opacity-0 group-hover:opacity-100 transition-all text-destructive hover:text-destructive hover:bg-destructive/10 z-10"
                 onClick={handleDelete}
                 disabled={isDeleting}
+                data-testid="withdraw-bid-button"
                 >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
@@ -229,6 +230,10 @@ export default function MyBidsClient() {
 
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [bids, setBids] = React.useState<(Bid & { jobId: string; id: string })[]>([]);
+  const bidsRef = React.useRef(bids);
+  React.useEffect(() => {
+    bidsRef.current = bids;
+  }, [bids]);
   const [loading, setLoading] = React.useState(true);
   const [loadMoreLoading, setLoadMoreLoading] = React.useState(false);
   const [hasMore, setHasMore] = React.useState(true);
@@ -251,8 +256,9 @@ export default function MyBidsClient() {
 
     try {
       let lastTimestamp: string | undefined = undefined;
-      if (isLoadMore && bids.length > 0) {
-        const lastBid = bids[bids.length - 1];
+      const currentBids = bidsRef.current;
+      if (isLoadMore && currentBids.length > 0) {
+        const lastBid = currentBids[currentBids.length - 1];
         const timestamp = toDate(lastBid.timestamp);
         if (!isNaN(timestamp.getTime())) {
           lastTimestamp = timestamp.toISOString();
@@ -301,7 +307,11 @@ export default function MyBidsClient() {
 
       setHasMore(data.hasMore !== false && fetchedBids.length === 50);
     } catch (error) {
-      toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Something went wrong while fetching bids",
+        variant: 'destructive',
+      });
     } finally {
       if (isLoadMore) {
         setLoadMoreLoading(false);
@@ -309,7 +319,7 @@ export default function MyBidsClient() {
         setLoading(false);
       }
     }
-  }, [user, role, toast, t, tCommon, bids]);
+  }, [user, role, toast, t, tCommon]);
 
   React.useEffect(() => {
     if (!userLoading) {
@@ -324,7 +334,7 @@ export default function MyBidsClient() {
       toast({ title: t('bidWithdrawn'), description: t('bidWithdrawnDesc') });
       setBids(prev => prev.filter(b => b.id !== bidId));
     } catch (error) {
-      toast({ title: tCommon('errors.generic'), description: t('withdrawError'), variant: "destructive" });
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
     }
   }
 

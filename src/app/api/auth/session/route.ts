@@ -9,14 +9,18 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(request: Request) {
     try {
-        const { token } = await request.json();
+        let token: string | undefined;
+        try {
+            const body = await request.json();
+            token = body?.token;
+        } catch {}
         const cookieStore = await cookies();
 
         if (token) {
             cookieStore.set('auth-token', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: 'lax',
                 path: '/',
                 maxAge: 3600 // 1 hour
             });
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
         }
     } catch (error: any) {
         console.error('[Session API Route] Error setting token:', error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
 

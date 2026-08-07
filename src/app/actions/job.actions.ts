@@ -278,10 +278,10 @@ export async function raiseDisputeAction(
     description: string,
     category: "Job Dispute" | "Billing Inquiry" | "Technical Support" | "Skill Request" | "General Question" = "Job Dispute",
     attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; disputeId?: string }> {
     try {
-        await jobService.raiseDispute(jobId, userId, reason, description, category, attachments);
-        return { success: true };
+        const disputeId = await jobService.raiseDispute(jobId, userId, reason, description, category, attachments);
+        return { success: true, disputeId };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

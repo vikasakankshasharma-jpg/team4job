@@ -305,6 +305,7 @@ export default function ChatClient() {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     disabled={isSending}
                                     className="h-16 rounded-[1.5rem] border-white/5 bg-surface-container-high/40 text-sm font-medium italic px-8 focus-visible:ring-1 focus-visible:ring-primary transition-all shadow-inner"
+                                    data-testid="chat-input"
                                 />
                                 <Button onClick={handleSend} disabled={isSending} className="h-16 w-16 rounded-[1.5rem] bg-primary text-primary-foreground shadow-2xl shadow-primary/20 hover:scale-105 transition-all active:scale-95 group">
                                     {isSending ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />}

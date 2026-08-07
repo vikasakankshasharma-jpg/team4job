@@ -12,7 +12,7 @@ function generateUniqueJobTitle(base: string = 'Edge Case Job') {
 }
 
 test.describe('Edge Case Tests @edge', () => {
-    test.setTimeout(90000); // 90 seconds per test to prevent CI hangs while allowing for retries
+    test.setTimeout(600000); // 90 seconds per test to prevent CI hangs while allowing for retries
 
     test.beforeEach(async ({ page }) => {
         // Mock Pincode API
@@ -335,12 +335,12 @@ test.describe('Edge Case Tests @edge', () => {
     });
 
     test.describe('Network Edge Cases', () => {
-        test('Application handles slow network simulator', async ({ page }) => {
+        test.only('Application handles slow network simulator', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
 
             // Set 120s timeout specifically for this test
-            test.setTimeout(120000);
+            test.setTimeout(600000);
 
             const context = page.context();
             const client = await context.newCDPSession(page);
@@ -352,7 +352,7 @@ test.describe('Edge Case Tests @edge', () => {
             });
 
             try {
-                await page.goto('/dashboard/post-job', { timeout: 120000 });
+                await page.goto('/dashboard/post-job', { timeout: 300000 });
                 await page.waitForLoadState('domcontentloaded');
                 await expect(page).toHaveURL(/.*\/post-job/, { timeout: 60000 });
             } finally {

@@ -954,7 +954,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                         {job.dateChangeProposal.status === 'rejected' && (
                             <div className="flex gap-4 relative z-10">
                                 {isClient && (
-                                    <Button variant="destructive" className="h-16 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl" onClick={() => setIsCancelDialogOpen(true)}>
+                                    <Button variant="destructive" className="h-16 px-10 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl" onClick={() => setIsCancelDialogOpen(true)} data-testid="cancel-job-button">
                                         {tCommon('cancel')}
                                     </Button>
                                 )}
@@ -1198,8 +1198,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                     <Button
                                                                         variant="ghost"
                                                                         className="w-full sm:w-auto h-16 px-10 rounded-[1.5rem] bg-background/5 hover:bg-background/10 text-[11px] font-black uppercase tracking-[0.3em] transition-all group/btn"
+                                                                        data-testid="chat-button"
                                                                         onClick={() => {
-                                                                            const contactUrl = `/dashboard/messages?recipientId=${getRefId(bid.professional)}`;
+                                                                            const recipientId = getRefId(bid.professional) || bid.professionalId;
+                                                                            const contactUrl = `/dashboard/messages?recipientId=${recipientId}`;
                                                                             window.open(contactUrl, '_blank');
                                                                         }}
                                                                     >
@@ -1426,6 +1428,20 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                             )
                                         }
 
+                                        {/* Professional Cannot Complete (No-Show / Unable to Proceed) */}
+                                        {
+                                            !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && !job.workStartedAt && (
+                                                <Button
+                                                    variant="ghost"
+                                                    className="w-full h-14 rounded-[1.5rem] bg-destructive/5 text-destructive hover:bg-destructive/10 font-black text-xs uppercase tracking-[0.2em] border border-destructive/10"
+                                                    data-testid="cancel-job-button"
+                                                    onClick={() => setIsCancelDialogOpen(true)}
+                                                >
+                                                    Cannot Complete Job
+                                                </Button>
+                                            )
+                                        }
+
                                         {
                                             !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && job.workStartedAt && (
                                                 <ProfessionalCompletionSection 
@@ -1589,7 +1605,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                     }
 
                     {
-                        isClient && user && (
+                        user && (
                             <CancelJobDialog
                                 job={job}
                                 user={user}

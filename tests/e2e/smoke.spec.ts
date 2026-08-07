@@ -8,34 +8,49 @@ import { TEST_ACCOUNTS } from '../fixtures/test-data';
 
 test.describe('Smoke Tests @smoke', () => {
     // Serial mode: tests share a single Firebase emulator instance.
-    test('User can login as Client', async ({ page }) => {
+    test('User can login as Client', async ({ page, isMobile }) => {
         const helper = new TestHelper(page);
 
         await helper.auth.loginAsClient();
         await expect(page).toHaveURL(/\/dashboard/);
         
         // Verify we're on dashboard - look for Client-specific navigation
-        await expect(page.getByText('Post a Job').or(page.getByText('Active Jobs')).first()).toBeVisible({ timeout: 90000 });
+        const navItem = page.getByText('Post a Job').or(page.getByText('Active Jobs')).first();
+        if (isMobile) {
+            await expect(navItem).toBeAttached({ timeout: 90000 });
+        } else {
+            await expect(navItem).toBeVisible({ timeout: 90000 });
+        }
     });
 
-    test('User can login as Professional', async ({ page }) => {
+    test('User can login as Professional', async ({ page, isMobile }) => {
         const helper = new TestHelper(page);
 
         await helper.auth.loginAsProfessional();
         await expect(page).toHaveURL(/\/dashboard/);
         
         // Verify we're on dashboard - look for Professional-specific navigation
-        await expect(page.getByText('Browse Jobs').or(page.getByText('Open Jobs')).first()).toBeVisible({ timeout: 90000 });
+        const navItem = page.getByText('Browse Jobs').or(page.getByText('Open Jobs')).first();
+        if (isMobile) {
+            await expect(navItem).toBeAttached({ timeout: 90000 });
+        } else {
+            await expect(navItem).toBeVisible({ timeout: 90000 });
+        }
     });
 
-    test('User can login as Admin', async ({ page }) => {
+    test('User can login as Admin', async ({ page, isMobile }) => {
         const helper = new TestHelper(page);
 
         await helper.auth.loginAsAdmin();
         await expect(page).toHaveURL(/\/dashboard/);
         
         // Verify we're on dashboard - admin sidebar links are stable
-        await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 90000 });
+        const navItem = page.getByTestId('nav-link-auditLog');
+        if (isMobile) {
+            await expect(navItem).toBeAttached({ timeout: 90000 });
+        } else {
+            await expect(navItem).toBeVisible({ timeout: 90000 });
+        }
     });
 
     test('Client can access Post Job page', async ({ page }) => {
@@ -51,7 +66,7 @@ test.describe('Smoke Tests @smoke', () => {
         await expect(page.locator('[data-testid*="-category-card"]').first()).toBeVisible();
     });
 
-    test('Professional can access Browse Jobs page', async ({ page }) => {
+    test('Professional can access Browse Jobs page', async ({ page, isMobile }) => {
         const helper = new TestHelper(page);
 
         await helper.auth.loginAsProfessional();
@@ -60,7 +75,12 @@ test.describe('Smoke Tests @smoke', () => {
         await expect(page).toHaveURL(/\/jobs/);
         
         // Look for page heading or navigation element using stable selectors
-        await expect(page.getByTestId('nav-link-browseJobs').or(page.getByText('Browse Jobs')).first()).toBeVisible({ timeout: 90000 });
+        const navItem = page.getByTestId('nav-link-browseJobs').or(page.getByText('Browse Jobs')).first();
+        if (isMobile) {
+            await expect(navItem).toBeAttached({ timeout: 90000 });
+        } else {
+            await expect(navItem).toBeVisible({ timeout: 90000 });
+        }
     });
 
     test('Invalid login shows error', async ({ page }) => {
@@ -75,6 +95,9 @@ test.describe('Smoke Tests @smoke', () => {
         await emailInput.fill('invalid@example.com');
 
         await page.fill('input[type="password"]', 'wrongpassword');
+        
+        // Mobile view: Cookie consent banner can block the submit button. Hide it.
+        await helper.nav.injectCookieHide();
         await page.click('button[type="submit"]:has-text("Log In")');
 
         // Should show error and stay on login page

@@ -18,11 +18,11 @@ export class ReviewService {
         }
 
         // 2. Validate Ownership/Permissions
-        const clientId = typeof job.client === 'string' ? job.client : job.client.id;
+        const clientId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
         const professionalId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
 
         if (input.reviewerId !== clientId && input.reviewerId !== professionalId) {
-            throw new Error('Forbidden. You must be involved in the job to review.');
+            throw new Error(`Forbidden. You must be involved in the job to review. Reviewer: ${input.reviewerId}, Client: ${clientId}, Pro: ${professionalId}`);
         }
 
         // 3. Create Review Document (for audit/history)

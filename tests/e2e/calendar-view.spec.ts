@@ -13,7 +13,7 @@ test.describe('Calendar & Scheduling View', () => {
     test('Professional can view scheduled jobs in the calendar', async ({ page }) => {
         await helper.auth.loginAsProfessional();
 
-        await page.goto('/dashboard/calendar');
+        await page.goto('/dashboard/calendar', { waitUntil: 'domcontentloaded' });
         await expect(page).toHaveURL(/.*\/dashboard\/calendar/);
 
         // Verify calendar grid is visible
@@ -36,7 +36,7 @@ test.describe('Calendar & Scheduling View', () => {
         // In a real E2E, we would create a job and accept it first,
         // but for coverage we'll check if any existing jobs are rendered.
         
-        await page.goto('/dashboard/calendar');
+        await page.goto('/dashboard/calendar', { waitUntil: 'domcontentloaded' });
         
         // Wait for potential events to load
         await page.waitForTimeout(2000);
@@ -55,7 +55,7 @@ test.describe('Calendar & Scheduling View', () => {
 
     test('User can switch between Day, Week, and Month views', async ({ page }) => {
         await helper.auth.loginAsAdmin();
-        await page.goto('/dashboard/calendar');
+        await page.goto('/dashboard/calendar', { waitUntil: 'domcontentloaded' });
 
         const views = ['Day', 'Week', 'Month'];
         for (const view of views) {
@@ -68,4 +68,5 @@ test.describe('Calendar & Scheduling View', () => {
         }
     });
 });
+
 

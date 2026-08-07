@@ -330,7 +330,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await helper.job.waitForJobStatus('Pending Funding', TIMEOUTS.medium);
         } else {
             await expect(placeBidButton).toBeVisible({ timeout: TIMEOUTS.medium });
-            await expect(page.locator('body')).toContainText(/No bids yet|Place Bid/i, { timeout: 10000 });
+            await expect(page.locator('body')).toContainText(/No bids yet|Place Bid|Submit Technical Bid|Awaiting technical proposals/i, { timeout: 10000 });
         }
 
         await context.close();

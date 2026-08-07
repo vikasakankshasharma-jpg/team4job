@@ -154,26 +154,54 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     // Wait for dashboard redirect to complete (matches CTC Phase 4 pattern that passes)
     await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
     await page.goto(`/dashboard/jobs/${jobId}`);
+    // Wait for the page to fully load as the professional
+    await page.waitForLoadState('domcontentloaded');
+    // Confirm the session is for the professional (SSR renders job control buttons based on session)
+    await page.waitForFunction(
+      () => document.querySelector('[data-testid="accept-job-button"]') !== null,
+      { timeout: 30000 }
+    );
     // Wait for accept-job-button to be visible (mobile viewport may need scroll)
     const acceptBtn = page.getByTestId('accept-job-button').first();
     await acceptBtn.waitFor({ state: 'visible', timeout: 30000 });
+    await page.waitForTimeout(1000); // Allow animations to settle on mobile
     await acceptBtn.scrollIntoViewIfNeeded();
-    // Start toast listener FIRST (toast fires ~2s after click)
-    const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
-    await acceptBtn.click({ force: true });
+    await page.waitForTimeout(500);
 
-    // Brief conflict dialog check (3s max to not miss the toast)
-    const conflictDialog = page.getByText('Schedule Conflict Warning');
-    if (await conflictDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-      console.log('Conflict dialog visible! Clicking Proceed...');
-      const btn = page.getByRole('button', { name: 'I Understand, Proceed & Accept' });
-      await btn.click();
-    } else {
-      console.log('Info: Conflict dialog NOT visible (No conflict detected).');
+    // Retry accept click up to 3 times to handle mobile viewport click reliability
+    let accepted = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`E2E: Accept button click attempt ${attempt}/3`);
+      // Start toast listener FIRST (toast fires ~2s after click)
+      const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+      await acceptBtn.dispatchEvent('click');
+
+      // Brief conflict dialog check (3s max to not miss the toast)
+      const conflictDialog = page.getByText('Schedule Conflict Warning');
+      if (await conflictDialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+        console.log('Conflict dialog visible! Clicking Proceed...');
+        const btn = page.getByRole('button', { name: 'I Understand, Proceed & Accept' });
+        await btn.click();
+      } else {
+        console.log(`E2E: No Conflict Dialog detected.`);
+        console.log('Info: Conflict dialog NOT visible (No conflict detected).');
+      }
+
+      // Wait up to 15s for toast or status to change
+      const toastResult = await Promise.race([
+        acceptToastPromise.then(() => 'toast'),
+        page.locator('[data-status="Pending Funding"]').waitFor({ state: 'visible', timeout: 15000 }).then(() => 'status').catch(() => null),
+      ]).catch(() => null);
+
+      if (toastResult) {
+        console.log(`E2E: Accept succeeded via ${toastResult} on attempt ${attempt}`);
+        accepted = true;
+        break;
+      }
+      console.log(`E2E: Attempt ${attempt} did not yield acceptance. Retrying...`);
+      await page.waitForTimeout(2000);
     }
 
-    // Await the pre-started toast
-    await acceptToastPromise;
     // Use data-status attribute (reliable regardless of CSS text-transform)
     await helper.job.waitForJobStatus('Pending Funding');
 

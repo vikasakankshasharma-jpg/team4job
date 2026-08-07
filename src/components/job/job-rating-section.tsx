@@ -86,6 +86,20 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate?: (u
                         className: "bg-primary text-white border-none rounded-3xl"
                     });
                 }
+                
+                // Optimistically update the UI to show the locked card
+                if (onJobUpdate) {
+                    const updateField = isclient ? 'clientReview' : 'professionalReview';
+                    onJobUpdate({
+                        [updateField]: {
+                            rating,
+                            review: reviewText,
+                            authorId: user.id,
+                            authorName: user.name,
+                            createdAt: new Date()
+                        }
+                    } as Partial<Job>);
+                }
             } else {
                 throw new Error(res.error);
             }

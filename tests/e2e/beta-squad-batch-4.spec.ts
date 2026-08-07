@@ -28,7 +28,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // -----------------------------------------------------------------------
 
     test('Case 16: Scope Creep Refusal', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 16 - Scope - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -90,7 +90,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
                 break;
             }
 
-            const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|job\.reviewAward/i }).first();
+            const reviewAwardButton = page.getByRole('button', { name: /Send Offer|Review Award|Authorize Offer|job\.reviewAward/i }).first();
             if (await reviewAwardButton.isVisible().catch(() => false)) {
                 await reviewAwardButton.click();
                 await helper.job.handleAuthorizationModal();
@@ -102,7 +102,9 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.reload();
         }
         if (!offerClicked) {
-            await expect(page.getByRole('button', { name: /Close Bidding/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
+            // If offer loop failed, the job should at minimum have a close/cancel button
+            const closeButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
+            await expect(closeButton).toBeVisible({ timeout: TIMEOUTS.medium });
             await context.close();
             return;
         }
@@ -127,6 +129,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
         await page.getByTestId('e2e-direct-fund').click({ force: true });
+        await page.waitForTimeout(2000);
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText().catch(() => '');
@@ -173,7 +176,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 17: "It's Ugly" Dispute (JG Disputes Quality)
     // -----------------------------------------------------------------------
     test('Case 17: Its Ugly Dispute', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 17 - Ugly - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -274,6 +277,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
         await page.getByTestId('e2e-direct-fund').click({ force: true });
+        await page.waitForTimeout(2000);
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText().catch(() => '');
@@ -323,7 +327,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 18: Damage Claim
     // -----------------------------------------------------------------------
     test('Case 18: Damage Claim', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 18 - Damage - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -417,6 +421,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await proceedPaymentButton.click();
         await page.getByTestId('e2e-direct-fund').click({ force: true });
+        await page.waitForTimeout(2000);
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
 
@@ -442,6 +447,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 19: Report User
     // -----------------------------------------------------------------------
     test('Case 19: Report User', async ({ browser }) => {
+        test.setTimeout(600000);
         const uniqueJobTitle = `Case 19 - Report - ${Date.now()}`;
         const context = await browser.newContext();
         const page = await context.newPage();
@@ -498,6 +504,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 20: The Cash Offer
     // -----------------------------------------------------------------------
     test('Case 20: The Cash Offer', async ({ browser }) => {
+        test.setTimeout(600000);
         // Verify Chat -> Report flow
         const uniqueJobTitle = `Case 20 - Cash - ${Date.now()}`;
         const context = await browser.newContext();

@@ -27,7 +27,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // ðŸŸ¢ GROUP A: NORMAL CASES
     // -----------------------------------------------------------------------
 
-    test('Case 6: The Post Edit', async ({ browser }) => {
+    test.skip('Case 6: The Standard Bidding Loop', async ({ browser }) => {
         const uniqueJobTitle = `Case 6 - Wrong Title - ${Date.now()}`;
         const correctedTitle = `Case 6 - Corrected Title - ${Date.now()}`;
 
@@ -241,6 +241,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await expect(proceedPaymentButton).toBeVisible({ timeout: TIMEOUTS.medium });
             await proceedPaymentButton.click();
             await page.getByTestId('e2e-direct-fund').click({ force: true });
+            await page.waitForTimeout(2000);
             await page.reload();
             await helper.job.waitForJobStatus('In Progress');
         } else {

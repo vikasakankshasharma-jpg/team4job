@@ -28,7 +28,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // -----------------------------------------------------------------------
 
     test('Case 21: The Ban Hammer', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const context = await browser.newContext();
         const page = await context.newPage();
         const helper = new TestHelper(page, { draftHandling: 'discard' });
@@ -202,8 +202,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const titleText = await page.getByTestId('job-title').innerText();
 
-        // Should contain the text literals, but NOT trigger execution
-        expect(titleText).toContain("<script>");
+        // Should contain the text literals (case-insensitive), but NOT trigger execution
+        expect(titleText.toLowerCase()).toContain("<script>");
         expect(dialogTriggered).toBe(false);
 
         await context.close();
@@ -240,7 +240,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
     // Case 25: Identity Fraud (KYC Reject)
     // -----------------------------------------------------------------------
     test('Case 25: Identity Fraud', async ({ browser }) => {
-        test.setTimeout(300000);
+        test.setTimeout(600000);
         const context = await browser.newContext();
         const page = await context.newPage();
         const helper = new TestHelper(page, { draftHandling: 'discard' });

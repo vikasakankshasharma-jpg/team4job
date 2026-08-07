@@ -97,7 +97,12 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
 
             // Current Job Range
             const currentRange = getJobRange(job);
-            if (!currentRange) return;
+            if (!currentRange) {
+                // No date range available – skip conflict check and proceed directly
+                setIsLoading(false);
+                await processAcceptance();
+                return;
+            }
 
             // Query for OTHER jobs awarded to this user
             // We fetch all 'Awarded' and filter in memory for complex date ranges

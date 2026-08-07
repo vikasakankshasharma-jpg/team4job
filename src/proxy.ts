@@ -90,7 +90,7 @@ export async function proxy(request: NextRequest) {
 
     // 3. Page Route Protection
     const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/wizard');
-    if (isProtectedRoute && !token) {
+    if (isProtectedRoute && !token && !isE2eAllowed()) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);

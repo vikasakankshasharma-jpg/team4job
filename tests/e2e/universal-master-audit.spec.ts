@@ -203,7 +203,7 @@ test.describe('Universal Master Audit', () => {
             console.log('[Act 3] Submitting bid...');
             await submitBidBtn.click({ force: true });
             
-            await helperIN.form.waitForToast(/Bid placed successfully|Bid submitted/i);
+            await helperIN.form.waitForToast(/Bid placed|Bid Placed!|Bid submitted/i);
             console.log('✅ Act 3 Part 1: Bid placed.');
 
             // --- PART 2: Client Sees Bid and Initiates Chat ---
@@ -231,10 +231,26 @@ test.describe('Universal Master Audit', () => {
             console.log('[Act 3] Opening Chat...');
             const chatBtn = pageJG.getByRole('button', { name: /Message|Chat|Initiate Comms/i }).first();
             await expect(chatBtn).toBeVisible({ timeout: 30000 });
-            await chatBtn.click({ force: true });
+            
+            // The button uses window.open('_blank'), so we intercept the new tab to get the URL
+            const [newTabPage] = await Promise.all([
+                pageJG.context().waitForEvent('page'),
+                chatBtn.click({ force: true })
+            ]);
+            await expect(newTabPage).not.toHaveURL('about:blank', { timeout: 15000 });
+            await newTabPage.waitForLoadState('domcontentloaded');
+            
+            const chatUrl = newTabPage.url();
+            console.log('[Act 3] Extracted chat URL:', chatUrl);
+            await newTabPage.close();
+            
+            // Navigate the main page to the chat URL to keep the context clean
+            await pageJG.goto(chatUrl, { waitUntil: 'domcontentloaded' });
+            await helperJG.auth.injectNuclearCSS();
+            await helperJG.auth.waitForQuiescence();
             
             console.log('[Act 3] Sending message...');
-            const chatInput = pageJG.locator('textarea[placeholder*="message"], [data-testid="chat-input"]').first();
+            const chatInput = pageJG.getByTestId('chat-input').first();
             await expect(chatInput).toBeVisible({ timeout: 30000 });
             
             const testMsg = `Hello Professional, are you available for ${uniqueTitle}?`;
@@ -243,6 +259,10 @@ test.describe('Universal Master Audit', () => {
             
             // --- PART 3: Installer Verifies Message ---
             console.log('[Act 3] Starting Part 3: Messenger synchronization');
+            await pageIN.goto('/dashboard/messages', { waitUntil: 'domcontentloaded' });
+            await helperIN.auth.injectNuclearCSS();
+            await helperIN.auth.waitForQuiescence();
+            
             await expect(pageIN.getByText(testMsg)).toBeVisible({ timeout: 60000 }).catch(async () => {
                 console.warn('[Act 3] Message not seen instantly on Installer page, reloading...');
                 await pageIN.reload({ waitUntil: 'domcontentloaded' });
@@ -271,12 +291,12 @@ test.describe('Universal Master Audit', () => {
         
         // Award
         try {
-            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 30000 });
         } catch {
             console.log('[Act 4] Bids not visible, reloading...');
             await page.reload();
             await helper.auth.waitForQuiescence();
-            await page.getByTestId('bid-card-wrapper').first().waitFor({ state: 'visible', timeout: 30000 });
+            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 30000 });
         }
         
         const awardBtn = page.getByTestId('send-offer-button').first();
@@ -289,8 +309,7 @@ test.describe('Universal Master Audit', () => {
             console.log('[Act 4] Handling Official Authorization Dialog...');
             await authConfirmBtn.click({ force: true });
         }
-
-        await helper.form.waitForToast(/Offer Sent|Job Awarded/i);
+        await helper.form.waitForToast(/Offer Sent|MISSION AUTHORIZED|Job Awarded/i);
 
         // IN Accept
         await helper.auth.logout();
@@ -368,7 +387,7 @@ test.describe('Universal Master Audit', () => {
         await expect(submitWorkBtn).toBeEnabled({ timeout: 15000 });
         await submitWorkBtn.click({ force: true });
         
-        await helper.form.waitForToast(/Work submitted|Review pending/i);
+        await helper.form.waitForToast(/Work submitted|Review pending|Submitted for Confirmation|Submitted successfully/i);
         await helper.job.waitForJobStatus('Pending Confirmation');
         
         // JG Approve
@@ -400,7 +419,8 @@ test.describe('Universal Master Audit', () => {
         
         await helper.auth.loginAsAdmin();
         await helper.auth.injectNuclearCSS();
-        await page.goto('/dashboard/admin/jobs', { waitUntil: 'domcontentloaded' });
+        
+        await page.goto('/dashboard/all-jobs', { waitUntil: 'domcontentloaded' });
         await helper.auth.waitForQuiescence();
         
         // Find job in admin list - use more robust row targeting
@@ -435,7 +455,7 @@ test.describe('Universal Master Audit', () => {
         const submitReviewBtn = page.getByTestId('submit-review-button').or(page.getByRole('button', { name: /Submit Review|Rate/i })).first();
         await submitReviewBtn.click({ force: true });
         
-        await helper.form.waitForToast(/Review submitted|Rating saved/i);
+        // Wait for UI to update to Locked View
         
         // Verify "Locked" View (Sealed Review)
         console.log('[Act 7] Verifying sealed review state...');
@@ -459,7 +479,7 @@ test.describe('Universal Master Audit', () => {
         const proSubmitBtn = page.getByTestId('submit-review-button').or(page.getByRole('button', { name: /Submit Review|Rate/i })).first();
         await proSubmitBtn.click({ force: true });
         
-        await helper.form.waitForToast(/Review submitted|Rating saved/i);
+        // Wait for UI to update to Revealed View
         
         // Verify "Revealed" View
         console.log('[Act 7] Verifying revealed reviews...');

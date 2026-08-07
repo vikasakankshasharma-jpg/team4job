@@ -22,8 +22,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Ban } from "lucide-react";
 import { Job, User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth } from "firebase/auth";
-import axios from "axios";
 
 export function CancelJobDialog({
     job,
@@ -46,25 +44,25 @@ export function CancelJobDialog({
     const handleCancel = async () => {
         setIsLoading(true);
         try {
-            await axios.post('/api/escrow/refund', {
-                jobId: job.id,
-                userId: user.id
-            }, {
-                headers: { Authorization: `Bearer ${await getAuth().currentUser?.getIdToken()}` }
-            });
+            const { updateJobAction } = await import("@/app/actions/job.actions");
+            const res = await updateJobAction(job.id, user.id, { status: 'Cancelled' as any });
+
+            if (!res.success) {
+                throw new Error(res.error || 'Failed to cancel job');
+            }
 
             onJobUpdate({ status: 'Cancelled' });
 
             toast({
                 title: "Job Cancelled",
-                description: "Refund has been processed.",
+                description: "The job has been cancelled.",
                 variant: 'destructive' as any
             });
             onOpenChange(false);
         } catch (error: any) {
             toast({
                 title: "Cancellation Failed",
-                description: error.response?.data?.error || "Could not cancel job.",
+                description: error.message || "Could not cancel job.",
                 variant: 'destructive'
             });
         } finally {

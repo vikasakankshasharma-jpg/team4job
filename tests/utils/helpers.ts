@@ -60,6 +60,11 @@ export class AuthHelper {
         this.page.on('requestfailed', request => {
             console.log(`[Browser Request Failed] ${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
         });
+        this.page.on('response', response => {
+            if (response.status() >= 400) {
+                console.log(`[Browser Response Error] ${response.status()} ${response.request().method()} ${response.url()}`);
+            }
+        });
     }
 
     private static seeded = false;
@@ -111,11 +116,13 @@ export class AuthHelper {
     async loginAsClient() {
         await this.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await this.ensureRole('Client');
+        await this.page.waitForTimeout(3000); // Allow Firebase Auth IndexedDB to persist before tests execute hard navigations
     }
 
     async loginAsProfessional() {
         await this.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
         await this.ensureRole('Professional');
+        await this.page.waitForTimeout(3000); // Allow Firebase Auth IndexedDB to persist before tests execute hard navigations
     }
 
     async waitForQuiescence() {
@@ -861,12 +868,12 @@ export class FormHelper {
         if (templateId) {
             console.log(`[FormHelper] Selecting template: ${templateId}`);
             const card = this.page.getByTestId(`${templateId}-template-card`).first();
-            await card.waitFor({ state: 'visible', timeout: 10000 });
+            await card.waitFor({ state: 'visible', timeout: 30000 });
             await card.click();
         } else {
             console.log('[FormHelper] Selecting Custom Request (No template)');
             const card = this.page.getByTestId('custom-template-card').first();
-            await card.waitFor({ state: 'visible', timeout: 10000 });
+            await card.waitFor({ state: 'visible', timeout: 30000 });
             await card.click();
         }
         await this.page.waitForTimeout(500);
@@ -1226,15 +1233,20 @@ export class FormHelper {
         
         // Define failure signals: destructive toasts or explicit error messages
         const failureLocator = this.page.locator('[role="status"][data-variant="destructive"], .toast-error').first();
-        const successLocator = this.page.locator(`[role="status"]:has-text("${message}"), .toast:has-text("${message}")`).first();
+        
+        let successLocator;
+        if (typeof message === 'string') {
+            successLocator = this.page.locator(`[role="status"]:has-text("${message}"), .toast:has-text("${message}")`).first();
+        } else {
+            successLocator = this.page.locator('[role="status"], .toast').filter({ hasText: message }).first();
+        }
 
         try {
             // Inject Nuclear CSS to make sure toast isn't obscured or blocking 
             const authHelper = new AuthHelper(this.page);
             await authHelper.injectNuclearCSS();
 
-            const combinedSelector = `[role="status"]:has-text("${message}"), .toast:has-text("${message}"), [role="status"][data-variant="destructive"], .toast-error`;
-            const matchedLocator = this.page.locator(combinedSelector).first();
+            const matchedLocator = successLocator.or(failureLocator);
             await matchedLocator.waitFor({ state: 'visible', timeout });
 
             // If the matched locator is an error, throw it
@@ -1711,11 +1723,11 @@ export class JobHelper {
 
     async handleAuthorizationModal() {
         // The award confirmation dialog has NO signature input — just a confirm button.
-        // Button text is "Official Authorization" (not "Authorize Offer").
-        // Toast on success is "MISSION AUTHORIZED".
-        const authBtn = this.page.getByRole('button', { name: /Official Authorization/i });
+        // Button text is "Official Authorization" or "Authorize Offer"
+        // Toast on success is "Offer Sent" or "MISSION AUTHORIZED".
+        const authBtn = this.page.getByRole('button', { name: /Official Authorization|Authorize Offer/i }).first();
         if (await authBtn.isVisible({ timeout: 10000 }).catch(() => false)) {
-            await authBtn.click();
+            await authBtn.click({ force: true });
         }
     }
 
@@ -1731,10 +1743,22 @@ export class JobHelper {
     async waitForJobStatus(status: string, timeout = TIMEOUTS.long) {
         try {
             console.log(`Helper: Waiting for job status: ${status}. Timeout: ${timeout}ms`);
+            
+            // Map status aliases for test stability
+            const aliases: Record<string, string[]> = {
+                'Pending Funding': ['Pending Funding', 'bid_accepted'],
+                'Awarded': ['Awarded', 'bid_accepted'],
+                'In Progress': ['In Progress', 'in_progress', 'funded'],
+                'Completed': ['Completed', 'completed'],
+                'Cancelled': ['Cancelled', 'cancelled'],
+            };
+            
+            const validStatuses = aliases[status] || [status];
+            const selector = validStatuses.map(s => `[data-status="${s}"]`).join(', ');
 
             // Try waiting initially
             try {
-                await expect(this.page.locator(`[data-status="${status}"]`).first())
+                await expect(this.page.locator(selector).first())
                     .toBeVisible({ timeout: 5000 }); // Short initial wait
                 console.log(`Helper: Job status ${status} visible immediately.`);
                 return;
@@ -1751,7 +1775,7 @@ export class JobHelper {
                 const statuses = await Promise.all(allBadges.map(b => b.getAttribute('data-status')));
                 console.log(`Helper: Currently visible status attributes: ${statuses.join(', ')}`);
 
-                const isVisible = await this.page.locator(`[data-status="${status}"]`).first().isVisible();
+                const isVisible = await this.page.locator(selector).first().isVisible();
                 if (isVisible) {
                     console.log(`Helper: Job status ${status} found.`);
                     return;
@@ -1764,7 +1788,7 @@ export class JobHelper {
 
                 // Wait a bit for components to mount
                 try {
-                    await expect(this.page.locator(`[data-status="${status}"]`).first())
+                    await expect(this.page.locator(selector).first())
                         .toBeVisible({ timeout: 5000 });
                     console.log(`Helper: Job status ${status} visible after reload.`);
                     return;

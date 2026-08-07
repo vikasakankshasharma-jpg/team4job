@@ -291,7 +291,7 @@
             "queryScope": "COLLECTION_GROUP",
             "fields": [
                 {
-                    "fieldPath": "installerId",
+                    "fieldPath": "professionalId",
                     "order": "ASCENDING"
                 },
                 {

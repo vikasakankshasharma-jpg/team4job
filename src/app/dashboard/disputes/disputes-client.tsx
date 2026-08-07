@@ -111,6 +111,7 @@ export default function DisputesClient() {
     const [loading, setLoading] = useState(true);
     const { setHelp } = useHelp();
     const [view, setView] = useState<'list' | 'grid'>('list');
+    const { auth } = useFirebase();
 
     const [filters, setFilters] = useState({
         status: 'all',
@@ -158,8 +159,10 @@ export default function DisputesClient() {
         setLoading(true);
 
         try {
-            // @ts-ignore
-            const token = await user.getIdToken();
+            const currentUser = auth?.currentUser;
+            if (!currentUser) throw new Error("No authenticated firebase user");
+            
+            const token = await currentUser.getIdToken();
             const response = await fetch('/api/disputes/my-disputes', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -168,13 +171,15 @@ export default function DisputesClient() {
                 const data = await response.json();
                 setDisputes(data.disputes || []);
                 setInvolvedUsers(data.involvedUsers || {});
+            } else {
+                console.error('[DisputesClient] Failed to fetch:', await response.text());
             }
         } catch (error) {
-            // Error fetching disputes
+            console.error('[DisputesClient] Error fetching disputes:', error);
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, auth]);
 
     useEffect(() => {
         if (!userLoading && user) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { raiseDisputeAction } from "@/app/actions/job.actions";
 import React from "react";
 import { Job, User, Comment, PlatformSettings } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -100,66 +101,51 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
     };
 
     const handleRaiseDispute = async () => {
-        if (!disputeReason.trim() || disputeFiles.length === 0) {
-            toast({ 
-                title: t('evidenceRequiredTitle'), 
-                description: t('evidenceRequiredDesc'), 
-                variant: "destructive" 
-            });
+        console.log("CLIENT DEBUG: handleRaiseDispute called!", { hasUser: !!user, reasonLength: disputeReason.length });
+        if (!user) {
+            console.log("CLIENT DEBUG: Returning early due to !user");
             return;
         }
-        if (!user || !storage) return;
+        if (!disputeReason.trim()) {
+            console.log("CLIENT DEBUG: Returning early due to empty reason");
+            toast({ title: t('reasonRequired'), description: t('reasonRequiredDesc'), variant: "destructive" });
+            return;
+        }
 
+        console.log("CLIENT DEBUG: Setting loading state");
         setIsLoading(true);
         try {
             const uploadPromises = disputeFiles.map(async (file) => {
-                const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(storageRef);
+                const storageRef = ref(storage, `disputes/${job.id}/${Date.now()}-${file.name}`);
+                const snapshot = await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
                 return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
             });
             const uploadedAttachments = await Promise.all(uploadPromises);
 
-            const newDisputeId = `DISPUTE-${Date.now()}`;
-            const awardedProfessional = job.awardedProfessional as User;
+            console.log("CLIENT DEBUG: Calling raiseDisputeAction");
+            const res = await raiseDisputeAction(
+                job.id,
+                user.id,
+                "Quality Concern",
+                disputeReason,
+                "Job Dispute",
+                uploadedAttachments
+            );
+            console.log("CLIENT DEBUG: raiseDisputeAction result", res);
 
-            const disputeData = {
-                id: newDisputeId,
-                requesterId: user.id,
-                category: "Job Dispute",
-                title: `Dispute for Job: ${job.title}`,
-                jobId: job.id,
-                jobTitle: job.title,
-                status: 'Open',
-                reason: disputeReason,
-                parties: {
-                    clientId: getRefId(job.client),
-                    professionalId: awardedProfessional.id || getRefId(job.awardedProfessional),
-                },
-                messages: [{
-                    authorId: user.id,
-                    authorRole: "Client",
-                    content: disputeReason,
-                    timestamp: new Date().toISOString(),
-                    attachments: uploadedAttachments
-                }],
-                createdAt: new Date().toISOString(),
-            };
-
-            const auth = getAuth();
-            const token = await auth.currentUser?.getIdToken();
-
-            await axios.post('/api/disputes/create', { ...disputeData }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            await onJobUpdate({ status: 'Disputed' as any, disputeId: newDisputeId });
-
-            toast({ title: t('disputeSuccess'), description: t('disputeSuccessDesc') });
-            router.push(`/dashboard/disputes/${newDisputeId}`);
-
-        } catch (error) {
-           toast({ title: t('errorTitle'), description: t('genericError'), variant: "destructive" });
+            if (res.success && res.disputeId) {
+                toast({ title: t('disputeSuccess'), description: t('disputeSuccessDesc') });
+                console.log("CLIENT DEBUG: Redirecting to", `/dashboard/disputes/${res.disputeId}`);
+                router.push(`/dashboard/disputes/${res.disputeId}`);
+            } else {
+                throw new Error(res.error || "Failed to raise dispute");
+            }
+        } catch (error: any) {
+            console.error("Dispute init error:", error);
+            toast({ title: t('errorTitle'), description: error.message || t('genericError'), variant: "destructive" });
         } finally {
+            console.log("CLIENT DEBUG: Clearing loading state");
             setIsLoading(false);
         }
     };
@@ -366,7 +352,7 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
 
                                         <Dialog>
                                             <DialogTrigger asChild>
-                                                <Button variant="ghost" className="h-24 w-16 px-0 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                                <Button data-testid="dispute-button" variant="ghost" className="h-24 w-16 px-0 rounded-[2.5rem] font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
                                                     <AlertOctagon className="h-7 w-7" />
                                                 </Button>
                                             </DialogTrigger>

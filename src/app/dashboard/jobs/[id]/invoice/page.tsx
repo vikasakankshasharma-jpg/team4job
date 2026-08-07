@@ -95,12 +95,12 @@ function InvoiceContent() {
     }, [id, type, toast, user, userLoading, tCommon]);
 
     if (loading || !mounted) {
-        return <div className="min-h-screen bg-background pt-12"><InvoicePageSkeleton /></div>;
+        return <div data-testid="invoice-page-container" className="min-h-screen bg-background pt-12"><InvoicePageSkeleton /></div>;
     }
 
     if (error || !job) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-8 text-center bg-background">
+            <div data-testid="invoice-page-container" className="min-h-screen flex items-center justify-center p-8 text-center bg-background">
                 <div className="max-w-md space-y-4">
                     <div className="bg-destructive/10 p-6 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
                         <ShieldCheck className="h-10 w-10 text-destructive" />
@@ -167,7 +167,7 @@ function InvoiceContent() {
         const gstAmt = feeAmount - taxableAmount;
 
         return (
-            <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all">
+            <div data-testid="invoice-page-container" className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all">
                 <motion.div 
                     initial={{ opacity: 0, y: 30, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -294,7 +294,7 @@ function InvoiceContent() {
     const serviceAmount = transaction?.amount || 0;
 
     return (
-        <div className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all selection:bg-primary selection:text-white">
+        <div data-testid="invoice-page-container" className="min-h-screen bg-surface-container-lowest dark:bg-slate-950 print:bg-background pt-12 pb-20 transition-all selection:bg-primary selection:text-white">
             <motion.div 
                 initial={{ opacity: 0, y: 30, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -22,6 +22,7 @@ import {
     IndianRupee,
     UserCog,
     CreditCard,
+    Wallet,
     Heart,
     Zap,
     UserPlus,
@@ -48,6 +49,7 @@ const professionalNavItems: NavItem[] = [
     { href: "/dashboard", icon: Home, labelKey: "dashboard", tourId: "dashboard-home" },
     { href: "/dashboard/jobs", icon: Briefcase, labelKey: "browseJobs", tourId: "all-jobs" },
     { href: "/dashboard/my-bids", icon: FileText, labelKey: "myBids", tourId: "my-bids" },
+    { href: "/dashboard/wallet", icon: Wallet, labelKey: "wallet" },
     { href: "/dashboard/billing", icon: CreditCard, labelKey: "billing" },
     { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
 ];

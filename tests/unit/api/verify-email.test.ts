@@ -25,6 +25,9 @@ jest.mock('firebase-admin/firestore', () => ({
 const createMockRequest = (body: any): NextRequest => {
     return {
         json: async () => body,
+        headers: {
+            get: jest.fn().mockReturnValue('127.0.0.1'),
+        },
     } as unknown as NextRequest;
 };
 
