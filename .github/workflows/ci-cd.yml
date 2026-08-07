@@ -889,6 +889,7 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
+          export JAVA_TOOL_OPTIONS="-Xmx1536m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
 
@@ -921,34 +922,47 @@ jobs:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
 
-      - name: Wait for services to be ready
+      - name: Wait for Firebase Emulator and Next.js to be ready
         run: |
+          echo "Waiting for Firebase Auth Emulator on port 9099..."
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1; then
+              echo "Firebase Auth Emulator is ready after ${i} attempts!"
+              break
+            fi
+            echo "Attempt $i/60 - emulator not ready yet, waiting 5s..."
+            sleep 5
+            if [ $i -eq 60 ]; then
+              echo "ERROR: Firebase Emulator did not start within 5 minutes!"
+              exit 1
+            fi
+          done
           echo "Waiting for Next.js on port 3000..."
           for i in $(seq 1 60); do
             if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
-              echo "Next.js is ready!"
+              echo "Next.js is fully running and serving /login!"
               break
             fi
-            echo "Attempt $i/60 - not ready yet, waiting 5s..."
+            echo "Attempt $i/60 - Next.js not ready yet, waiting 5s..."
             sleep 5
             if [ $i -eq 60 ]; then
               echo "ERROR: Next.js did not start within 5 minutes!"
               exit 1
             fi
           done
-          echo "Waiting for Firebase Auth Emulator on port 9099..."
-          for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1; then
-              echo "Firebase Emulator is ready!"
-              break
-            fi
-            echo "Attempt $i/30 - emulator not ready yet, waiting 5s..."
-            sleep 5
-            if [ $i -eq 30 ]; then
-              echo "ERROR: Firebase Emulator did not start within 2.5 minutes!"
-              exit 1
-            fi
-          done
+          
+          echo "Seeding test users via dedicated CLI script..."
+          if ! npx tsx scripts/ci-seed.ts; then
+             echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
+             exit 1
+          fi
+          
+          echo "Confirming server health after CLI seeding..."
+          if ! curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+            echo "ERROR: Next.js server crashed during or immediately after seeding. Possible OOM. Aborting."
+            exit 1
+          fi
+          echo "Server health check passed. Starting tests."
 
 
       - name: Run Visual Regression Tests
