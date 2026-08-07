@@ -98,7 +98,7 @@ export async function getWalletDataAction(userId: string) {
         }));
 
         // Deduct successful withdrawals from available balance
-        withdrawals.forEach(w => {
+        withdrawals.forEach((w: any) => {
             if (w.status !== 'Failed' && w.status !== 'Rejected') {
                 availableBalance -= w.amount || 0;
             }
