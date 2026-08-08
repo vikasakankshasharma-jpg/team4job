@@ -39,7 +39,7 @@ const LOCKOUT_DURATION_SECONDS = 60;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, user, setRoleState } = useUser();
+  const { login, user } = useUser();
   const { app: mainApp } = useFirebase();
   const { toast } = useToast();
   const t = useTranslations("auth");

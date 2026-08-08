@@ -1,6 +1,5 @@
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { sendNotification } from '@/lib/notifications';
-import { systemLogger } from '@/lib/system-logger';
 
 /**
  * Smart Batching Service for Job Alerts
@@ -18,7 +17,7 @@ export async function broadcastJobToPincode(jobId: string, pincode: string) {
         .get();
 
     if (snapshot.empty) {
-        systemLogger.warn(`[BatchNotifier] No installers found for job ${jobId} in pincode ${pincode}`);
+        console.warn(`[BatchNotifier] No installers found for job ${jobId} in pincode ${pincode}`);
         return;
     }
 
@@ -28,7 +27,7 @@ export async function broadcastJobToPincode(jobId: string, pincode: string) {
     const batchSize = 5;
     const currentBatch = installers.slice(0, batchSize);
 
-    systemLogger.info(`[BatchNotifier] Broadcasting job ${jobId} to top ${currentBatch.length} installers in ${pincode}`);
+    console.info(`[BatchNotifier] Broadcasting job ${jobId} to top ${currentBatch.length} installers in ${pincode}`);
 
     // 3. Send Escalation Waterfall Notification to the batch
     const promises = currentBatch.map(installer => {
@@ -39,7 +38,7 @@ export async function broadcastJobToPincode(jobId: string, pincode: string) {
             undefined,
             {
                 userId: installer.id,
-                phoneNumber: installer.phone,
+                phoneNumber: installer.mobile,
                 fcmTokens: installer.fcmTokens || [],
                 useEscalation: true,
                 templateName: 'new_job_alert_pincode'

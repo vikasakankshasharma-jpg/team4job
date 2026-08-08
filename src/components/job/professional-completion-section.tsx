@@ -116,7 +116,7 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
                         undefined,
                         {
                             channel: 'both',
-                            phoneNumber: client.phone,
+                            phoneNumber: client.mobile,
                             userId: client.id,
                             fcmTokens: client.fcmTokens || [],
                             useEscalation: true,
