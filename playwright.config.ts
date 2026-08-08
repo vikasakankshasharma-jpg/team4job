@@ -110,9 +110,7 @@ export default defineConfig({
         /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
         /* It mocks: 1. Google Maps Geocoder, 2. Postal Pincode API (fetch) */
-        launchOptions: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        },
+
         /* Init scripts run before any other script in the page */
         contextOptions: {
             ignoreHTTPSErrors: true,

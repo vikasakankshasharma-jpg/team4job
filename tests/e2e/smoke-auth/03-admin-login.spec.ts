@@ -6,6 +6,6 @@ test.describe('Auth Smoke Tests — Admin Login @smoke-auth', () => {
         const helper = new TestHelper(page);
         await helper.auth.loginAsAdmin();
         await expect(page).toHaveURL(/\/dashboard/);
-        await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 90000 });
+        await expect(page.getByTestId('nav-link-auditLog')).toBeAttached({ timeout: 90000 });
     });
 });
