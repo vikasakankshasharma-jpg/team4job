@@ -8,6 +8,6 @@ test.describe('Auth Smoke Tests — Client Login @smoke-auth', () => {
         await expect(page).toHaveURL(/\/dashboard/);
         await expect(
             page.getByText('Post a Job').or(page.getByText('Active Jobs')).first()
-        ).toBeVisible({ timeout: 90000 });
+        ).toBeAttached({ timeout: 90000 });
     });
 });

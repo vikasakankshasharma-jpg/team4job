@@ -111,7 +111,7 @@ export default defineConfig({
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
         /* It mocks: 1. Google Maps Geocoder, 2. Postal Pincode API (fetch) */
         launchOptions: {
-            args: ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'],
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
         },
         /* Init scripts run before any other script in the page */
         contextOptions: {
