@@ -32,7 +32,8 @@ const appName = isE2E ? 'dodo-e2e-app' : '[DEFAULT]';
 
 const allowProductionEmulators = process.env.NEXT_PUBLIC_ALLOW_PRODUCTION_EMULATORS === 'true';
 const shouldUseClientEmulators = process.env.NEXT_PUBLIC_USE_EMULATOR === 'true' || 
-                               process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true';
+                               process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+                               (typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost'));
 
 const existingApp = getApps().find(a => a.name === appName);
 const isNewApp = !existingApp;
