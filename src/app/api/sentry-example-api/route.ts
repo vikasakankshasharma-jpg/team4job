@@ -1,8 +1,5 @@
-// import * as Sentry from "@sentry/nextjs";
+import * as Sentry from "@sentry/nextjs";
 
-const Sentry = {
-  captureException: () => { },
-};
 export const dynamic = "force-dynamic";
 
 class SentryExampleAPIError extends Error {

@@ -1,14 +1,6 @@
 "use client";
 
-// import * as Sentry from "@sentry/nextjs";
-
-const Sentry = {
-  captureException: () => { },
-  captureMessage: () => { },
-  startSpan: async (config: any, callback: () => Promise<any>) => {
-    return await callback();
-  },
-};
+import * as Sentry from "@sentry/nextjs";
 import Head from "next/head";
 import { useEffect, useState } from "react";
 
