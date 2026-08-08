@@ -399,7 +399,7 @@ export function LoginForm() {
         )}
 
         {loginMode === 'password' && otpStep === 'input' && (
-          <Button type="submit" className="w-full h-20 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all mt-6" disabled={isLoading || !!lockoutUntil}>
+          <Button type="submit" data-testid="login-submit-btn" className="w-full h-20 rounded-[2rem] bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.4em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all mt-6" disabled={isLoading || !!lockoutUntil}>
             {isLoading && <Loader2 className="mr-4 h-6 w-6 animate-spin" />}
             {t('loginSubmit') || 'AUTHORIZE ACCESS'}
           </Button>
