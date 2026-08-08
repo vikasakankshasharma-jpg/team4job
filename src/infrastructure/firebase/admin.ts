@@ -4,6 +4,7 @@ import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
+import { getMessaging } from 'firebase-admin/messaging';
 
 let appInstance: App | undefined;
 
@@ -109,3 +110,8 @@ export const getAdminAuth = () => getAuth(getAdminApp());
  * Get the Firebase Admin Storage instance.
  */
 export const getAdminStorage = () => getStorage(getAdminApp());
+
+/**
+ * Get the Firebase Admin Messaging instance (FCM).
+ */
+export const getAdminMessaging = () => getMessaging(getAdminApp());

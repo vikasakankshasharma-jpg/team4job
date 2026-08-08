@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const verifyEmailSchema = z.object({
     email: z.string().email('Invalid email address'),
     action: z.enum(['send', 'verify']),
+    intent: z.enum(['signup', 'login']).default('signup'),
     otp: z.string().length(6, 'OTP must be 6 digits').optional(),
 }).refine((data) => {
     if (data.action === 'verify' && !data.otp) {

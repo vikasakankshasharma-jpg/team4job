@@ -259,6 +259,8 @@
         "pendingSignups": "Pending Signups",
         "signupAnalytics": "Signup Analytics",
         "systemHealth": "System Health",
+        "systemOps": "System Ops",
+        "support": "Support & Help",
         "logout": "Log Out"
     },
     "feedback": {

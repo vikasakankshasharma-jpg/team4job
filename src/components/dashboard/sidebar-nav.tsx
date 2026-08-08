@@ -77,6 +77,7 @@ const adminNavItems: NavItem[] = [
     { href: "/dashboard/pending-signups", icon: UserPlus, labelKey: "pendingSignups" },
     { href: "/dashboard/signup-analytics", icon: TrendingUp, labelKey: "signupAnalytics" },
     { href: "/dashboard/admin/system-health", icon: Activity, labelKey: "systemHealth" },
+    { href: "/dashboard/system-ops", icon: Zap, labelKey: "systemOps" },
 ];
 
 const supportTeamNavItems: NavItem[] = [

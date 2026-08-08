@@ -55,7 +55,7 @@ app.post("/cashfree-webhook", async (req, res) => {
 
           // Notify Professional
           if (transactionData.payeeId) {
-            await sendNotification(transactionData.payeeId, "FUNDING SECURED // ESCROW CLEARANCE", "The Client has successfully funded the project escrow. Production phase is now authorized.", "/dashboard/my-bids");
+            await sendNotification(transactionData.payeeId, "FUNDING SECURED // ESCROW CLEARANCE", "The Client has successfully funded the project escrow. Production phase is now authorized.", "/dashboard/my-bids", true);
           }
         } else {
         }
@@ -119,35 +119,86 @@ export const api = functions.https.onRequest(app);
  * @param {string} [link] Optional deep link for the notification.
  */
 async function sendNotification(
-  userId: string, title: string, body: string, link?: string
+  userId: string, title: string, body: string, link?: string, isUrgent: boolean = false
 ) {
   try {
-    if (!userId) {
-      return;
-    }
+    if (!userId) return;
 
     const userDoc = await admin.firestore().collection("users").doc(userId).get();
     const userData = userDoc.data();
+    if (!userData) return;
 
-    if (!userData || !userData.fcmTokens || userData.fcmTokens.length === 0) {
-      return;
+    let pushSuccess = false;
+
+    // Tier 1: FCM Push Notifications
+    if (userData.fcmTokens && userData.fcmTokens.length > 0) {
+      const payload: admin.messaging.MulticastMessage = {
+        notification: { title, body },
+        webpush: { fcmOptions: { link: link || "https://team4job.com/dashboard" } },
+        tokens: userData.fcmTokens,
+      };
+
+      try {
+        const response = await admin.messaging().sendEachForMulticast(payload);
+        if (response.successCount > 0) pushSuccess = true;
+      } catch (err) { }
     }
 
-    const payload: admin.messaging.MulticastMessage = {
-      notification: {
-        title,
-        body,
-      },
-      webpush: {
-        fcmOptions: {
-          link: link || "https://team4job.com/dashboard",
-        },
-      },
-      tokens: userData.fcmTokens,
-    };
+    // Tier 2 & 3: WhatsApp Escalation Waterfall
+    if (isUrgent && !pushSuccess && userData.phone) {
+      const token = process.env.WHATSAPP_TOKEN;
+      const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      
+      if (token && phoneNumberId) {
+        const lastWaInteraction = userData.lastWhatsappInteraction?.toDate() || new Date(0);
+        const isWithin24h = (Date.now() - lastWaInteraction.getTime()) < (24 * 60 * 60 * 1000);
+        
+        const formattedTo = userData.phone.replace(/\D/g, "");
+        const apiUrl = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
 
-    const response = await admin.messaging().sendEachForMulticast(payload);
-    // You can also handle failures and remove invalid tokens here
+        let waPayload = {};
+        if (isWithin24h) {
+          // Tier 2: Free 24h Text
+          waPayload = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: formattedTo,
+            type: "text",
+            text: { preview_url: false, body: `${title}\n\n${body}` }
+          };
+        } else {
+          // Tier 3: Paid Template (Utility) - Requires 'urgent_alert' template in Meta
+          waPayload = {
+            messaging_product: "whatsapp",
+            to: formattedTo,
+            type: "template",
+            template: {
+              name: 'urgent_alert',
+              language: { code: 'en' },
+              components: [{ type: "body", parameters: [{ type: "text", text: title }] }]
+            }
+          };
+        }
+
+        try {
+          // Dynamic import of node-fetch or native fetch if Node 18+
+          const fetchResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(waPayload)
+          });
+          const fetchResult = await fetchResponse.json();
+          if (!fetchResponse.ok) {
+            console.error("[Functions WhatsApp Failed]:", JSON.stringify(fetchResult));
+          }
+        } catch (waErr: any) {
+          console.error("[Functions WhatsApp Error]:", waErr.message);
+        }
+      }
+    }
   } catch (error) {
     // Suppress notification errors
   }
@@ -184,7 +235,8 @@ export const onBidCreated = functions.firestore
             "NEW BID PROTOCOL // ACTION REQUIRED",
             `${ProfessionalName} has placed a bid of ₹${newBid.amount} ` +
             `on your project: "${afterData.title.toUpperCase()}"`,
-            `/dashboard/jobs/${context.params.jobId}`
+            `/dashboard/jobs/${context.params.jobId}`,
+            true
           );
         } catch (e) {
           // Silent failure
@@ -227,7 +279,8 @@ export const onPrivateMessageCreated = functions.firestore
           recipientId,
           `New Message from ${authorName}`,
           `You have a new message on job: "${afterData.title}"`,
-          `/dashboard/jobs/${context.params.jobId}`
+          `/dashboard/jobs/${context.params.jobId}`,
+          true
         );
       } catch (e) {
         // Silent failure
@@ -343,7 +396,8 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
       "Job Cancelled",
       `Your job "${job.title}" was automatically cancelled ` +
       "because it was not funded within 48 hours of acceptance.",
-      `/dashboard/jobs/${doc.id}`
+      `/dashboard/jobs/${doc.id}`,
+      true
     ));
 
     // Notify Professional
@@ -352,7 +406,8 @@ export const handleUnfundedJobs = functions.pubsub.schedule(
       "Job Cancelled",
       `Job "${job.title}" was cancelled as the Client did not ` +
       "complete payment. You are now free to bid on other jobs.",
-      `/dashboard/jobs/${doc.id}`
+      `/dashboard/jobs/${doc.id}`,
+      true
     ));
   });
 
@@ -389,7 +444,8 @@ export const handleUnbidJobs = functions.pubsub.schedule("every 1 hours").onRun(
       job.client.id,
       "RESCUE PROTOCOL // ATTENTION REQUIRED",
       `Project "${job.title.toUpperCase()}" has not received bids. Activation of recovery procedures is recommended.`,
-      `/dashboard/jobs/${doc.id}`
+      `/dashboard/jobs/${doc.id}`,
+      true
     ).catch(() => {});
   });
 
@@ -432,7 +488,8 @@ export const onJobDateChange = functions.firestore
           "Date Change Proposed",
           `${proposerName} has proposed a new start date for job: "${afterData.title
           }".`,
-          `/dashboard/jobs/${jobId}`
+          `/dashboard/jobs/${jobId}`,
+          true
         );
       } catch (e) { /* Silent */ }
     }
@@ -489,7 +546,8 @@ export const handleExpiredAwards = functions.pubsub.schedule(
         professionalId,
         "Offer Expired",
         `Your offer for job "${job.title}" has expired. You can request to re-apply from the job page.`,
-        `/dashboard/jobs/${doc.id}`
+        `/dashboard/jobs/${doc.id}`,
+        true
       ));
     });
 
@@ -509,7 +567,8 @@ export const handleExpiredAwards = functions.pubsub.schedule(
       "Offer Expired",
       `Your offer for job "${job.title}" expired without being accepted. ` +
       "You can now award it to another Professional.",
-      `/dashboard/jobs/${doc.id}`
+      `/dashboard/jobs/${doc.id}`,
+      true
     ));
   });
 

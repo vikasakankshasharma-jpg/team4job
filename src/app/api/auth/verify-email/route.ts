@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: errorMessage }, { status: 400 });
         }
 
-        const { email, otp, action } = validation.data;
+        const { email, otp, action, intent } = validation.data;
 
         if (action === 'send') {
             console.log('[VerifyEmailAPI] Generating OTP');
@@ -121,6 +121,23 @@ export async function POST(req: NextRequest) {
 
             // Success: Clean up
             await docRef.delete();
+
+            if (intent === 'login') {
+                const { getAdminAuth } = require('@/infrastructure/firebase/admin');
+                const auth = getAdminAuth();
+                try {
+                    // Try to get the user by email
+                    const userRecord = await auth.getUserByEmail(email);
+                    const customToken = await auth.createCustomToken(userRecord.uid);
+                    return NextResponse.json({ 
+                        success: true, 
+                        message: 'Login successful',
+                        token: customToken
+                    });
+                } catch (e: any) {
+                    return NextResponse.json({ success: false, message: 'Account not found for this email' }, { status: 404 });
+                }
+            }
 
             return NextResponse.json({ success: true, message: 'Email verified successfully' });
         }

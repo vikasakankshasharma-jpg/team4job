@@ -25,7 +25,7 @@ export class AuthHelper {
                     pointer-events: none !important;
                 }
                 /* Hide Cookie Banners & Sticky Modals */
-                .cookie-banner, #cookie-banner, [id*="cookie"], [class*="cookie"] {
+                .cookie-banner, #cookie-banner, [id*="cookie"], [class*="cookie"], .CookieConsent, [class*="Cookie"] {
                     display: none !important;
                 }
                 /* Hide Help Beacons */

@@ -35,7 +35,7 @@ test.describe('HTTP Smoke Tests @smoke-http', () => {
         await emailInput.waitFor({ state: 'visible', timeout: 30000 });
         await emailInput.fill('invalid-user@example.com');
         await page.fill('input[type="password"]', 'wrongpassword');
-        await page.click('button[type="submit"]:has-text("Log In")');
+        await page.click('button[type="submit"]');
 
         // Should stay on login page with an error visible
         await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 30000 });

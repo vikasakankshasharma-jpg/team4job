@@ -36,6 +36,7 @@ export function StepContact() {
   const [mobileOtp, setMobileOtp] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [isMobileVerifying, setIsMobileVerifying] = useState(false);
+  const [mobileVerificationMethod, setMobileVerificationMethod] = useState<'sms' | 'whatsapp' | null>(null);
   const [isEmailVerifying, setIsEmailVerifying] = useState(false);
   const [mobileOtpError, setMobileOtpError] = useState<string | null>(null);
   const [emailOtpError, setEmailOtpError] = useState<string | null>(null);
@@ -76,29 +77,48 @@ export function StepContact() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSendMobileOtp = async () => {
+  const handleSendMobileOtp = async (method: 'sms' | 'whatsapp') => {
     const mobile = getValues("mobile");
     if (!mobile || mobile.length !== 10) return;
     
     setIsLoading(true);
+    setMobileVerificationMethod(method);
+    
     try {
-      const formattedNumber = `+91${mobile}`;
-      const authInstance = tempAuthRef.current;
-      if (!authInstance || !recaptchaVerifierRef.current) {
-        toast({ title: "Error", description: "Verification not ready.", variant: "destructive" });
-        setIsLoading(false);
-        return;
-      }
+      if (method === 'sms') {
+        const formattedNumber = `+91${mobile}`;
+        const authInstance = tempAuthRef.current;
+        if (!authInstance || !recaptchaVerifierRef.current) {
+          toast({ title: "Error", description: "Verification not ready.", variant: "destructive" });
+          setIsLoading(false);
+          return;
+        }
 
-      const confirmation = await signInWithPhoneNumber(authInstance, formattedNumber, recaptchaVerifierRef.current);
-      // @ts-ignore
-      window.confirmationResult = confirmation;
-      setIsMobileVerifying(true);
-      setMobileResendTimer(60);
-      toast({ title: tAuth('otpSent'), description: "Please check your mobile." });
+        const confirmation = await signInWithPhoneNumber(authInstance, formattedNumber, recaptchaVerifierRef.current);
+        // @ts-ignore
+        window.confirmationResult = confirmation;
+        setIsMobileVerifying(true);
+        setMobileResendTimer(60);
+        toast({ title: tAuth('otpSent'), description: "Please check your SMS." });
+      } else {
+        // WhatsApp
+        const response = await fetch('/api/auth/whatsapp-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: mobile, action: 'send', intent: 'signup' })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setIsMobileVerifying(true);
+          setMobileResendTimer(60);
+          toast({ title: tAuth('otpSent'), description: "Please check your WhatsApp." });
+        } else {
+          throw new Error(data.message);
+        }
+      }
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-      if (recaptchaVerifierRef.current) recaptchaVerifierRef.current.clear();
+      if (method === 'sms' && recaptchaVerifierRef.current) recaptchaVerifierRef.current.clear();
     } finally {
       setIsLoading(false);
     }
@@ -112,15 +132,29 @@ export function StepContact() {
     setIsLoading(true);
     setMobileOtpError(null);
     try {
-      // @ts-ignore
-      const confirmation = window.confirmationResult;
-      if (!confirmation) throw new Error("No verification session found.");
+      if (mobileVerificationMethod === 'sms') {
+        // @ts-ignore
+        const confirmation = window.confirmationResult;
+        if (!confirmation) throw new Error("No verification session found.");
 
-      await confirmation.confirm(mobileOtp);
-      const { PhoneAuthProvider } = await import('firebase/auth');
-      const cred = PhoneAuthProvider.credential(confirmation.verificationId, mobileOtp);
-      
-      setVerifiedCredential(cred);
+        await confirmation.confirm(mobileOtp);
+        const { PhoneAuthProvider } = await import('firebase/auth');
+        const cred = PhoneAuthProvider.credential(confirmation.verificationId, mobileOtp);
+        
+        setVerifiedCredential(cred);
+      } else {
+        // WhatsApp verification
+        const response = await fetch('/api/auth/whatsapp-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: getValues("mobile"), action: 'verify', otp: mobileOtp, intent: 'signup' })
+        });
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.message);
+        }
+      }
+
       setIsMobileVerified(true);
       setIsMobileVerifying(false);
       setMobileOtp("");
@@ -234,14 +268,24 @@ export function StepContact() {
                       autoComplete="tel"
                     />
                       {!isMobileVerified && !isMobileVerifying && (
-                        <Button 
-                          type="button" 
-                          onClick={handleSendMobileOtp} 
-                          disabled={isLoading || !field.value || field.value.length !== 10} 
-                          className="h-16 px-8 rounded-[1.25rem] bg-primary text-foreground font-black text-[10px] uppercase tracking-[0.3em] italic shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                        >
-                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : tAuth('sendOtp')}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            type="button" 
+                            onClick={() => handleSendMobileOtp('sms')} 
+                            disabled={isLoading || !field.value || field.value.length !== 10} 
+                            className="h-16 px-6 rounded-[1.25rem] bg-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.2em] italic hover:scale-105 active:scale-95 transition-all"
+                          >
+                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SMS'}
+                          </Button>
+                          <Button 
+                            type="button" 
+                            onClick={() => handleSendMobileOtp('whatsapp')} 
+                            disabled={isLoading || !field.value || field.value.length !== 10} 
+                            className="h-16 px-6 rounded-[1.25rem] bg-green-500/20 text-green-500 border border-green-500/50 font-black text-[10px] uppercase tracking-[0.2em] italic hover:scale-105 active:scale-95 transition-all"
+                          >
+                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'WhatsApp'}
+                          </Button>
+                        </div>
                       )}
                       {isMobileVerified && (
                         <div className="h-16 px-8 rounded-[1.25rem] bg-success/20 text-success flex items-center gap-3 border-none ring-1 ring-success/30 backdrop-blur-md">
@@ -286,7 +330,7 @@ export function StepContact() {
                           </Button>
                           <Button 
                             variant="outline" 
-                            onClick={handleSendMobileOtp} 
+                            onClick={() => mobileVerificationMethod && handleSendMobileOtp(mobileVerificationMethod)} 
                             disabled={isLoading || mobileResendTimer > 0}
                             className="h-16 px-8 rounded-[1.25rem] border-white/10 font-black text-[10px] uppercase tracking-[0.2em] italic hover:bg-background/5 transition-colors"
                           >

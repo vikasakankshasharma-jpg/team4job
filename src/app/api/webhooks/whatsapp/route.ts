@@ -32,20 +32,54 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Bad Request', { status: 400 });
 }
 
+import { getAdminDb } from '@/infrastructure/firebase/admin';
+
 // Receive Messages
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        // Log incoming message
+        // Validate this is a WhatsApp status/message update
+        if (body.object === 'whatsapp_business_account') {
+            
+            for (const entry of body.entry || []) {
+                for (const change of entry.changes || []) {
+                    const value = change.value;
+                    
+                    // Handle Incoming Messages
+                    if (value.messages && value.messages.length > 0) {
+                        for (const message of value.messages) {
+                            const from = message.from;
+                            const messageId = message.id;
+                            const text = message.type === 'text' ? message.text.body : '[Non-text message]';
+                            
+                            console.info(`[WhatsApp] Incoming message from ${from}: ${text}`);
 
+                            // Log to Firestore for admin review or chat interface
+                            const db = getAdminDb();
+                            await db.collection('whatsapp_inbound_logs').doc(messageId).set({
+                                from,
+                                text,
+                                messageId,
+                                timestamp: new Date(),
+                                status: 'received'
+                            });
+                        }
+                    }
 
-        // Planned message handling logic goes here
-        // if (body.entry[0].changes[0].value.messages) ...
+                    // Handle Message Status Updates (Delivered, Read, Failed)
+                    if (value.statuses && value.statuses.length > 0) {
+                        for (const status of value.statuses) {
+                            console.info(`[WhatsApp] Message ${status.id} status updated to: ${status.status}`);
+                        }
+                    }
+                }
+            }
+        }
 
         return new NextResponse('OK', { status: 200 });
-    } catch (error) {
-
+    } catch (error: any) {
+        console.error(`[WhatsApp] Webhook Error: ${error.message}`);
         return new NextResponse('Error', { status: 500 });
     }
 }

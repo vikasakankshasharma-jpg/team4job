@@ -109,7 +109,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
         run: |
@@ -215,7 +215,7 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
         run: |
@@ -382,7 +382,7 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
         env:
@@ -633,7 +633,7 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
         env:
@@ -774,7 +774,7 @@ jobs:
           npm install -g @lhci/cli
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -872,7 +872,7 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
         run: |

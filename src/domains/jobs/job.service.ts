@@ -423,6 +423,26 @@ export class JobService {
         });
 
         await jobRepository.updateStatus(jobId, 'funded', userId, 'Job successfully funded by Giver');
+
+        const { sendNotification } = await import('@/lib/notifications');
+        const client = job.client as any;
+        if (client && client.email) {
+            await sendNotification(
+                client.email,
+                "Job Funded - Action Required",
+                `Your job "${job.title}" is funded. Give this START PIN to the Professional when they arrive: ${startOtp}. Give this COMPLETION PIN when they finish: ${completionOtp}.`,
+                `/dashboard/jobs/${jobId}`,
+                {
+                    channel: 'both',
+                    phoneNumber: client.phone,
+                    userId: client.id,
+                    fcmTokens: client.fcmTokens || [],
+                    useEscalation: true,
+                    templateName: 'urgent_alert',
+                    templateVariables: [{ type: "text", text: "Job Funded - Action Required" }]
+                }
+            ).catch(() => {});
+        }
     }
 
     /**

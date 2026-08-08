@@ -112,7 +112,17 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
                     sendNotification(
                         client.email,
                         "Action Required: Review Work",
-                        `Professional ${user.name} has submitted proof of work for job "${job.title}". Please log in to review and release payment.`
+                        `Professional ${user.name} has submitted proof of work for job "${job.title}". Please log in to review and release payment.`,
+                        undefined,
+                        {
+                            channel: 'both',
+                            phoneNumber: client.phone,
+                            userId: client.id,
+                            fcmTokens: client.fcmTokens || [],
+                            useEscalation: true,
+                            templateName: 'urgent_alert',
+                            templateVariables: [{ type: "text", text: "Action Required: Review Work" }]
+                        }
                     ).catch(err => {});
                 }
 
