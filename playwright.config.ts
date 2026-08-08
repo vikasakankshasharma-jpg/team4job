@@ -176,10 +176,6 @@ export default defineConfig({
                 }
             },
         },
-        {
-            name: 'mobile-safari',
-            use: { ...devices['iPhone 12'] },
-        }
     ],
 
     /* Run your local dev server before starting the tests.
