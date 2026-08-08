@@ -12,6 +12,8 @@ const getWhatsAppConfig = () => {
 
 export interface WhatsAppTemplateComponent {
     type: "header" | "body" | "button";
+    sub_type?: "quick_reply" | "url";
+    index?: string;
     parameters: Array<{
         type: "text" | "currency" | "date_time" | "document" | "image" | "video";
         text?: string;

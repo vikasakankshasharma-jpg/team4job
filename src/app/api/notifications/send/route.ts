@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { sendServerEmail } from '@/lib/server-email';
-import { sendWhatsAppMessage, sendWhatsAppTemplate } from '@/lib/whatsapp';
+import { sendWhatsAppText, sendWhatsAppTemplate } from '@/lib/whatsapp';
 
 import { getAdminMessaging, getAdminDb } from '@/infrastructure/firebase/admin';
 
@@ -33,8 +33,8 @@ export async function POST(req: Request) {
             const channel = payload.channel || 'email';
             if (channel === 'email' || channel === 'both') await sendEmailFallback();
             if ((channel === 'whatsapp' || channel === 'both') && phoneNumber) {
-                if (templateName) results.whatsapp = await sendWhatsAppTemplate(phoneNumber, templateName, 'en', templateVariables || []);
-                else results.whatsapp = await sendWhatsAppMessage(phoneNumber, text);
+                if (templateName) results.whatsapp = await sendWhatsAppTemplate(phoneNumber, templateName, templateVariables || [], 'en');
+                else results.whatsapp = await sendWhatsAppText(phoneNumber, text);
             }
             return NextResponse.json(results);
         }
@@ -73,14 +73,14 @@ export async function POST(req: Request) {
 
             if (isWithin24h) {
                 // Tier 2: Free 24-hour Raw Text
-                results.whatsapp = await sendWhatsAppMessage(phoneNumber, text);
+                results.whatsapp = await sendWhatsAppText(phoneNumber, text);
                 if (results.whatsapp?.success) {
                     results.escalatedTo = 'whatsapp_raw';
                     return NextResponse.json(results);
                 }
             } else if (templateName) {
                 // Tier 3: Paid Template (Utility)
-                results.whatsapp = await sendWhatsAppTemplate(phoneNumber, templateName, 'en', templateVariables || []);
+                results.whatsapp = await sendWhatsAppTemplate(phoneNumber, templateName, templateVariables || [], 'en');
                 if (results.whatsapp?.success) {
                     results.escalatedTo = 'whatsapp_template';
                     return NextResponse.json(results);

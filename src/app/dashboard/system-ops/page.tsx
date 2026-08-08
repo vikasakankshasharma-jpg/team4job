@@ -1,16 +1,30 @@
-import { getAdminAuth } from "@/infrastructure/firebase/admin";
+import { getAdminAuth, getAdminDb } from "@/infrastructure/firebase/admin";
 import { getSystemLinksAction } from "@/app/actions/system-ops.actions";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { SystemOpsClient } from "./system-ops-client";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function SystemOpsPage() {
-    const auth = await getAdminAuth();
-    
-    // Strict RBAC: Only Super Admins can view this
-    if (!auth || !auth.uid || auth.role !== "Admin") {
+    // Verify session and role
+    let isAdmin = false;
+    try {
+        const sessionCookie = (await cookies()).get('session')?.value;
+        if (sessionCookie) {
+            const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie);
+            const uid = decodedClaims.uid;
+            const db = getAdminDb();
+            const userDoc = await db.collection('users').doc(uid).get();
+            const role = userDoc.data()?.role || '';
+            isAdmin = role === 'Admin';
+        }
+    } catch {
+        // Auth failed, redirect below
+    }
+
+    if (!isAdmin) {
         redirect("/dashboard");
     }
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { getAdminDb, getAdminAuth } from "@/infrastructure/firebase/admin";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export type SystemLink = {
@@ -11,11 +12,30 @@ export type SystemLink = {
     description: string;
 };
 
+async function getAuthenticatedAdmin(): Promise<{ uid: string; role: string } | null> {
+    try {
+        const sessionCookie = (await cookies()).get('session')?.value;
+        if (!sessionCookie) return null;
+
+        const decodedClaims = await getAdminAuth().verifySessionCookie(sessionCookie);
+        const uid = decodedClaims.uid;
+
+        // Look up user's role from Firestore
+        const db = getAdminDb();
+        const userDoc = await db.collection('users').doc(uid).get();
+        const role = userDoc.data()?.role || '';
+
+        return { uid, role };
+    } catch {
+        return null;
+    }
+}
+
 export async function getSystemLinksAction(): Promise<{ success: boolean; data?: SystemLink[]; error?: string }> {
     try {
-        const { uid, role } = await getAdminAuth();
+        const authUser = await getAuthenticatedAdmin();
 
-        if (!uid || role !== "Admin") {
+        if (!authUser || authUser.role !== "Admin") {
             return { success: false, error: "Unauthorized access" };
         }
 
@@ -50,9 +70,9 @@ export async function getSystemLinksAction(): Promise<{ success: boolean; data?:
 
 export async function updateSystemLinksAction(links: SystemLink[]): Promise<{ success: boolean; error?: string }> {
     try {
-        const { uid, role } = await getAdminAuth();
+        const authUser = await getAuthenticatedAdmin();
 
-        if (!uid || role !== "Admin") {
+        if (!authUser || authUser.role !== "Admin") {
             return { success: false, error: "Unauthorized access" };
         }
 
