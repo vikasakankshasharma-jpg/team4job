@@ -134,7 +134,7 @@ jobs:
         run: |
           echo "Waiting for Next.js dev server on port 3000..."
           for i in $(seq 1 40); do
-            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then
               echo "Next.js is ready after ${i} attempts!"
               break
             fi
@@ -150,7 +150,7 @@ jobs:
         run: npx playwright test tests/e2e/smoke-http.spec.ts --workers=2 --reporter=list,html
         env:
           CI: true
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://127.0.0.1:3000
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -315,7 +315,7 @@ jobs:
         run: npx playwright test ${{ matrix.test-file }} --workers=1 --reporter=list,html
         env:
           CI: true
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://127.0.0.1:3000
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -572,7 +572,7 @@ jobs:
           npx playwright test ${{ env.TEST_FILES }} --workers=1 --reporter=list,html
         env:
           CI: true
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://127.0.0.1:3000
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -729,7 +729,7 @@ jobs:
           NEXT_PUBLIC_USE_EMULATOR: true
           NEXT_PUBLIC_E2E: true
           ALLOW_E2E_SEED: true
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://127.0.0.1:3000
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
