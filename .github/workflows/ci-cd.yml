@@ -233,7 +233,6 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
-          npx firebase experiments:enable webframeworks && \
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -418,7 +417,6 @@ jobs:
       - name: Start Firebase Emulators in background
         run: |
           export JAVA_TOOL_OPTIONS="-Xmx1536m"
-          npx firebase experiments:enable webframeworks && \
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -662,7 +660,6 @@ jobs:
 
       - name: Start Firebase Emulators for Edge Cases
         run: |
-          npx firebase experiments:enable webframeworks && \
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -893,7 +890,6 @@ jobs:
       - name: Start Firebase Emulators in background
         run: |
           export JAVA_TOOL_OPTIONS="-Xmx1536m"
-          npx firebase experiments:enable webframeworks && \
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:

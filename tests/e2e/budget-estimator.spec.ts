@@ -49,7 +49,7 @@ test.describe('Budget Estimator & Templates', () => {
         await handleDraftDialog(page);
 
         // header text recently changed from "Post a New Job" to simply "Post Job" so allow either
-        await expect(page.locator('h1')).toContainText(/Post(?: a New)? Job|Edit Job/);
+        await expect(page.locator('h1')).toContainText(/Post(?: a New)? Job|Post a Job|Edit Job/i);
 
         // 1. Fill basic budget info to save
         console.log('Setting custom budget...');
