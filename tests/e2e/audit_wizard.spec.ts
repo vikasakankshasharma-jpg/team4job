@@ -20,7 +20,7 @@ test('audit post job wizard', async ({ page }) => {
   
   const nextButton = page.getByTestId('wizard-next-button');
   while (await nextButton.isVisible().catch(() => false)) {
-      const firstOption = page.locator('[data-test-id^="question-option-"]').first();
+      const firstOption = page.locator('[data-testid^="question-option-"]').first();
       if (await firstOption.isVisible().catch(() => false)) {
           await firstOption.click();
       }
