@@ -335,7 +335,7 @@ test.describe('Edge Case Tests @edge', () => {
     });
 
     test.describe('Network Edge Cases', () => {
-        test.only('Application handles slow network simulator', async ({ page }) => {
+        test('Application handles slow network simulator', async ({ page }) => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
 
