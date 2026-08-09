@@ -14,7 +14,7 @@ test.describe('Partner Onboarding Flow', () => {
         const helper = new TestHelper(page);
 
         // 1. Setup: Reset Professional onboarding state via script
-        await execSync('npx tsx scripts/reset-Professional-onboarding.ts', { stdio: 'inherit' });
+        await execSync('npx tsx scripts/reset-installer-onboarding.ts', { stdio: 'inherit' });
 
         // 2. Navigation: Login and go to onboarding
         await helper.auth.loginAsProfessional();
