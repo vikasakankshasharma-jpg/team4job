@@ -17,8 +17,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
     // console logs moved to individual pages
 
     test('Complete Transaction Cycle: Full 8-Phase Flow', async ({ browser }) => {
-        // Increase timeout for this specific heavy test (5 minutes)
-        test.setTimeout(480000); // 8-phase test needs 8 minutes
+        // Increase timeout for this specific heavy test (10 minutes)
+        test.setTimeout(600000); // 8-phase test needs 10 minutes with AI wizard
 
         (uniqueJobTitle as any) = `${TEST_JOB_DATA.title} - ${Date.now()} `;
 
@@ -73,17 +73,19 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             }
         );
 
-        await helper.nav.goToPostJobForm();
+        // Use the new wizard flow to generate the draft
+        await helper.form.completeWizard(
+            TEST_JOB_DATA.category, 
+            TEST_JOB_DATA.subType, 
+            TEST_JOB_DATA.branchAnswers, 
+            TEST_JOB_DATA.urgency
+        );
+
+        // Synchronize with global draft handler
+        await helper.form.waitForDraftDialogHandled();
+
+        // After wizard completes, it redirects to the main form to finalize details
         await expect(page).toHaveURL(/\/post-job/);
-
-        const categorySelect = page.getByTestId('job-category-select');
-        await categorySelect.waitFor({ state: 'visible' });
-        await categorySelect.click();
-
-        // Wait for the option to appear in the portal
-        const option = page.locator('[role="option"]').filter({ hasText: TEST_JOB_DATA.category }).first();
-        await option.waitFor({ state: 'visible' });
-        await option.click();
 
         await page.fill('input[name="jobTitle"]', uniqueJobTitle);
         await page.locator('[data-testid="job-description-input"]').fill(TEST_JOB_DATA.description);
