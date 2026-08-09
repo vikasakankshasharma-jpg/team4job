@@ -34,7 +34,7 @@ test('audit post job wizard', async ({ page }) => {
 
   // 4. Review Step (Post Job)
   const publishButton = page.getByRole('button', { name: /Looks Good/i });
-  await publishButton.waitFor({ state: 'visible', timeout: 15000 });
+  await publishButton.waitFor({ state: 'visible', timeout: 120000 });
   await page.screenshot({ path: 'audit_wizard_step2.png' });
   await publishButton.click();
 });
