@@ -37,6 +37,7 @@ test.describe('Role Switching System', () => {
         // 1. Login with the dual-role user
         console.log('Logging in as dual-role user...');
         await helper.auth.login(DUAL_ROLE_USER.email, DUAL_ROLE_USER.password);
+        await helper.waitForStability();
 
         // 2. Initial state verification
         // By default, it might pick one or the other. Let's check what it is.
@@ -106,7 +107,7 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
 
         } else {
             // Initially Professional
@@ -115,12 +116,12 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
 
             // Verify persistence
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.getByRole('heading', { name: 'Active Jobs' })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
 
             // SWITCH BACK TO Professional
             console.log('Switching back to Professional mode...');

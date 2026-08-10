@@ -28,7 +28,9 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
                 await helper.auth.waitForStability();
                 
                 // Assert key Stitch tokens are present in the DOM (hybrid wrapper check)
-                const surfaceContainer = page.locator('.bg-surface-container-low, .bg-surface-container').first();
+                // Use attribute-substring selectors because Tailwind opacity modifiers
+                // (e.g. bg-surface-container-low/40) change the exact class string.
+                const surfaceContainer = page.locator('[class*="bg-surface-container-low"], [class*="bg-surface-container"]').first();
                 await expect(surfaceContainer).toBeVisible();
 
                 // Capture screenshot for manual/visual verify
@@ -76,7 +78,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
 
                     // Admin specific pages
                     await page.goto('/dashboard/analytics');
-                    await expect(page.locator('.bg-surface-container-low').first()).toBeVisible();
+                    await expect(page.locator('[class*="bg-surface-container-low"]').first()).toBeVisible();
                     await page.screenshot({ path: `test-results/audit/admin-analytics-desktop.png`, fullPage: true });
 
                     await page.goto('/dashboard/users');

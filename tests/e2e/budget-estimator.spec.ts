@@ -12,7 +12,8 @@ test.describe('Budget Estimator & Templates', () => {
         await page.setViewportSize({ width: 1280, height: 1000 });
         helper = new TestHelper(page);
         await helper.mockExternalAPIs();
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+        await helper.auth.loginAsClient();
+        await helper.auth.waitForStability();
     });
 
     async function handleDraftDialog(page: Page) {

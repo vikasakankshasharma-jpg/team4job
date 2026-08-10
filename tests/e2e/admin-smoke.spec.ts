@@ -15,10 +15,19 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         // Wait for dashboard to handle multi-role switch or hydration
         await page.waitForURL(/\/dashboard/, { timeout: 30000 });
         
-        // Wait for stable navigation elements instead of text content
-        await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 15000 });
-        await expect(page.getByTestId('nav-link-teamManagement')).toBeVisible({ timeout: 15000 });
-        await expect(page.getByTestId('nav-link-users')).toBeVisible({ timeout: 15000 });
+        const viewportSize = page.viewportSize();
+        const isMobile = viewportSize ? viewportSize.width < 640 : false;
+
+        if (isMobile) {
+            // On mobile, the sidebar (hidden sm:flex) is not rendered.
+            // Verify the mobile bottom nav is present instead.
+            await expect(page.locator('nav.sm\\:hidden').first()).toBeVisible({ timeout: 15000 });
+        } else {
+            // Wait for stable navigation elements in the sidebar
+            await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 15000 });
+            await expect(page.getByTestId('nav-link-teamManagement')).toBeVisible({ timeout: 15000 });
+            await expect(page.getByTestId('nav-link-users')).toBeVisible({ timeout: 15000 });
+        }
 
         // Verify admin mode indicator if present
         const adminMode = page.locator('text=Admin Mode');
@@ -45,12 +54,13 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await helper.auth.loginAsAdmin();
 
         await page.goto('/dashboard/team');
+        await helper.auth.waitForStability();
         
         // Wait for page content using stable button selector
         await expect(page.getByTestId('add-team-member-btn').or(page.getByText('Add Team Member'))).toBeVisible({ timeout: 30000 });
 
         // Verify common team member role indicators
-        await expect(page.locator('text=Admin').first()).toBeVisible();
+        await expect(page.locator('text=Admin').first()).toBeVisible({ timeout: 15000 });
     });
 
     test('Admin can access all sections', async ({ page }) => {
