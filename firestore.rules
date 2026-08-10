@@ -271,5 +271,33 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+    // --- ADMIN & MISC COLLECTIONS ---
+    match /cases/{caseId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /case_queue/{itemId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /financial_exceptions/{exceptionId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /approval_requests/{requestId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /reports/{reportId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /system_logs/{logId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /business_audit_logs/{logId} {
+      allow read, write: if isAdmin() || isSupport();
+    }
+    match /saved_searches/{searchId} {
+      allow read, write: if request.auth != null;
+    }
+    match /userTemplates/{templateId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
