@@ -37,7 +37,7 @@ test.describe('Role Switching System', () => {
         // 1. Login with the dual-role user
         console.log('Logging in as dual-role user...');
         await helper.auth.login(DUAL_ROLE_USER.email, DUAL_ROLE_USER.password);
-        await helper.waitForStability();
+        await helper.auth.waitForStability();
 
         // 2. Initial state verification
         // By default, it might pick one or the other. Let's check what it is.

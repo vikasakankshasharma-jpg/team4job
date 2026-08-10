@@ -96,3 +96,7 @@ chatgpt_prompt.md
 dashboard-response.json
 generated-dashboard.html
 generated-dashboard.jpg
+
+# Playwright traces & test results
+trace_out/
+test-results/
