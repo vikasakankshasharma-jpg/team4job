@@ -59,8 +59,8 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         // Wait for page content using stable button selector
         await expect(page.getByTestId('add-team-member-btn').or(page.getByText('Add Team Member'))).toBeVisible({ timeout: 30000 });
 
-        // Verify common team member role indicators
-        await expect(page.locator('text=Admin').first()).toBeVisible({ timeout: 15000 });
+        // Verify team management table is present by checking the Role column header
+        await expect(page.getByRole('columnheader', { name: /Role/i })).toBeVisible({ timeout: 15000 });
     });
 
     test('Admin can access all sections', async ({ page }) => {

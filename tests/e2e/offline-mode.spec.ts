@@ -11,7 +11,7 @@ test.describe('Offline Mode (PWA)', () => {
 
         // Verify the OfflineDetector component triggers a UI update
         // The detector typically shows a banner or toast
-        const offlineBanner = page.locator('text=/You are currently offline|No internet connection/i').first()
+        const offlineBanner = page.locator('text=/Working Offline|You are Offline/i').first()
             .or(page.locator('[data-testid="offline-alert"]'));
         
         await expect(offlineBanner).toBeVisible({ timeout: 10000 });

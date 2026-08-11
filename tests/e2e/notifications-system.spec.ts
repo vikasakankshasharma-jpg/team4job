@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { AuthHelper } from '../utils/helpers';
 import { TEST_ACCOUNTS } from '../fixtures/test-data';
 import { NotificationsService } from '../../src/lib/api/notifications';
 import { Notification } from '../../src/lib/types';
@@ -8,13 +9,11 @@ test.describe('Notification System', () => {
     // Use Client account
     const { email, password } = TEST_ACCOUNTS.client;
 
+    let helper: { auth: AuthHelper };
+
     test.beforeEach(async ({ page }) => {
-        // Login
-        await page.goto('/login');
-        await page.fill('input[name="identifier"]', email);
-        await page.fill('input[type="password"]', password);
-        await page.click('button[type="submit"]'); // Adjust selector if needed
-        await page.waitForURL(/\/dashboard/);
+        helper = { auth: new AuthHelper(page) };
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
     });
 
     test('should display notification bell and dropdown', async ({ page }) => {

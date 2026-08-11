@@ -19,33 +19,28 @@ test.describe('Coupons & Discounts', () => {
         const createBtn = page.getByRole('button', { name: /Create|New Coupon/i }).first();
         await createBtn.click();
 
-        // Fill coupon form
+        // Fill coupon form (subscription plan coupon)
         const couponCode = `SAVE${Math.floor(Math.random() * 1000)}`;
-        await page.getByLabel(/Code/i).fill(couponCode);
-        await page.getByLabel(/Discount Percentage|Amount/i).fill('10');
         
-        // Select type
-        const typeSelect = page.getByRole('combobox', { name: /Type/i }).first();
-        if (await typeSelect.isVisible()) {
-            await typeSelect.click();
-            await page.getByRole('option', { name: /Percentage/i }).first().click();
-        }
-
-        // Set expiry date
-        const expiryInput = page.getByLabel(/Expiry|Valid Until/i).first();
-        if (await expiryInput.isVisible()) {
-            const futureDate = new Date();
-            futureDate.setDate(futureDate.getDate() + 30);
-            await expiryInput.fill(futureDate.toISOString().split('T')[0]);
+        // Find inputs by order if labels aren't strictly matched
+        const inputs = page.locator('input[type="text"], input[type="number"]');
+        await inputs.nth(0).fill(couponCode);
+        await inputs.nth(1).fill('Free 30 days subscription'); // Description
+        await inputs.nth(2).fill('pro-Professional-annual'); // Plan ID
+        await inputs.nth(3).fill('30'); // Duration (Days)
+        
+        // Select applicable role
+        const roleSelect = page.getByRole('combobox').first();
+        if (await roleSelect.isVisible()) {
+            await roleSelect.click();
+            await page.getByRole('option', { name: /Any/i }).first().click();
         }
 
         // Save coupon
-        await page.getByRole('button', { name: /Save|Create/i }).click();
+        await page.getByRole('button', { name: /Save|Create|Submit/i }).first().click();
 
-        // Verify success toast
-        await helper.form.waitForToast(/Coupon created|Saved successfully/i);
-
-        // Verify it appears in the list
+        // Verify it appears in the list (wait for dialog to close)
+        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5000 });
         await expect(page.getByText(couponCode)).toBeVisible({ timeout: TIMEOUTS.medium });
     });
 

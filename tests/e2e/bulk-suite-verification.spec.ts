@@ -26,10 +26,12 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await expect(tabsList.getByText('AI Smart Split')).toBeVisible();
 
         // 3. Test AI Smart Split Flow
-        await page.click('button[role="tab"]:has-text("AI Smart Split")');
+        const aiTab = page.locator('button[role="tab"]:has-text("AI Smart Split"), [data-state="inactive"]:has-text("AI Smart Split")').first();
+        await aiTab.scrollIntoViewIfNeeded();
+        await aiTab.click({ force: true });
         
         const textarea = page.getByTestId('smart-split-textarea');
-        await expect(textarea).toBeVisible();
+        await expect(textarea).toBeVisible({ timeout: 15000 });
         
         await textarea.fill("I need 2 cameras in Okhla and 4 cameras in Noida. Total budget 50000.");
         await page.getByTestId('smart-split-analyze-btn').click();

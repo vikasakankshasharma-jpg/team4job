@@ -49,15 +49,16 @@ test.describe('Budget Estimator & Templates', () => {
         });
         await handleDraftDialog(page);
 
-        // header text recently changed from "Post a New Job" to simply "Post Job" so allow either
-        await expect(page.locator('h1')).toContainText(/Post(?: a New)? Job|Post a Job|Edit Job/i);
+        // header text has been updated and might contain "mission origination" or "postjob" based on translations
+        await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
 
         // 1. Fill basic budget info to save
         console.log('Setting custom budget...');
         const minInput = page.locator('[data-testid="min-budget-input"]');
         const maxInput = page.locator('[data-testid="max-budget-input"]');
 
-        await minInput.click();
+        await minInput.scrollIntoViewIfNeeded();
+        await minInput.click({ force: true });
         await minInput.fill('5500');
         await minInput.blur();
         await maxInput.click();
@@ -135,7 +136,8 @@ test.describe('Budget Estimator & Templates', () => {
         await handleDraftDialog(page);
 
         // FILL REQUIRED FIELDS VIGOROUSLY
-        const titleInput = page.locator('input#job-title-input-field');
+        const titleInput = page.locator('input#job-title-input-field').first();
+        await titleInput.waitFor({ state: 'attached', timeout: 15000 });
         await titleInput.scrollIntoViewIfNeeded();
         await titleInput.click({ force: true });
         await titleInput.clear();

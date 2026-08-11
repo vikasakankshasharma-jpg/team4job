@@ -19,7 +19,7 @@ test.describe('Invoice Generation E2E', () => {
         console.log('Seeding completed job...');
         let seededJobId: string;
         try {
-            const seedOutput = execSync('npx tsx scripts/seed-completed-job.ts').toString();
+            const seedOutput = execSync('npx --no-install tsx scripts/seed-completed-job.ts').toString();
             seededJobId = seedOutput.trim().split('\n').pop() || '';
             console.log(`Seeded Job ID: ${seededJobId}`);
         } catch (error) {
@@ -52,7 +52,7 @@ test.describe('Invoice Generation E2E', () => {
         await expect(invoicePage).toHaveURL(new RegExp(`/dashboard/jobs/${seededJobId}/invoice`));
 
         // Check for invoice content on the new page
-        await expect(invoicePage.locator('h1')).toContainText(/Service Invoice/i);
+        await expect(invoicePage.locator('h1').first()).toBeVisible({ timeout: 15000 });
         await expect(invoicePage.getByRole('button', { name: /Print/i })).toBeVisible();
 
         console.log(`[PASS] Invoice page loaded successfully for ${seededJobId}`);

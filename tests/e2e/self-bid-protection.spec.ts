@@ -48,14 +48,34 @@ test.describe('Self-Interaction Guardrails', () => {
             'Within 1-2 Days'
         );
 
-        // Fill job details on the final form
-        await page.fill('input[name="jobTitle"]', jobTitle);
-        await page.locator('[data-testid="job-description-input"], textarea[name="jobDescription"]').first().fill('Testing self-bid protection. This job should not be biddable by the owner.');
-        // Select category
-        await page.getByTestId('job-category-select').click();
-        await page.locator('[role="option"]').first().click();
+        // dismiss draft dialog if present
+        await page.evaluate(() => {
+            document.querySelectorAll('button').forEach(btn => {
+                const text = btn.textContent || '';
+                if (text.includes('Discard') || text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
+                    btn.click();
+                }
+            });
+        });
 
-        await page.fill('input[name="skills"]', 'React, Testing');
+        // Fill job details on the final form
+        const titleInput = page.locator('input[name="jobTitle"], input#job-title-input-field').first();
+        await titleInput.waitFor({ state: 'attached', timeout: 15000 });
+        await titleInput.scrollIntoViewIfNeeded();
+        await titleInput.click({ force: true });
+        await titleInput.fill(jobTitle);
+
+        const descInput = page.locator('[data-testid="job-description-input"], textarea[name="jobDescription"]').first();
+        await descInput.scrollIntoViewIfNeeded();
+        await descInput.fill('Testing self-bid protection. This job should not be biddable by the owner.');
+        
+        // Select category
+        await page.getByTestId('job-category-select').click({ force: true });
+        await page.locator('[role="option"]').first().click({ force: true });
+
+        const skillsInput = page.locator('input[name="skills"], [data-testid="skills-input"]').first();
+        await skillsInput.scrollIntoViewIfNeeded();
+        await skillsInput.fill('React, Testing');
 
         // Use robust pincode helper
         await helper.form.fillPincodeAndSelectPO('110001');

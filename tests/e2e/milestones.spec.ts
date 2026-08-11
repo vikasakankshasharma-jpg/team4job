@@ -17,7 +17,7 @@ test.describe('Milestone-based Payments @slow', () => {
         console.log("Seeding job...");
         let jobId;
         try {
-            const output = execSync('npx tsx scripts/seed-job.ts').toString().trim();
+            const output = execSync('npx --no-install tsx scripts/seed-job.ts').toString().trim();
             jobId = output.split('\n').pop()?.trim() || ''; // Get last line with fallback
             console.log(`Seeded Job ID: ${jobId}`);
         } catch (error) {

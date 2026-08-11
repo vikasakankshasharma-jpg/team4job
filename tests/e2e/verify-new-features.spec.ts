@@ -29,13 +29,30 @@ test.describe('Client Enhancements Verification', () => {
         console.log('Verifying Draft Auto-Save...');
         await page.goto('/dashboard/post-job');
 
+        // dismiss draft dialog if present
+        await page.evaluate(() => {
+            document.querySelectorAll('button').forEach(btn => {
+                const text = btn.textContent || '';
+                if (text.includes('Discard') || text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
+                    btn.click();
+                }
+            });
+        });
+
         const timestamp = Date.now();
         const testTitle = `Auto-Save Test ${timestamp}`;
 
         // Type in title
-        await page.fill('input[name="jobTitle"]', testTitle);
+        const titleInput = page.locator('input[name="jobTitle"], input#job-title-input-field').first();
+        await titleInput.waitFor({ state: 'attached', timeout: 15000 });
+        await titleInput.scrollIntoViewIfNeeded();
+        await titleInput.click({ force: true });
+        await titleInput.fill(testTitle);
+        
         // Type description to ensure form is dirty
-        await page.fill('[data-testid="job-description-input"]', 'This is a test description for auto-save verification.');
+        const descInput = page.locator('[data-testid="job-description-input"], textarea[name="jobDescription"]').first();
+        await descInput.scrollIntoViewIfNeeded();
+        await descInput.fill('This is a test description for auto-save verification.');
 
         // Blur field to trigger immediate events
         await page.click('body');

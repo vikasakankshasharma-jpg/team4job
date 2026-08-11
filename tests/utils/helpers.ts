@@ -166,11 +166,11 @@ export class AuthHelper {
             await this.page.waitForTimeout(1000);
 
             // Check primary or secondary indicators first (they might already be there)
-            const isProfessional = await this.page.getByText('Browse Jobs').first().isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText('Open Jobs').first().isVisible({ timeout: 1000 }).catch(() => false);
-            const isClient = await this.page.getByTestId('dashboard-post-job-btn').isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText(/Post (New )?Job/i).first().isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText(/(My )?Active Jobs/i).first().isVisible({ timeout: 1000 }).catch(() => false);
+            const isProfessional = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText('Open Jobs').filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false);
+            const isClient = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText(/Post (New )?Job/i).filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false) ||
+                await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false);
 
             const currentRoleMatched = (targetRole === 'Professional' && isProfessional) ||
                 (targetRole === 'Client' && isClient);
@@ -207,9 +207,10 @@ export class AuthHelper {
                 await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
                 await this.page.waitForTimeout(2000);
 
-                const profNow = await this.page.getByText('Browse Jobs').first().isVisible().catch(() => false);
-                const clientNow = await this.page.getByTestId('dashboard-post-job-btn').isVisible().catch(() => false) ||
-                    await this.page.getByText('Post Job').first().isVisible().catch(() => false);
+                const profNow = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible().catch(() => false);
+                const clientNow = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible().catch(() => false) ||
+                    await this.page.getByText('Post Job').filter({ visible: true }).first().isVisible().catch(() => false) ||
+                    await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible().catch(() => false);
 
                 if ((targetRole === 'Professional' && profNow) || (targetRole === 'Client' && clientNow)) {
                     console.log(`[AuthHelper] ${targetRole} indicators found after direct dashboard navigation.`);

@@ -67,7 +67,7 @@ test.describe('Role Switching System', () => {
             await userMenu.click({ force: true });
             try {
                 // Check if "Current Mode" label or role options are visible
-                await expect(page.getByText(/Current Mode|Client|Professional/i).first()).toBeVisible({ timeout: 5000 });
+                await expect(page.getByText(/Current Mode|Client|Professional/i).filter({ visible: true }).first()).toBeVisible({ timeout: 5000 });
                 menuOpened = true;
                 break;
             } catch (e) {
@@ -107,7 +107,7 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).filter({ visible: true }).first()).toBeVisible({ timeout: 30000 });
 
         } else {
             // Initially Professional
@@ -116,12 +116,12 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).filter({ visible: true }).first()).toBeVisible({ timeout: 30000 });
 
             // Verify persistence
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText(/Active Engagements|Active Jobs/i).filter({ visible: true }).first()).toBeVisible({ timeout: 30000 });
 
             // SWITCH BACK TO Professional
             console.log('Switching back to Professional mode...');
