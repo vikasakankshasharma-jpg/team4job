@@ -43,8 +43,8 @@ async function seedCompletedJob() {
             title: `Completed Job for Review ${Date.now()}`,
             description: "A seeded job for testing review/rating flow.",
             status: 'Completed',
-            jobGiverId: giverId,
-            jobGiver: db.collection('users').doc(giverId),
+            clientId: giverId,
+            client: db.collection('users').doc(giverId),
             priceEstimate: { min: 8000, max: 15000 },
             postedAt: Timestamp.now(),
             deadline: Timestamp.fromDate(new Date(Date.now() + 86400000)),
@@ -54,8 +54,8 @@ async function seedCompletedJob() {
             updatedAt: Timestamp.now(),
             bids: [mockBid],
             bidderIds: [installerId],
-            awardedInstallerId: installerId,
-            awardedBid: mockBid,
+            awardedProfessionalId: installerId,
+            awardedProfessional: db.collection('users').doc(installerId),
             budget: { min: 15000, max: 15000 }
         };
 

@@ -58,47 +58,15 @@ test.describe('Self-Interaction Guardrails', () => {
             });
         });
 
-        // Fill job details on the final form
-        const titleInput = page.locator('input[name="jobTitle"], input#job-title-input-field').first();
-        await titleInput.waitFor({ state: 'attached', timeout: 15000 });
-        await titleInput.scrollIntoViewIfNeeded();
-        await titleInput.click({ force: true });
-        await titleInput.fill(jobTitle);
-
-        const descInput = page.locator('[data-testid="job-description-input"], textarea[name="jobDescription"]').first();
-        await descInput.scrollIntoViewIfNeeded();
-        await descInput.fill('Testing self-bid protection. This job should not be biddable by the owner.');
-        
-        // Select category
-        await page.getByTestId('job-category-select').click({ force: true });
-        await page.locator('[role="option"]').first().click({ force: true });
-
-        const skillsInput = page.locator('input[name="skills"], [data-testid="skills-input"]').first();
-        await skillsInput.scrollIntoViewIfNeeded();
-        await skillsInput.fill('React, Testing');
-
-        // Use robust pincode helper
-        await helper.form.fillPincodeAndSelectPO('110001');
-
-        await page.fill('input[name="address.house"]', 'Self-Bid House');
-        await page.fill('input[name="address.street"]', 'Guardrail St');
-        await page.fill('input[name="address.landmark"]', 'Near Protection Park');
-        await page.fill('input[name="address.fullAddress"]', 'Self-Bid House, Guardrail St, Near Protection Park, 110001');
-
-        // Dates
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const nextWeek = new Date();
-        nextWeek.setDate(nextWeek.getDate() + 7);
-
-        await page.fill('input[name="deadline"]', tomorrow.toISOString().split('T')[0]);
-        await page.fill('input[name="jobStartDate"]', nextWeek.toISOString().slice(0, 16));
-
-        await page.fill('[data-testid="min-budget-input"]', '1000');
-        await page.fill('[data-testid="max-budget-input"]', '5000');
+        // The wizard generates the job title and description.
+        // We can read it from the DOM to use for assertions later.
+        const generatedTitleElement = page.locator('.text-2xl.font-extrabold').first();
+        await expect(generatedTitleElement).toBeVisible({ timeout: 15000 });
+        jobTitle = await generatedTitleElement.innerText();
 
         // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
-        await helper.form.submitPostJob();
+        // Note: The wizard auto-fills most details, we just need to ensure pincode is set if not already
+        await helper.form.submitPostJob('110001');
 
         await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
 

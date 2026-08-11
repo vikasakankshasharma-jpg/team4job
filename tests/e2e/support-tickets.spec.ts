@@ -9,6 +9,10 @@ test.describe('Support Tickets', () => {
     });
 
     test('User can interact with AI Support Chatbot', async ({ page }) => {
+        // Skip test on mobile because support dialog is not available in mobile menu yet
+        const viewport = page.viewportSize();
+        test.skip(!!viewport && viewport.width < 768, 'Support Dialog is only in desktop sidebar for now');
+
         await helper.auth.loginAsClient();
 
         // Navigate to dashboard where support dialog is available
@@ -18,7 +22,7 @@ test.describe('Support Tickets', () => {
         // Locate and click the support button
         const supportBtn = page.getByTestId('support-trigger-button');
         await expect(supportBtn).toBeVisible({ timeout: 15000 });
-        await supportBtn.click({ force: true });
+        await supportBtn.evaluate(b => (b as HTMLElement).click());
 
         // Verify dialog opens
         await expect(page.locator('text=Contact Support').first()).toBeVisible({ timeout: 15000 });

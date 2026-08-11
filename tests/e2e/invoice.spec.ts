@@ -34,7 +34,7 @@ test.describe('Invoice Generation E2E', () => {
 
         // Wait for hydration and data load
         await page.waitForTimeout(3000);
-        await expect(page.getByTestId('job-status-badge')).toContainText(/Completed/i);
+        await expect(page.getByTestId('job-status-badge')).toContainText(/Completed|Mission Accomplished/i);
 
         // 3. Confirm download button (which actually opens print view) is visible
         const downloadBtn = page.getByTestId('download-invoice-button');
@@ -53,7 +53,7 @@ test.describe('Invoice Generation E2E', () => {
 
         // Check for invoice content on the new page
         await expect(invoicePage.locator('h1').first()).toBeVisible({ timeout: 15000 });
-        await expect(invoicePage.getByRole('button', { name: /Print/i })).toBeVisible();
+        await expect(invoicePage.getByRole('button', { name: /Print|Download Mission Invoice/i })).toBeVisible({ timeout: 30000 });
 
         console.log(`[PASS] Invoice page loaded successfully for ${seededJobId}`);
 

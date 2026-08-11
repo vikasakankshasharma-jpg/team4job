@@ -15,13 +15,13 @@ if (!process.env.CI) {
 
 async function seedJob() {
     // Dynamic import to ensure env vars are loaded first
-    const { getAdminDb } = await import('../src/lib/firebase/server-init');
-    const { getAuth } = await import('firebase-admin/auth');
+    const { getAdminDb, getAdminAuth } = await import('../src/infrastructure/firebase/admin');
     const { Timestamp } = await import('firebase-admin/firestore');
 
     try {
         const db = getAdminDb(); // Initialize Admin App first
-        const userRecord = await getAuth().getUserByEmail('giver_vip_v3@team4job.com');
+        const auth = getAdminAuth();
+        const userRecord = await auth.getUserByEmail('giver_vip_v3@team4job.com');
         const userId = userRecord.uid;
 
         const jobId = `JOB-SEED-${Date.now()}`;

@@ -365,7 +365,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
   const { saveStatus, draftId, saveNow, setDraftId } = useAutoSave(
     getDraftData,
     {
-      enabled: !isEditMode && !isSubmitted && !repostJobId && process.env.NEXT_PUBLIC_IS_CI !== 'true',
+      enabled: !isEditMode && !isSubmitted && !repostJobId && process.env.NEXT_PUBLIC_E2E !== 'true',
       onSave: (id) => setDraftId(id),
     }
   );
@@ -436,7 +436,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
            setTimeout(() => checkForDraft(retries - 1), 2500);
         } else if (isWizardCompleted) {
            console.warn("[PostJob] Wizard completed but no draft found in Firestore after extended retries.");
-        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_IS_CI !== 'true' && !userLoading && user?.roles?.includes('Client')) {
+        } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_E2E !== 'true' && !userLoading && user?.roles?.includes('Client')) {
           // Safety: only redirect if definitely no draft, not coming from wizard, and user is a Client
           console.log("[PostJob] No draft found and no special params. Redirecting to wizard.");
           router.replace('/wizard');

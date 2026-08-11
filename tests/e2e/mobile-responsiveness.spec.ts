@@ -53,7 +53,7 @@ test.describe('Mobile Responsiveness', () => {
         console.log('[Mobile] Hamburger menu trigger is visible');
 
         // 4. Open Mobile Menu
-        await mobileMenuTrigger.click();
+        await mobileMenuTrigger.click({ force: true });
 
         // Verify Menu Content (Sheet) - filter by hasText to avoid Next.js error overlay
         const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });

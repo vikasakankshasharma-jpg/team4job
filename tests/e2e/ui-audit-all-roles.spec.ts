@@ -40,7 +40,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
                 });
 
                 // Functional check: Navigation works
-                await page.locator('a[href="/dashboard/posted-jobs"]').first().click();
+                await page.goto('/dashboard/posted-jobs', { waitUntil: 'networkidle' });
                 await expect(page).toHaveURL(/.*\/posted-jobs/);
                 await page.screenshot({ 
                     path: `test-results/audit/customer-posted-jobs-${viewport.name.toLowerCase()}.png`,

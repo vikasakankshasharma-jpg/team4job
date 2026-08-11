@@ -22,7 +22,7 @@ test.describe('Team Management', () => {
         await page.getByLabel(/Temporary Password/i).fill('password123');
         
         // Select role
-        await page.getByLabel(/Role/i).click();
+        await page.getByLabel(/Role/i).first().click();
         await page.getByRole('option', { name: /Support Team/i }).first().click();
 
         // Send invitation

@@ -94,7 +94,7 @@ export function FixedQuestionStep({
                                             : "border-white/5 bg-background/20 hover:border-primary/40 hover:bg-background/40 shadow-inner"
                                         }
                    `}
-                                    data-test-id={`question-option-${option.value}`}
+                                    data-testid={`question-option-${option.value}`}
                                 >
                                     <span className={`transition-colors ${isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}>
                                         {option.label}

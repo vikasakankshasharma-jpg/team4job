@@ -5,12 +5,10 @@ if (!process.env.CI) {
 }
 
 async function resetInstaller() {
-    const { getAdminDb } = await import('../src/lib/firebase/server-init');
-    const { getAuth } = await import('firebase-admin/auth');
-
+    const { getAdminDb, getAdminAuth } = await import('../src/infrastructure/firebase/admin');
     try {
         const db = getAdminDb();
-        const auth = getAuth();
+        const auth = getAdminAuth();
 
         const userRecord = await auth.getUserByEmail('installer_pro_v3@team4job.com');
         const userId = userRecord.uid;

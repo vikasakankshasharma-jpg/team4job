@@ -2504,12 +2504,22 @@
             "basic": "Basic Info",
             "experience": "Experience & Skills",
             "documents": "Documents (KYC)",
-            "review": "Review"
+            "review": "Review",
+            "next": "Next",
+            "back": "Back"
         },
         "experience": {
             "title": "Experience & Skills",
             "categoryLabel": "Professional Category",
             "selectCategory": "Select your field of expertise",
+            "categories": {
+                "security": "Security & Surveillance",
+                "it_networking": "IT & Networking",
+                "electrical": "Electrical",
+                "plumbing": "Plumbing",
+                "construction": "Construction",
+                "hvac": "HVAC"
+            },
             "yearsLabel": "Years of Experience",
             "years02": "0 - 2 Years",
             "years35": "3 - 5 Years",

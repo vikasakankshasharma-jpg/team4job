@@ -39,9 +39,9 @@ test.describe('Partner Onboarding Flow', () => {
         await page.getByRole('button', { name: 'Next' }).click();
 
         // 4. Step 2: Experience & Skills
-        await page.check('#r2');
-        await page.check('[id="CCTV Installation"]');
-        await page.check('[id="Networking"]');
+        await page.locator('#security').click();
+        await page.getByRole('button', { name: 'CCTV Installation' }).click();
+        await page.getByRole('button', { name: 'Alarm Systems' }).click();
         await page.getByRole('button', { name: 'Next' }).click();
 
         // 5. Step 3: Documents (KYC)

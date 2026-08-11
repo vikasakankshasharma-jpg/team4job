@@ -34,7 +34,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await expect(textarea).toBeVisible({ timeout: 15000 });
         
         await textarea.fill("I need 2 cameras in Okhla and 4 cameras in Noida. Total budget 50000.");
-        await page.getByTestId('smart-split-analyze-btn').click();
+        await page.getByTestId('smart-split-analyze-btn').click({ force: true });
 
         // 4. Verify Analysis Results (Review Grid)
         // Wait for AI analysis - might take a few seconds

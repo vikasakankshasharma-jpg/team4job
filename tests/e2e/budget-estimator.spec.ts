@@ -19,17 +19,19 @@ test.describe('Budget Estimator & Templates', () => {
     async function handleDraftDialog(page: Page) {
         console.log('Checking for draft dialog vigorously...');
         // Wait and check multiple times because it can appear late
-        for (let i = 0; i < 5; i++) {
-            const dialog = page.locator('div[role="dialog"]').filter({ hasText: /Resume your draft/i });
+        try {
+            // Increase timeout because draft detection has retries up to 7.5s + network latency
+            const dialog = page.locator('[role="dialog"]').filter({ hasText: /Draft/i }).first();
+            await dialog.waitFor({ state: 'visible', timeout: 15000 });
             if (await dialog.isVisible()) {
-                console.log('Draft dialog found, clicking Discard...');
-                const discardBtn = dialog.getByRole('button', { name: /Discard/i });
-                await discardBtn.click();
-                await expect(dialog).not.toBeVisible({ timeout: 5000 }).catch(() => { });
-                console.log('Draft discarded.');
-                break;
+                const discardBtn = dialog.getByRole('button', { name: /Discard|Start Fresh/i });
+                if (await discardBtn.isVisible()) {
+                    await discardBtn.click({ force: true });
+                    await dialog.waitFor({ state: 'hidden', timeout: 10000 });
+                }
             }
-            await page.waitForTimeout(1000);
+        } catch (e) {
+            // No dialog appeared, ignore
         }
     }
 

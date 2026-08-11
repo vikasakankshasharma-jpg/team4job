@@ -74,9 +74,10 @@ test.describe.serial('Multi-Party Job Flow @smoke @multi-context', () => {
 
         // 3. Answer questions (just click next repeatedly until compiling)
         const nextButton = clientPage.getByTestId('wizard-next-button');
+        await nextButton.waitFor({ state: 'visible', timeout: 15000 });
         while (await nextButton.isVisible().catch(() => false)) {
             // Click the first available multiple-choice option so Next is enabled
-            const firstOption = clientPage.locator('[data-test-id^="question-option-"]').first();
+            const firstOption = clientPage.locator('[data-testid^="question-option-"]').first();
             if (await firstOption.isVisible().catch(() => false)) {
                 await firstOption.click();
             }

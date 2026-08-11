@@ -40,7 +40,7 @@ test.describe('Calendar & Scheduling View', () => {
             await event.click();
             
             // Verify event popover or detail shows up in the job list panel
-            await expect(page.locator('h3').filter({ hasText: /No Jobs|Scheduled Jobs/i }).first()).toBeVisible();
+            await expect(page.locator('p').filter({ hasText: /No Jobs|Scheduled Jobs/i }).first()).toBeVisible();
         } else {
             console.log('No events found on the current calendar view.');
         }

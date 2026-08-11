@@ -192,10 +192,24 @@ export class AuthHelper {
                 .filter({ visible: true })
                 .first();
 
+            const menuText = targetRole === 'Professional' ? "Professional (Working)" : "Client (Hiring)";
+            const roleOption = this.page.getByText(menuText).first();
+            let menuOpened = false;
+
             try {
-                await userMenu.waitFor({ state: 'visible', timeout: 8000 });
-                await userMenu.click();
-                console.log('[AuthHelper] Clicked user menu');
+                for (let i = 0; i < 3; i++) {
+                    await userMenu.waitFor({ state: 'visible', timeout: 8000 });
+                    await userMenu.click({ force: true });
+                    console.log(`[AuthHelper] Clicked user menu (attempt ${i + 1})`);
+                    
+                    if (await roleOption.isVisible({ timeout: 2000 })) {
+                        menuOpened = true;
+                        break;
+                    }
+                    console.log('[AuthHelper] Role option not visible yet, retrying click...');
+                    await this.page.keyboard.press('Escape');
+                    await this.page.waitForTimeout(1000);
+                }
             } catch (e: any) {
                 console.log('[AuthHelper] User menu not found or not clickable, checking URL...');
                 if (this.page.url().includes('/dashboard')) {
@@ -223,11 +237,7 @@ export class AuthHelper {
                 return;
             }
 
-            // Click the radio item for the role
-            const menuText = targetRole === 'Professional' ? "Professional (Working)" : "Client (Hiring)";
-            const roleOption = this.page.getByText(menuText).first();
-
-            if (await roleOption.isVisible({ timeout: 2000 })) {
+            if (menuOpened) {
                 console.log(`[AuthHelper] Switching to role: ${menuText}`);
                 await roleOption.click();
                 await this.page.waitForURL(/\/dashboard/, { timeout: 180000 });

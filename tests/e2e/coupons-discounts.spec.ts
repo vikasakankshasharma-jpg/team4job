@@ -23,7 +23,7 @@ test.describe('Coupons & Discounts', () => {
         const couponCode = `SAVE${Math.floor(Math.random() * 1000)}`;
         
         // Find inputs by order if labels aren't strictly matched
-        const inputs = page.locator('input[type="text"], input[type="number"]');
+        const inputs = page.locator('input:not([type="hidden"])');
         await inputs.nth(0).fill(couponCode);
         await inputs.nth(1).fill('Free 30 days subscription'); // Description
         await inputs.nth(2).fill('pro-Professional-annual'); // Plan ID

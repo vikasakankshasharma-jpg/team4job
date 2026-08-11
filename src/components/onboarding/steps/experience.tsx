@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function Experience({ data, updateData }: ExperienceProps) {
     const t = useTranslations('onboarding.experience');
+    const tSkills = useTranslations('skills');
     const selectedCategory = data.category || "";
 
     const filteredSkills = selectedCategory ? SKILLS_BY_CATEGORY[selectedCategory] : [];
@@ -131,7 +132,7 @@ export function Experience({ data, updateData }: ExperienceProps) {
                                                     : "bg-background border-border hover:border-primary/40 text-muted-foreground hover:text-primary"
                                             )}
                                         >
-                                            {t(`skills.${skill}`)}
+                                            {tSkills(skill)}
                                         </button>
                                     );
                                 })}
