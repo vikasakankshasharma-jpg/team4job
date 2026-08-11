@@ -280,7 +280,7 @@ jobs:
           
           echo "Waiting for Firebase Emulators on ports 9099 and 8080..."
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -sf http://127.0.0.1:8080 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -s http://127.0.0.1:8080 > /dev/null 2>&1; then
               echo "Firebase Emulators are ready after ${i} attempts!"
               break
             fi
@@ -464,7 +464,7 @@ jobs:
         run: |
           echo "Waiting for Firebase Emulators on ports 9099 and 8080..."
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -sf http://127.0.0.1:8080 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -s http://127.0.0.1:8080 > /dev/null 2>&1; then
               echo "Firebase Emulators are ready after ${i} attempts!"
               break
             fi
@@ -939,7 +939,7 @@ jobs:
         run: |
           echo "Waiting for Firebase Emulators on ports 9099 and 8080..."
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -sf http://127.0.0.1:8080 > /dev/null 2>&1; then
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -s http://127.0.0.1:8080 > /dev/null 2>&1; then
               echo "Firebase Emulators are ready after ${i} attempts!"
               break
             fi
@@ -1100,5 +1100,6 @@ jobs:
   #         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
   #       run: |
   #         npx firebase-tools@latest deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
+
 
 
