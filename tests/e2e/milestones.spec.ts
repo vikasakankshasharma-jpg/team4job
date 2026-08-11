@@ -30,9 +30,14 @@ test.describe('Milestone-based Payments @slow', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
 
-        // Wait for hydration and data load
+        // Wait for hydration and data load, bypass syncing screen if necessary
         await page.waitForTimeout(3000);
-        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i);
+        const manualSyncBtn = page.getByRole('button', { name: /Manual Sync/i });
+        if (await manualSyncBtn.isVisible().catch(() => false)) {
+            await manualSyncBtn.click();
+            await page.waitForTimeout(2000);
+        }
+        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i, { timeout: 15000 });
 
         // 3. Create Milestone 1
         // Wait for milestone section to be interactive

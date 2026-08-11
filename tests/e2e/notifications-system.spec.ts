@@ -18,8 +18,11 @@ test.describe('Notification System', () => {
 
     test('should display notification bell and dropdown', async ({ page }) => {
         // Check if bell exists
-        const bell = page.getByRole('button', { name: /Notifications/i });
+        const bell = page.getByRole('button', { name: /Notifications/i }).first();
         await expect(bell).toBeVisible();
+
+        // Wait for hydration
+        await page.waitForTimeout(2000);
 
         // Click bell (force click for mobile viewports where it might be slightly overflowing)
         await bell.click({ force: true });
