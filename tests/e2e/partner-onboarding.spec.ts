@@ -39,7 +39,7 @@ test.describe('Partner Onboarding Flow', () => {
         await page.getByRole('button', { name: 'Next' }).click();
 
         // 4. Step 2: Experience & Skills
-        await page.locator('#security').click();
+        await page.locator('#security').click({ force: true });
         await page.getByRole('button', { name: 'CCTV Installation' }).click();
         await page.getByRole('button', { name: 'Alarm Systems' }).click();
         await page.getByRole('button', { name: 'Next' }).click();
