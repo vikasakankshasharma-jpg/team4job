@@ -917,15 +917,15 @@ export class FormHelper {
             return;
         } catch { /* fallthrough */ }
 
-        // Strategy 3: data-test-id attribute (component uses option.value)
+        // Strategy 3: data-testid attribute (component uses option.value)
         try {
             const slug = optionValue.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
             const cleanVal = optionValue.replace(/[^a-z0-9]/gi, '');
-            const byId = this.page.locator(`[data-test-id*="${slug}"], [data-test-id*="${cleanVal}"]`).first();
+            const byId = this.page.locator(`[data-testid*="${slug}" i], [data-testid*="${cleanVal}" i]`).first();
             await byId.waitFor({ state: 'visible', timeout: 8000 });
             await byId.click({ force: true });
             await this.page.waitForTimeout(500);
-            console.log(`[FormHelper] ✅ Clicked via data-test-id: ${optionValue}`);
+            console.log(`[FormHelper] ✅ Clicked via data-testid: ${optionValue}`);
             return;
         } catch { /* fallthrough */ }
 

@@ -102,13 +102,13 @@ export const TEST_JOB_DATA = {
     category: 'Security & Surveillance',
     subType: 'CCTV / Video Surveillance',
     branchAnswers: [
-        '3-4',          // How many areas/points?
-        'Both',         // Indoor, Outdoor, or Both?
-        'Commercial',   // Property type?
-        'FreshWiring',  // Existing wiring?
-        '1Week',        // Storage?
-        'NotNeeded',    // Audio?
-        'MobileOnly'    // Display?
+        '3-4 Points',               // How many areas/points?
+        'Both Indoor & Outdoor',    // Indoor, Outdoor, or Both?
+        'Commercial / Office',      // Property type?
+        'No, needs fresh wiring',   // Existing wiring?
+        '1 Week',                   // Storage?
+        'Not needed',               // Audio?
+        'Mobile viewing only'       // Display?
     ],
     urgency: 'Within 1-2 Days',
     skills: 'CCTV Installation, Wiring, DVR Configuration',
