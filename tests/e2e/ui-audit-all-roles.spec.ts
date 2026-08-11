@@ -54,7 +54,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
                 await helper.auth.waitForStability();
 
                 // Check for Pro-specific Stitch patterns
-                await expect(page.getByText(/Open Jobs|Browse Jobs/i).first()).toBeVisible();
+                await expect(page.getByText(/Open Jobs|Browse Jobs/i).filter({ visible: true }).first()).toBeVisible();
                 
                 await page.screenshot({ 
                     path: `test-results/audit/pro-dashboard-${viewport.name.toLowerCase()}.png`,
