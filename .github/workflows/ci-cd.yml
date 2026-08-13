@@ -14,7 +14,6 @@ defaults:
 env:
   NODE_VERSION: '20.x'
   FIREBASE_TOOLS_VERSION: '11.28.0'
-  NODE_OPTIONS: '--max-old-space-size=4096'
 
 jobs:
   # Job 1: Code Quality Checks
@@ -256,7 +255,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -308,7 +307,7 @@ jobs:
             fi
           done
           echo "Seeding test users..."
-          if ! npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
             echo "ERROR: Seeding failed. Aborting."
             exit 1
           fi
@@ -361,7 +360,7 @@ jobs:
       matrix:
         # 10 explicit groups â€” each maps to a specific set of test files below.
         # Distribution is weight-balanced so no single group exceeds ~170 units.
-        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43]
     
     steps:
       - name: Checkout code
@@ -538,34 +537,103 @@ jobs:
               TEST_FILES="tests/e2e/dispute-refund-audit.spec.ts"
               ;;
             11)
-              TEST_FILES="tests/e2e/admin-smoke.spec.ts tests/e2e/ui-audit-all-roles.spec.ts"
+              TEST_FILES="tests/e2e/admin-smoke.spec.ts"
               ;;
             12)
-              TEST_FILES="tests/e2e/beta-squad-case-1.spec.ts tests/e2e/budget-estimator.spec.ts"
+              TEST_FILES="tests/e2e/ui-audit-all-roles.spec.ts"
               ;;
             13)
-              TEST_FILES="tests/e2e/accessibility.spec.ts tests/e2e/analytics-dashboard.spec.ts tests/e2e/audit_wizard.spec.ts"
+              TEST_FILES="tests/e2e/beta-squad-case-1.spec.ts"
               ;;
             14)
-              TEST_FILES="tests/e2e/desktop_user_flow.spec.ts tests/e2e/final-polish.spec.ts tests/e2e/invoice.spec.ts"
+              TEST_FILES="tests/e2e/budget-estimator.spec.ts"
               ;;
             15)
-              TEST_FILES="tests/e2e/offline-mode.spec.ts tests/e2e/partner-onboarding.spec.ts tests/e2e/performance.spec.ts"
+              TEST_FILES="tests/e2e/accessibility.spec.ts"
               ;;
             16)
-              TEST_FILES="tests/e2e/support-tickets.spec.ts tests/e2e/team-management.spec.ts tests/e2e/variation-orders.spec.ts"
+              TEST_FILES="tests/e2e/analytics-dashboard.spec.ts"
               ;;
             17)
-              TEST_FILES="tests/e2e/bulk-suite-verification.spec.ts tests/e2e/calendar-view.spec.ts tests/e2e/coordination-sync.spec.ts tests/e2e/coupons-discounts.spec.ts"
+              TEST_FILES="tests/e2e/audit_wizard.spec.ts"
               ;;
             18)
-              TEST_FILES="tests/e2e/milestones.spec.ts tests/e2e/mobile-responsiveness.spec.ts tests/e2e/mobile_user_flow.spec.ts tests/e2e/notifications-system.spec.ts"
+              TEST_FILES="tests/e2e/desktop_user_flow.spec.ts"
               ;;
             19)
-              TEST_FILES="tests/e2e/profile-settings.spec.ts tests/e2e/reviews.spec.ts tests/e2e/role-redirects.spec.ts tests/e2e/self-bid-protection.spec.ts"
+              TEST_FILES="tests/e2e/final-polish.spec.ts"
               ;;
             20)
-              TEST_FILES="tests/e2e/verify-new-features.spec.ts tests/e2e/wallet-withdrawals.spec.ts tests/e2e/ux-enhancements.spec.ts tests/e2e/role-switching.spec.ts tests/e2e/dashboard-financials.spec.ts"
+              TEST_FILES="tests/e2e/invoice.spec.ts"
+              ;;
+            21)
+              TEST_FILES="tests/e2e/offline-mode.spec.ts"
+              ;;
+            22)
+              TEST_FILES="tests/e2e/partner-onboarding.spec.ts"
+              ;;
+            23)
+              TEST_FILES="tests/e2e/performance.spec.ts"
+              ;;
+            24)
+              TEST_FILES="tests/e2e/support-tickets.spec.ts"
+              ;;
+            25)
+              TEST_FILES="tests/e2e/team-management.spec.ts"
+              ;;
+            26)
+              TEST_FILES="tests/e2e/variation-orders.spec.ts"
+              ;;
+            27)
+              TEST_FILES="tests/e2e/bulk-suite-verification.spec.ts"
+              ;;
+            28)
+              TEST_FILES="tests/e2e/calendar-view.spec.ts"
+              ;;
+            29)
+              TEST_FILES="tests/e2e/coordination-sync.spec.ts"
+              ;;
+            30)
+              TEST_FILES="tests/e2e/coupons-discounts.spec.ts"
+              ;;
+            31)
+              TEST_FILES="tests/e2e/milestones.spec.ts"
+              ;;
+            32)
+              TEST_FILES="tests/e2e/mobile-responsiveness.spec.ts"
+              ;;
+            33)
+              TEST_FILES="tests/e2e/mobile_user_flow.spec.ts"
+              ;;
+            34)
+              TEST_FILES="tests/e2e/notifications-system.spec.ts"
+              ;;
+            35)
+              TEST_FILES="tests/e2e/profile-settings.spec.ts"
+              ;;
+            36)
+              TEST_FILES="tests/e2e/reviews.spec.ts"
+              ;;
+            37)
+              TEST_FILES="tests/e2e/role-redirects.spec.ts"
+              ;;
+            38)
+              TEST_FILES="tests/e2e/self-bid-protection.spec.ts"
+              ;;
+            39)
+              TEST_FILES="tests/e2e/verify-new-features.spec.ts"
+              ;;
+            40)
+              TEST_FILES="tests/e2e/wallet-withdrawals.spec.ts"
+              ;;
+            41)
+              TEST_FILES="tests/e2e/ux-enhancements.spec.ts"
+              ;;
+            42)
+              TEST_FILES="tests/e2e/role-switching.spec.ts"
+              ;;
+            43)
+              TEST_FILES="tests/e2e/dashboard-financials.spec.ts"
               ;;
           esac
           echo "TEST_FILES=$TEST_FILES" >> $GITHUB_ENV

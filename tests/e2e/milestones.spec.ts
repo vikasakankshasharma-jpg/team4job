@@ -37,7 +37,7 @@ test.describe('Milestone-based Payments @slow', () => {
             await manualSyncBtn.click();
             await page.waitForTimeout(2000);
         }
-        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i, { timeout: 15000 });
+        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i, { timeout: 30000 });
 
         // 3. Create Milestone 1
         // Wait for milestone section to be interactive

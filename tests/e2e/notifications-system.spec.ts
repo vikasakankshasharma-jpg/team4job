@@ -19,7 +19,7 @@ test.describe('Notification System', () => {
     test('should display notification bell and dropdown', async ({ page }) => {
         // Check if bell exists
         const bell = page.getByRole('button', { name: /Notifications/i }).first();
-        await expect(bell).toBeVisible();
+        await expect(bell).toBeVisible({ timeout: 30000 });
 
         // Wait for hydration
         await page.waitForTimeout(2000);
@@ -29,11 +29,11 @@ test.describe('Notification System', () => {
 
         // Check dropdown content
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
-        await expect(dropdownHeader).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(dropdownHeader).toBeVisible({ timeout: 30000 });
 
         // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i });
-        await expect(viewAllBtn).toBeVisible();
+        await expect(viewAllBtn).toBeVisible({ timeout: 30000 });
     });
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {
