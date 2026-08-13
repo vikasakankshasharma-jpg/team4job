@@ -63,7 +63,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
 
                 // Check Profile Alignment
                 await page.goto('/dashboard/profile');
-                await expect(page.locator('h1, h2').filter({ hasText: /Profile/i }).first()).toBeVisible();
+                await expect(page.getByText(/Member since/i).first()).toBeVisible();
                 await page.screenshot({ 
                     path: `test-results/audit/pro-profile-${viewport.name.toLowerCase()}.png`,
                     fullPage: true 

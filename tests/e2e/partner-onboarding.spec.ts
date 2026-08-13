@@ -39,7 +39,7 @@ test.describe('Partner Onboarding Flow', () => {
         await page.getByRole('button', { name: 'Next' }).click();
 
         // 4. Step 2: Experience & Skills
-        await page.getByRole('radio', { name: /Security & Surveillance/i }).click({ force: true });
+        await page.locator('label').filter({ hasText: /Security & Surveillance/i }).click();
         await page.getByRole('button', { name: 'CCTV Installation' }).click();
         await page.getByRole('button', { name: 'Alarm Systems' }).click();
         await page.getByRole('button', { name: 'Next' }).click();
@@ -48,15 +48,15 @@ test.describe('Partner Onboarding Flow', () => {
         const mockFilePath = path.join(process.cwd(), 'tests/fixtures/dummy.png');
 
         // Upload Aadhar Front
-        await page.locator('div.space-y-2').filter({ has: page.getByText('Aadhar Card (Front)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await page.locator('div.space-y-3').filter({ has: page.getByText('Aadhar Card (Front)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
         await expect(page.locator('text=dummy.png').first()).toBeVisible({ timeout: 15000 });
 
         // Upload PAN Card
-        await page.locator('div.space-y-2').filter({ has: page.getByText('PAN Card') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await page.locator('div.space-y-3').filter({ has: page.getByText('PAN Card') }).locator('input[type="file"]').setInputFiles(mockFilePath);
         await expect(page.locator('text=dummy.png').nth(1)).toBeVisible({ timeout: 15000 });
 
         // Upload Profile Photo
-        await page.locator('div.space-y-2').filter({ has: page.getByText('Profile Photo (Selfie)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
+        await page.locator('div.space-y-3').filter({ has: page.getByText('Profile Photo') }).locator('input[type="file"]').setInputFiles(mockFilePath);
         await expect(page.locator('text=dummy.png').nth(2)).toBeVisible({ timeout: 15000 });
 
         await page.getByRole('button', { name: 'Next' }).click();
@@ -69,7 +69,7 @@ test.describe('Partner Onboarding Flow', () => {
         await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60000 });
 
         // Use a more generic locator and wait for attachment to be extra resilient
-        await expect(page.locator('text=Application Submitted!')).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('text=Application Submitted!').first()).toBeVisible({ timeout: 20000 });
     });
 });
 

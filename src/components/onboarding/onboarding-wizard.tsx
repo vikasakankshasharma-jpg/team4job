@@ -9,8 +9,10 @@ import { BasicInfo } from "./steps/basic-info";
 import { Experience } from "./steps/experience";
 import { Documents } from "./steps/documents";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/infrastructure/firebase/client";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useUser } from "@/hooks/use-user";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,7 @@ export function OnboardingWizard() {
     const data = useOnboardingStore();
     const updateData = useOnboardingStore((state) => state.updateData);
     const resetStore = useOnboardingStore((state) => state.reset);
+    const { refreshUser } = useUser();
 
     const nextStep = () => {
         setCurrentStep((prev) => Math.min(prev + 1, steps.length));
@@ -59,8 +62,6 @@ export function OnboardingWizard() {
             if (data.panCard) formData.append('panCard', data.panCard);
             if (data.profilePhoto) formData.append('profilePhoto', data.profilePhoto);
 
-            const { getAuth } = await import("firebase/auth");
-            const auth = getAuth();
             const token = await auth.currentUser?.getIdToken();
 
             if (!token) throw new Error("Not authenticated");
@@ -83,13 +84,14 @@ export function OnboardingWizard() {
                 description: t('submit.successDesc'),
             });
 
+            await refreshUser();
             resetStore();
             router.push('/dashboard');
 
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: t('submit.failed'),
-                description: t('submit.failedDesc'),
+                description: error.message || t('submit.failedDesc'),
                 variant: "destructive"
             });
         } finally {
@@ -189,7 +191,7 @@ export function OnboardingWizard() {
                                                     </p>
                                                     <p className="flex flex-col gap-2">
                                                         <span className="text-muted-foreground italic font-black uppercase text-[10px] tracking-widest">{t('experience.categoryLabel')}:</span> 
-                                                        <span className="font-black italic uppercase tracking-tight text-primary text-lg">{data.category ? t(`experience.categories.${data.category}.label`) : t('review.noneSelected')}</span>
+                                                        <span className="font-black italic uppercase tracking-tight text-primary text-lg">{data.category ? t(`experience.categories.${data.category}`) : t('review.noneSelected')}</span>
                                                     </p>
                                                     <div className="flex flex-wrap gap-2 mt-2">
                                                         {(data.skills || []).map((s: string) => (

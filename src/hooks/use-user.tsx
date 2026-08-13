@@ -36,6 +36,7 @@ interface UserContextType {
   setRole: (role: Role) => void;
   logout: () => void;
   login: (identifier: string, password?: string) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -153,6 +154,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('userRole');
     }
   }, []);
+
+  const refreshUser = useCallback(async () => {
+    const currentAuthUser = auth?.currentUser;
+    if (!currentAuthUser || !db) return;
+    try {
+      const { getDoc, doc: firestoreDoc } = await import('firebase/firestore');
+      const docSnap = await getDoc(firestoreDoc(db, 'users', currentAuthUser.uid));
+      if (docSnap.exists()) {
+        updateUserState(docSnap.data() as User);
+      }
+    } catch (e) {
+      console.error('Error refreshing user:', e);
+    }
+  }, [auth, db, updateUserState]);
 
   useEffect(() => {
     if (!auth || !db) return;
@@ -557,8 +572,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Value provided to context
   const value = useMemo(() => ({
     user, role, isAdmin, loading,
-    setUser, setRole, logout, login
-  }), [user, role, isAdmin, loading, setUser, setRole, logout, login]);
+    setUser, setRole, logout, login, refreshUser
+  }), [user, role, isAdmin, loading, setUser, setRole, logout, login, refreshUser]);
 
 
   // RENDER LOGIC:

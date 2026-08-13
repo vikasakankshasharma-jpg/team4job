@@ -26,7 +26,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await expect(tabsList.getByText('AI Smart Split')).toBeVisible();
 
         // 3. Test AI Smart Split Flow
-        const aiTab = page.locator('button[role="tab"]:has-text("AI Smart Split"), [data-state="inactive"]:has-text("AI Smart Split")').first();
+        const aiTab = page.getByRole('tab', { name: /AI Smart Split/i }).first();
         await aiTab.scrollIntoViewIfNeeded();
         await aiTab.click({ force: true });
         

@@ -2518,7 +2518,8 @@
                 "electrical": "Electrical",
                 "plumbing": "Plumbing",
                 "construction": "Construction",
-                "hvac": "HVAC"
+                "hvac": "HVAC",
+                "multimedia": "Multimedia"
             },
             "yearsLabel": "Years of Experience",
             "years02": "0 - 2 Years",

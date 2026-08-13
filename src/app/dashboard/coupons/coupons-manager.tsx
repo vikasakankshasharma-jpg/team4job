@@ -126,9 +126,9 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
     setIsSubmitting(false);
   }
 
-  const triggerText = coupon ? t('form.editTitle') : t('form.createTitle');
+  const triggerText = coupon ? 'Edit Coupon' : t('create');
   const TriggerButton = coupon
-    ? <DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t('actions.edit')}</DropdownMenuItem>
+    ? <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
     : <Button><PlusCircle className="mr-2 h-4 w-4" />{triggerText}</Button>;
 
   return (
@@ -140,7 +140,7 @@ function CouponForm({ coupon, onSave }: { coupon?: Coupon, onSave: () => void })
         <DialogHeader>
           <DialogTitle>{triggerText}</DialogTitle>
           <DialogDescription>
-            {coupon ? t('form.editDesc') : t('form.createDesc')}
+            {coupon ? 'Modify the details of this coupon.' : 'Enter the details for a new discount coupon.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

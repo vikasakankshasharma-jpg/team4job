@@ -192,9 +192,9 @@ function InvoiceContent() {
                                 {t('billedTo')}
                             </h3>
                             <div className="space-y-4 bg-foreground/[0.03] p-8 rounded-[2rem] ring-1 ring-white/5">
-                                <p className="text-3xl font-black italic tracking-tighter uppercase leading-none">{client.name}</p>
-                                <p className="text-sm font-semibold opacity-60 leading-relaxed max-w-xs">{client.address?.fullAddress}</p>
-                                {client.gstin && <Badge variant="outline" className="text-[9px] font-black tracking-widest px-3 py-1 border-primary/20 bg-primary/5 text-primary">GSTIN: {client.gstin}</Badge>}
+                                <p className="text-3xl font-black italic tracking-tighter uppercase leading-none">{client?.name}</p>
+                                <p className="text-sm font-semibold opacity-60 leading-relaxed max-w-xs">{client?.address?.fullAddress}</p>
+                                {client?.gstin && <Badge variant="outline" className="text-[9px] font-black tracking-widest px-3 py-1 border-primary/20 bg-primary/5 text-primary">GSTIN: {client.gstin}</Badge>}
                             </div>
                         </div>
                         <div className="sm:text-right space-y-6">

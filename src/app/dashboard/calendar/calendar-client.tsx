@@ -110,7 +110,7 @@ export default function CalendarClient() {
                     <CardHeader className="pb-4">
                         <CardTitle className="text-lg font-bold tracking-tight">{t('calendarTitle')}</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex justify-center">
+                    <CardContent className="flex justify-center" data-testid="calendar-grid">
                         <DayPicker
                             mode="single"
                             selected={selectedDate}

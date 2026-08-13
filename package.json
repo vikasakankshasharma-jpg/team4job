@@ -48,7 +48,11 @@
     "scenario:bid-placed": "tsx scripts/scenario-runner.ts --bid-placed",
     "scenario:payment-ready": "tsx scripts/scenario-runner.ts --payment-ready",
     "scenario:audit-ready": "tsx scripts/scenario-runner.ts --audit-ready",
-    "test:dispute-audit": "playwright test tests/e2e/dispute-refund-audit.spec.ts"
+    "test:dispute-audit": "playwright test tests/e2e/dispute-refund-audit.spec.ts",
+    "test:ci-local": "powershell -ExecutionPolicy Bypass -File ./run-ci-local.ps1",
+    "test:ci-local:smoke": "powershell -ExecutionPolicy Bypass -File ./run-ci-local.ps1 -Suite smoke-auth",
+    "test:ci-local:e2e": "powershell -ExecutionPolicy Bypass -File ./run-ci-local.ps1 -Suite e2e",
+    "test:ci-local:quick": "powershell -ExecutionPolicy Bypass -File ./run-ci-local.ps1 -Suite smoke-auth -SkipBuild"
   },
   "dependencies": {
     "@genkit-ai/firebase": "^1.32.0",

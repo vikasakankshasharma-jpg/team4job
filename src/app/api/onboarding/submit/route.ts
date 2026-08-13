@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "firebase-admin/auth";
+import { getAdminAuth } from "@/infrastructure/firebase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { userService } from "@/domains/users/user.service";
 import { ProfessionalOnboardingInput } from "@/lib/types";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         }
 
         const token = authHeader.split("Bearer ")[1];
-        const decodedToken = await getAuth().verifyIdToken(token);
+        const decodedToken = await getAdminAuth().verifyIdToken(token);
         const userId = decodedToken.uid;
 
         // Rate Limiting
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: "Application submitted successfully" });
 
     } catch (error: any) {
+        console.error("[ONBOARDING SUBMIT ERROR]", error);
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
     }
 }

@@ -138,7 +138,7 @@ test.describe('Budget Estimator & Templates', () => {
         await handleDraftDialog(page);
 
         // FILL REQUIRED FIELDS VIGOROUSLY
-        const titleInput = page.locator('input#job-title-input-field').first();
+        const titleInput = page.getByTestId('job-title-input').first();
         await titleInput.waitFor({ state: 'attached', timeout: 15000 });
         await titleInput.scrollIntoViewIfNeeded();
         await titleInput.click({ force: true });
