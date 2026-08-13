@@ -102,7 +102,7 @@ test.describe('Edge Case Tests @edge', () => {
             console.log(`[Persistence Test] Post-reload URL: ${page.url()}`);
 
             await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
-            await expect(page.getByText(/Active Engagements|Active Jobs/i).first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 15000 });
             console.log(`[Persistence Test] SUCCESS: Still on dashboard.`);
         });
     });

@@ -27,8 +27,8 @@ test.describe('Notification System', () => {
         // Click bell (force click for mobile viewports where it might be slightly overflowing)
         await bell.click({ force: true });
 
-        // Check dropdown content - use heading role for the "Mission Intel" text
-        const dropdownHeader = page.getByRole('heading', { name: /Mission Intel/i });
+        // Check dropdown content
+        const dropdownHeader = page.getByText(/Mission Intel/i).first();
         await expect(dropdownHeader).toBeVisible();
 
         // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)

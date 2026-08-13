@@ -252,7 +252,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.reload();
         }
         if (!offerClicked) {
-            await expect(page.getByRole('button', { name: /Close Bidding/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
+            await expect(page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
             await context.close();
             return;
         }
@@ -397,7 +397,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.reload();
         }
         if (!offerClicked) {
-            await expect(page.getByRole('button', { name: /Close Bidding/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
+            await expect(page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first()).toBeVisible({ timeout: TIMEOUTS.medium });
             await context.close();
             return;
         }

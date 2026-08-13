@@ -41,7 +41,7 @@ test.describe('Reviews & Ratings E2E', () => {
         
         // Let's assume the dialog opens and we can just use the rating stars directly
         console.log('Submitting review as Client...');
-        const star5 = page.locator('.lucide-star').nth(4).or(page.getByTestId('rating-star-5'));
+        const star5 = page.locator('.lucide-star').nth(4).or(page.getByTestId('rating-star-5').first());
         await expect(star5).toBeVisible({ timeout: 15000 });
         await star5.click({ force: true });
         
@@ -69,7 +69,7 @@ test.describe('Reviews & Ratings E2E', () => {
         await proLeaveReviewBtn.click({ force: true });
         
         console.log('Submitting review as Professional...');
-        const proStar5 = page.locator('.lucide-star').nth(4).or(page.getByTestId('rating-star-5'));
+        const proStar5 = page.locator('.lucide-star').nth(4).or(page.getByTestId('rating-star-5').first());
         await expect(proStar5).toBeVisible({ timeout: 15000 });
         await proStar5.click({ force: true });
         

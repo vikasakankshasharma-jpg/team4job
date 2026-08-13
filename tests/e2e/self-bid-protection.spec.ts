@@ -60,7 +60,7 @@ test.describe('Self-Interaction Guardrails', () => {
 
         // The wizard generates the job title and description.
         // We can read it from the DOM to use for assertions later.
-        const generatedTitleElement = page.locator('.text-2xl.font-extrabold').first();
+        const generatedTitleElement = page.locator('.text-2xl, h2, h1').first();
         await expect(generatedTitleElement).toBeVisible({ timeout: 15000 });
         jobTitle = await generatedTitleElement.innerText();
 

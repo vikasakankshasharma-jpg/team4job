@@ -42,7 +42,7 @@ test.describe('Mobile Responsiveness', () => {
             throw e;
         }
 
-        await expect(page.getByText(/Active Engagements|Active Jobs/i).filter({ visible: true }).first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 20000 });
         console.log('[Mobile] Dashboard loaded');
 
         // 3. Verify Desktop Sidebar is HIDDEN

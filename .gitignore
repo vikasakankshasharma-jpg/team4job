@@ -65,6 +65,7 @@ project_backup*.zip
 # Temporary Test Output
 *.txt
 *.png
+!tests/fixtures/dummy.png
 *.log
 repair_en_json.*
 test-results/
