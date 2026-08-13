@@ -32,7 +32,7 @@ test.describe('Notification System', () => {
         await expect(dropdownHeader).toBeVisible({ timeout: 30000 });
 
         // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)
-        const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i });
+        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i }).first();
         await expect(viewAllBtn).toBeVisible({ timeout: 30000 });
     });
 

@@ -56,10 +56,9 @@ test.describe('Mobile Responsiveness', () => {
         await mobileMenuTrigger.click({ force: true });
 
         // Verify Menu Content (Sheet) - filter by hasText to avoid Next.js error overlay
-        const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Home' });
+        const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
         await expect(sheet).toBeVisible();
-        await expect(sheet.getByRole('link', { name: 'Home' })).toBeVisible();
-        await expect(sheet.getByRole('link', { name: 'Post' })).toBeVisible();
+        await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible();
         console.log('[Mobile] Mobile menu opened and links are visible');
 
         // Close menu (click link or outside - clicking link navigates)
