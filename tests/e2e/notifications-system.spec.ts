@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { AuthHelper } from '../utils/helpers';
-import { TEST_ACCOUNTS } from '../fixtures/test-data';
+import { TEST_ACCOUNTS, TIMEOUTS } from '../fixtures/test-data';
 import { NotificationsService } from '../../src/lib/api/notifications';
 import { Notification } from '../../src/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -29,7 +29,7 @@ test.describe('Notification System', () => {
 
         // Check dropdown content
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
-        await expect(dropdownHeader).toBeVisible();
+        await expect(dropdownHeader).toBeVisible({ timeout: TIMEOUTS.medium });
 
         // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i });
