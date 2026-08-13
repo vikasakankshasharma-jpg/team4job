@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password,
-      mobile: '0000000000', // Placeholder for team members
+      mobile: '9999999999', // Placeholder for team members
       role: role as Role,
     });
 
@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, uid });
 
   } catch (error: any) {
-        // Silent failure in production to avoid leaking info
+    console.error('CREATE_USER_ERROR:', error);
+    // Silent failure in production to avoid leaking info
 
     // Handle specific errors
     let errorMessage = 'An unexpected error occurred';

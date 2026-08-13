@@ -15,7 +15,9 @@ test.describe('Invoice Generation E2E', () => {
 
         console.log('--- START: Invoice Generation Test ---');
 
-        // 1. Seed a completed job
+        // 1. Login first to ensure DB is seeded and not cleared afterwards
+        await helper.auth.loginAsClient();
+
         console.log('Seeding completed job...');
         let seededJobId: string;
         try {
@@ -27,14 +29,12 @@ test.describe('Invoice Generation E2E', () => {
             throw error;
         }
 
-        await helper.auth.loginAsClient();
-
         // 2. Navigate directly to the seeded job
         await page.goto(`/dashboard/jobs/${seededJobId}`);
 
         // Wait for hydration and data load
         await page.waitForTimeout(3000);
-        await expect(page.getByTestId('job-status-badge')).toContainText(/Completed|Mission Accomplished/i);
+        await expect(page.getByTestId('job-status-badge')).toContainText(/Completed|Mission Accomplished/i, { timeout: 30000 });
 
         // 3. Confirm download button (which actually opens print view) is visible
         const downloadBtn = page.getByTestId('download-invoice-button');

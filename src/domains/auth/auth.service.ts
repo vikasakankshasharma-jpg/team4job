@@ -172,7 +172,7 @@ export class AuthService {
             throw new Error('Password must be at least 6 characters');
         }
 
-        if (!['Client', 'Professional'].includes(data.role)) {
+        if (!['Client', 'Professional', 'Admin', 'Support Team'].includes(data.role)) {
             throw new Error('Invalid role');
         }
     }

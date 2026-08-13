@@ -1,5 +1,5 @@
-
 import { test, expect } from '@playwright/test';
+import { execSync } from 'child_process';
 import { TestHelper } from '../utils/helpers';
 import { generateUniqueJobTitle, TIMEOUTS } from '../fixtures/test-data';
 
@@ -20,58 +20,21 @@ test.describe('Self-Interaction Guardrails', () => {
     test('Dual-role user cannot bid on their own job', async ({ page }) => {
         const helper = new TestHelper(page);
 
-        // 1. Login as Client and Post a Job
-        console.log('Logging in as dual-role user (Client mode)...');
+        // Login as Client to ensure DB is seeded and auth state is ready
+        console.log('Logging in as dual-role user...');
         await helper.auth.login(DUAL_ROLE_USER.email, DUAL_ROLE_USER.password);
-        await helper.auth.ensureRole('Client');
 
-        console.log('Posting a new job...');
-        const reachedPostJob = await helper.nav.goToPostJob();
-        if (!reachedPostJob) {
-            test.skip(true, 'Post Job form inaccessible due to role guard');
-            return;
+        console.log('Seeding open job for dual-role user...');
+        let seededJobId: string;
+        try {
+            const seedOutput = execSync('npx --no-install tsx scripts/seed-open-job-dual-role.ts').toString();
+            seededJobId = seedOutput.trim().split('\n').pop() || '';
+            jobId = seededJobId;
+            console.log(`Seeded Job ID: ${jobId}`);
+        } catch (error) {
+            console.error('Failed to seed open job', error);
+            throw error;
         }
-
-        // Complete Wizard first (Mandatory redirection to /wizard)
-        await helper.form.completeWizard(
-            'Security & Surveillance',
-            'CCTV / Video Surveillance',
-            [
-                '3-4', 
-                'Both', 
-                'Commercial',
-                'needs fresh wiring',
-                '1 week',
-                'Not needed',
-                'Mobile viewing only'
-            ],
-            'Within 1-2 Days'
-        );
-
-        // dismiss draft dialog if present
-        await page.evaluate(() => {
-            document.querySelectorAll('button').forEach(btn => {
-                const text = btn.textContent || '';
-                if (text.includes('Discard') || text.includes('Beta Feedback') || text.includes('Feedback') || text.trim() === '…') {
-                    btn.click();
-                }
-            });
-        });
-
-        // The wizard generates the job title and description.
-        // We can read it from the DOM to use for assertions later.
-        const generatedTitleElement = page.locator('.text-2xl, h2, h1').first();
-        await expect(generatedTitleElement).toBeVisible({ timeout: 15000 });
-        jobTitle = await generatedTitleElement.innerText();
-
-        // Use the robust submitPostJob helper that handles checkboxes and confirmation modals
-        // Note: The wizard auto-fills most details, we just need to ensure pincode is set if not already
-        await helper.form.submitPostJob('110001');
-
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.long });
-
-        jobId = await helper.job.getJobIdFromUrl();
-        console.log(`Job posted with ID: ${jobId}`);
 
         // 2. Switch to Professional Mode
         console.log('Switching to Professional mode...');

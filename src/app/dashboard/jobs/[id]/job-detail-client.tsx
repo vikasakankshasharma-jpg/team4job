@@ -484,9 +484,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                 milestones: [...(job.milestones || []), newMilestone]
             });
 
-            toast({ title: t('notifications.milestoneCreated'), description: t('notifications.milestoneCreatedDesc') });
+            toast({ title: t('notifications.milestoneCreated'), description: 'Milestone has been added successfully.' });
         } catch (error) {
-            toast({ title: tCommon('error'), description: t('notifications.milestoneGenericError'), variant: "destructive" });
+            toast({ title: tCommon('error'), description: 'An error occurred while creating the milestone.', variant: "destructive" });
         }
     };
 

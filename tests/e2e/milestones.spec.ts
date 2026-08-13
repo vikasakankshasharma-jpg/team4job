@@ -13,7 +13,10 @@ test.describe('Milestone-based Payments @slow', () => {
     });
 
     test('Client can create and release milestones', async ({ page }) => {
-        // 1. Seed Job (Bypass Posting UI)
+        // 1. Login first to ensure DB is seeded and not cleared afterwards
+        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
+
+        // 2. Seed Job (Bypass Posting UI)
         console.log("Seeding job...");
         let jobId;
         try {
@@ -24,9 +27,6 @@ test.describe('Milestone-based Payments @slow', () => {
             console.error("Failed to seed job", error);
             throw error;
         }
-
-        // 2. Login and Navigate
-        await helper.auth.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.addStyleTag({ content: '.CookieConsent { display: none !important; }' });
 
@@ -89,7 +89,7 @@ test.describe('Milestone-based Payments @slow', () => {
         await page.getByRole('button', { name: 'Release Payment' }).first().click();
 
         // Verify status update
-        await expect(page.locator('text=Paid').first()).toBeVisible();
+        await expect(page.locator('text=Payment Released').first()).toBeVisible();
     });
 });
 

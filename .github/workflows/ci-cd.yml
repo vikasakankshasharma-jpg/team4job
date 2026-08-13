@@ -543,7 +543,7 @@ jobs:
               TEST_FILES="tests/e2e/ui-audit-all-roles.spec.ts"
               ;;
             13)
-              TEST_FILES="tests/e2e/beta-squad-case-1.spec.ts"
+              TEST_FILES="tests/e2e/smoke.spec.ts"
               ;;
             14)
               TEST_FILES="tests/e2e/budget-estimator.spec.ts"

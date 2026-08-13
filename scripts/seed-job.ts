@@ -42,8 +42,8 @@ async function seedJob() {
             title: `Seeded Milestone Job ${Date.now()}`,
             description: "A seeded job for testing milestones.",
             status: 'in_progress', // Skip to In Progress
-            jobGiverId: userId,
-            jobGiver: db.collection('users').doc(userId),
+            clientId: userId,
+            client: db.collection('users').doc(userId),
             priceEstimate: { min: 8000, max: 15000 },
             postedAt: Timestamp.now(),
             deadline: Timestamp.fromDate(new Date(Date.now() + 86400000)), // tomorrow
