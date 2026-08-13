@@ -107,7 +107,7 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
 
         } else {
             // Initially Professional
@@ -116,12 +116,12 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
 
             // Verify persistence
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
 
             // SWITCH BACK TO Professional
             console.log('Switching back to Professional mode...');

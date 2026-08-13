@@ -42,7 +42,7 @@ test.describe('Mobile Responsiveness', () => {
             throw e;
         }
 
-        await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 20000 });
+        await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 20000 });
         console.log('[Mobile] Dashboard loaded');
 
         // 3. Verify Desktop Sidebar is HIDDEN
