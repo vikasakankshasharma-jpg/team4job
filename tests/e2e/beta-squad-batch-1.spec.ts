@@ -399,6 +399,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             // Handle potential warning modal
             await confirmBtn.last().click();
         }
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
 
         // 4. IN Verify
@@ -484,6 +485,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         await page.getByTestId('send-offer-button').first().click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
 
         // 4. IN Verify
@@ -597,6 +599,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         }
         await expect(sendOfferButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await sendOfferButton.click();
+        await helper.job.handleAuthorizationModal();
         await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
 
         // IN Accept

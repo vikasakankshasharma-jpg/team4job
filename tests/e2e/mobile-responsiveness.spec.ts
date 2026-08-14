@@ -55,7 +55,9 @@ test.describe('Mobile Responsiveness', () => {
         // 4. Open Mobile Menu and wait for Sheet
         const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
         await expect(async () => {
-            await mobileMenuTrigger.click({ force: true });
+            if (!(await sheet.isVisible())) {
+                await mobileMenuTrigger.click({ force: true });
+            }
             await expect(sheet).toBeVisible({ timeout: 5000 });
         }).toPass({ timeout: 30000 });
         await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });

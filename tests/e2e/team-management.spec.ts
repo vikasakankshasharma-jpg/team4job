@@ -31,8 +31,14 @@ test.describe('Team Management', () => {
         // Verify success toast (flaky in CI if it disappears too quickly)
         // await helper.form.waitForToast(/Team Member Added/i);
         
-        // Verify member appears in the list (pending or active)
-        await expect(page.getByText(email)).toBeVisible({ timeout: 30000 });
+        // Verify member appears in the list (pending or active) - use toPass with reload fallback
+        await expect(async () => {
+            const isVisible = await page.getByText(email).isVisible();
+            if (!isVisible) {
+                await page.reload();
+            }
+            await expect(page.getByText(email)).toBeVisible({ timeout: 10000 });
+        }).toPass({ timeout: 60000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {

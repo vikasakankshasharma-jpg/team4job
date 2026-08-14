@@ -22,16 +22,16 @@ test.describe('Invoice Generation E2E', () => {
         console.log('Seeding completed job...');
         let seededJobId: string;
         try {
-            const envVars = { 
-                ...process.env, 
-                NEXT_PUBLIC_USE_EMULATOR: 'true',
-                NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
-                FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', 
-                FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-                DO_FIREBASE_PROJECT_ID: 'team4job-live',
-                NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'team4job-live'
-            };
-            const seedOutput = execSync('npx --no-install tsx scripts/seed-completed-job.ts', { env: envVars }).toString();
+            const seedOutput = execSync('npx --no-install tsx scripts/seed-completed-job.ts', {
+                env: {
+                    ...process.env,
+                    NEXT_PUBLIC_USE_EMULATOR: 'true',
+                    NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
+                    FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
+                    FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+                    FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199',
+                }
+            }).toString();
             seededJobId = seedOutput.trim().replace(/\r/g, '').split('\n').pop()?.trim() || '';
             console.log(`Seeded Job ID: ${seededJobId}`);
         } catch (error) {

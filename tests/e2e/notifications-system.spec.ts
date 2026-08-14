@@ -25,13 +25,15 @@ test.describe('Notification System', () => {
         await page.waitForTimeout(2000);
 
         // Click bell and wait for dropdown (using toPass to handle hydration/click interception)
+        const dropdownHeader = page.getByText(/Mission Intel/i).first();
         await expect(async () => {
-            await bell.click({ force: true });
-            await expect(page.getByText(/Mission Intel/i).first()).toBeVisible({ timeout: 5000 });
+            if (!(await dropdownHeader.isVisible())) {
+                await bell.click({ force: true });
+            }
+            await expect(dropdownHeader).toBeVisible({ timeout: 5000 });
         }).toPass({ timeout: 30000 });
 
         // Check dropdown content
-        const dropdownHeader = page.getByText(/Mission Intel/i).first();
         await expect(dropdownHeader).toBeVisible({ timeout: 30000 });
 
         // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)
@@ -41,7 +43,7 @@ test.describe('Notification System', () => {
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {
         // Check that it's hidden (default state)
-        await expect(page.getByText('Action Required')).toBeHidden();
+        await expect(page.getByText('Action Required').first()).toBeHidden();
     });
 
     test('should navigate to notification settings', async ({ page }) => {

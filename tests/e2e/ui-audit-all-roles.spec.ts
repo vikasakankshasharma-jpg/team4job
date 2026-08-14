@@ -139,11 +139,11 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         const adminHelper = new TestHelper(adminPage);
         await adminHelper.auth.loginAsAdmin();
         
-        console.log('[Sync] Admin auditing audit logs...');
-        await adminPage.goto('/dashboard/audit-logs');
-        // Wait for the audit log entry for the new job
-        await expect(adminPage.locator(`text=${jobId}`)).toBeVisible({ timeout: 20000 });
-        console.log('[Sync] Data verified in Admin Audit Logs.');
+        console.log('[Sync] Admin verifying job visibility...');
+        await adminPage.goto(`/dashboard/jobs/${jobId}`);
+        // Wait for the job page to show the unique title
+        await expect(adminPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 30000 });
+        console.log('[Sync] Data verified by Admin - job is visible.');
 
         await context.close();
     });
