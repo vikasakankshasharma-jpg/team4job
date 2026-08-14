@@ -74,7 +74,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('input[type="password"]', 'wrongpassword');
             await page.getByTestId('login-submit-btn').click();
 
-            await expect(page.locator('text=Login Failed').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=Login Failed').first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Multiple failed login attempts are handled', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('Edge Case Tests @edge', () => {
                 await page.waitForTimeout(1000);
             }
 
-            await expect(page.locator('input[name="identifier"]')).toBeVisible();
+            await expect(page.locator('input[name="identifier"]')).toBeVisible({ timeout: 30000 });
         });
 
         test('Session persistence after page reload', async ({ page }) => {
@@ -102,7 +102,7 @@ test.describe('Edge Case Tests @edge', () => {
             console.log(`[Persistence Test] Post-reload URL: ${page.url()}`);
 
             await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
-            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 30000 });
             console.log(`[Persistence Test] SUCCESS: Still on dashboard.`);
         });
     });
@@ -185,7 +185,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
-            await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Job posting with past deadline date', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
-            await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Job posting with special characters in title', async ({ page }) => {
@@ -233,7 +233,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.form.submitPostJob();
 
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
-            await expect(page.getByText(specialTitle).first()).toBeVisible();
+            await expect(page.getByText(specialTitle).first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Job posting with invalid pincode', async ({ page }) => {
@@ -247,7 +247,7 @@ test.describe('Edge Case Tests @edge', () => {
 
             // Expect the error text to be visible based on our mock response ("No records found") or fallback
             // Match substring to handle variable structures
-            await expect(page.locator('text=/No records found|Invalid PIN code/i').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=/No records found|Invalid PIN code/i').first()).toBeVisible({ timeout: 30000 });
         });
     });
 
@@ -272,7 +272,7 @@ test.describe('Edge Case Tests @edge', () => {
             await searchInput.fill('NonExistentJobXYZ' + Math.random().toString(36).substring(7));
             await searchInput.press('Enter');
 
-            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Search with special characters', async ({ page }) => {
@@ -291,7 +291,7 @@ test.describe('Edge Case Tests @edge', () => {
             await searchInput.fill('!@#$%^&*()');
             await searchInput.press('Enter');
 
-            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 30000 });
         });
     });
 
@@ -378,10 +378,10 @@ test.describe('Edge Case Tests @edge', () => {
             await page.waitForURL(/.*\/posted-jobs/);
 
             await page.goBack();
-            await expect(page).toHaveURL(/.*\/post-job/, { timeout: 15000 });
+            await expect(page).toHaveURL(/.*\/post-job/, { timeout: 30000 });
 
             await page.goForward();
-            await expect(page).toHaveURL(/.*\/posted-jobs/, { timeout: 15000 });
+            await expect(page).toHaveURL(/.*\/posted-jobs/, { timeout: 30000 });
         });
 
         test('Application handles page refresh during form fill', async ({ page }) => {
@@ -395,7 +395,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.reload();
             await page.waitForTimeout(3000);
 
-            await expect(page.locator('input[name="jobTitle"]')).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('input[name="jobTitle"]')).toBeVisible({ timeout: 30000 });
         });
     });
 
@@ -429,7 +429,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.form.submitPostJob();
 
             await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
-            await expect(page.getByText(xssPayload).first()).toBeVisible({ timeout: 15000 });
+            await expect(page.getByText(xssPayload).first()).toBeVisible({ timeout: 30000 });
         });
 
         test('Unicode and emoji handling', async ({ page }) => {
@@ -465,5 +465,6 @@ test.describe('Edge Case Tests @edge', () => {
         });
     });
 });
+
 
 

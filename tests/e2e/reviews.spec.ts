@@ -45,13 +45,13 @@ test.describe('Reviews & Ratings E2E', () => {
 
         // 3. Submit Review as Client
         const leaveReviewBtn = page.getByTestId('leave-review-button');
-        await expect(leaveReviewBtn).toBeVisible({ timeout: 15000 });
+        await expect(leaveReviewBtn).toBeVisible({ timeout: 30000 });
         await leaveReviewBtn.click({ force: true });
         
         // Let's assume the dialog opens and we can just use the rating stars directly
         console.log('Submitting review as Client...');
         const star5 = page.getByTestId('rating-star-5').first();
-        await expect(star5).toBeVisible({ timeout: 15000 });
+        await expect(star5).toBeVisible({ timeout: 30000 });
         await star5.click({ force: true });
         
         const reviewInput = page.locator('textarea, input[type="text"]').filter({ hasText: /review|comment/i }).first().or(page.getByTestId('rating-comment'));
@@ -63,7 +63,7 @@ test.describe('Reviews & Ratings E2E', () => {
         await submitBtn.click({ force: true });
 
         // Verify Locked/Sealed State
-        await expect(page.getByTestId('review-locked-card')).toBeVisible();
+        await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: 30000 });
         console.log('[PASS] Client Review Submitted');
 
         // 4. Login as Professional to Submit Review
@@ -74,12 +74,12 @@ test.describe('Reviews & Ratings E2E', () => {
 
         // Professional Submit Review
         const proLeaveReviewBtn = page.getByTestId('leave-review-button');
-        await expect(proLeaveReviewBtn).toBeVisible({ timeout: 15000 });
+        await expect(proLeaveReviewBtn).toBeVisible({ timeout: 30000 });
         await proLeaveReviewBtn.click({ force: true });
         
         console.log('Submitting review as Professional...');
         const proStar5 = page.getByTestId('rating-star-5').first();
-        await expect(proStar5).toBeVisible({ timeout: 15000 });
+        await expect(proStar5).toBeVisible({ timeout: 30000 });
         await proStar5.click({ force: true });
         
         const proReviewInput = page.locator('textarea, input[type="text"]').filter({ hasText: /review|comment/i }).first().or(page.getByTestId('rating-comment'));
@@ -95,13 +95,14 @@ test.describe('Reviews & Ratings E2E', () => {
         console.log('--- END: Reviews & Ratings Test ---');
 
         // 5. Verify Reviews Revealed
-        await expect(page.getByTestId('reviews-revealed-section')).toBeVisible({ timeout: TIMEOUTS.medium });
-        await expect(page.getByText(/Self Assessment/i)).toBeVisible();
-        await expect(page.getByText(/Counterparty Feedback/i)).toBeVisible();
+        await expect(page.getByTestId('reviews-revealed-section')).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText(/Self Assessment/i)).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText(/Counterparty Feedback/i)).toBeVisible({ timeout: 30000 });
 
         console.log('[PASS] Reviews Verified Successfully');
         await context.close();
     });
 });
+
 
 

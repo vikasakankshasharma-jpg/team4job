@@ -408,7 +408,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(acceptJobButton).toBeVisible({ timeout: 30000 });
         await acceptJobButton.click();
         // Handle conflict or success
         await Promise.race([

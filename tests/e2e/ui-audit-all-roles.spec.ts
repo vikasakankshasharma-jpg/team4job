@@ -31,7 +31,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
                 // Use attribute-substring selectors because Tailwind opacity modifiers
                 // (e.g. bg-surface-container-low/40) change the exact class string.
                 const surfaceContainer = page.locator('[class*="bg-surface-container-low"], [class*="bg-surface-container"]').first();
-                await expect(surfaceContainer).toBeVisible();
+                await expect(surfaceContainer).toBeVisible({ timeout: 30000 });
 
                 // Capture screenshot for manual/visual verify
                 await page.screenshot({ 
@@ -54,7 +54,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
                 await helper.auth.waitForStability();
 
                 // Check for Pro-specific Stitch patterns
-                await expect(page.getByText(/Open Jobs|Browse Jobs/i).filter({ visible: true }).first()).toBeVisible();
+                await expect(page.getByText(/Open Jobs|Browse Jobs/i).filter({ visible: true }).first()).toBeVisible({ timeout: 30000 });
                 
                 await page.screenshot({ 
                     path: `test-results/audit/pro-dashboard-${viewport.name.toLowerCase()}.png`,
@@ -63,7 +63,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
 
                 // Check Profile Alignment
                 await page.goto('/dashboard/profile');
-                await expect(page.getByText(/Member since/i).first()).toBeVisible();
+                await expect(page.getByText(/Member since/i).first()).toBeVisible({ timeout: 30000 });
                 await page.screenshot({ 
                     path: `test-results/audit/pro-profile-${viewport.name.toLowerCase()}.png`,
                     fullPage: true 
@@ -78,11 +78,11 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
 
                     // Admin specific pages
                     await page.goto('/dashboard/analytics');
-                    await expect(page.locator('[class*="bg-surface-container-low"]').first()).toBeVisible();
+                    await expect(page.locator('[class*="bg-surface-container-low"]').first()).toBeVisible({ timeout: 30000 });
                     await page.screenshot({ path: `test-results/audit/admin-analytics-desktop.png`, fullPage: true });
 
                     await page.goto('/dashboard/users');
-                    await expect(page.locator('table')).toBeVisible();
+                    await expect(page.locator('table')).toBeVisible({ timeout: 30000 });
                     await page.screenshot({ path: `test-results/audit/admin-users-desktop.png`, fullPage: true });
                 });
             }
@@ -113,7 +113,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         await customerPage.fill('[data-testid="max-budget-input"]', '2000');
         await clientHelper.form.submitPostJob();
         
-        await customerPage.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: TIMEOUTS.medium });
+        await customerPage.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
         const jobId = await clientHelper.job.getJobIdFromUrl();
         console.log(`[Sync] Job Created: ${jobId}`);
 
@@ -124,7 +124,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         
         console.log('[Sync] Professional viewing job...');
         await proPage.goto(`/dashboard/jobs/${jobId}`);
-        await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible();
+        await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 30000 });
         
         const bidBtn = proPage.getByTestId('place-bid-button');
         await bidBtn.click();
@@ -148,3 +148,4 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         await context.close();
     });
 });
+

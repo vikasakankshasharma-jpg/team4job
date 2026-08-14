@@ -459,7 +459,7 @@ test.describe('Universal Master Audit', () => {
         
         // Verify "Locked" View (Sealed Review)
         console.log('[Act 7] Verifying sealed review state...');
-        await expect(page.getByTestId('review-locked-card').or(page.locator('text=/Waiting for [\\w\\s]+ to review|Review Sealed/i'))).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('review-locked-card').or(page.locator('text=/Waiting for [\\w\\s]+ to review|Review Sealed/i')).first()).toBeVisible({ timeout: 15000 });
         
         // IN Rates JG
         console.log('[Act 7] Professional rating Client...');

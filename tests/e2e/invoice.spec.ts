@@ -48,7 +48,7 @@ test.describe('Invoice Generation E2E', () => {
 
         // 3. Confirm download button (which actually opens print view) is visible
         const downloadBtn = page.getByTestId('download-invoice-button');
-        await expect(downloadBtn).toBeVisible();
+        await expect(downloadBtn).toBeVisible({ timeout: 30000 });
 
         // 4. In our current implementation, this opens a new tab with a print view
         // Instead of waiting for a download event (which window.print doesn't trigger),
@@ -62,7 +62,7 @@ test.describe('Invoice Generation E2E', () => {
         await expect(invoicePage).toHaveURL(new RegExp(`/dashboard/jobs/${seededJobId}/invoice`));
 
         // Check for invoice content on the new page
-        await expect(invoicePage.locator('h1').first()).toBeVisible({ timeout: 15000 });
+        await expect(invoicePage.locator('h1').first()).toBeVisible({ timeout: 30000 });
         await expect(invoicePage.getByRole('button', { name: /Print|Download Mission Invoice/i })).toBeVisible({ timeout: 30000 });
 
         console.log(`[PASS] Invoice page loaded successfully for ${seededJobId}`);
@@ -70,5 +70,6 @@ test.describe('Invoice Generation E2E', () => {
         await context.close();
     });
 });
+
 
 

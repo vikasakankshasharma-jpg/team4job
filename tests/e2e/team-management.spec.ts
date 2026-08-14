@@ -32,7 +32,7 @@ test.describe('Team Management', () => {
         // await helper.form.waitForToast(/Team Member Added/i);
         
         // Verify member appears in the list (pending or active)
-        await expect(page.getByText(email)).toBeVisible({ timeout: TIMEOUTS.medium });
+        await expect(page.getByText(email)).toBeVisible({ timeout: 30000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {

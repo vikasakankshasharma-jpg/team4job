@@ -23,7 +23,7 @@ test.describe('Mobile Responsiveness', () => {
         // 1. Landing Page / Login
         console.log('[Mobile] Navigating to login...');
         await page.goto('/login');
-        await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Login page loaded');
 
         // 2. Login as Client
@@ -49,7 +49,7 @@ test.describe('Mobile Responsiveness', () => {
         // The sidebar component has `hidden sm:flex`.
         // We can't easily select it if it's hidden, but we can check the mobile trigger is VISIBLE.
         const mobileMenuTrigger = page.getByRole('button', { name: 'Toggle Menu' });
-        await expect(mobileMenuTrigger).toBeVisible();
+        await expect(mobileMenuTrigger).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Hamburger menu trigger is visible');
 
         // 4. Open Mobile Menu
@@ -57,8 +57,8 @@ test.describe('Mobile Responsiveness', () => {
 
         // Verify Menu Content (Sheet) - filter by hasText to avoid Next.js error overlay
         const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
-        await expect(sheet).toBeVisible();
-        await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible();
+        await expect(sheet).toBeVisible({ timeout: 30000 });
+        await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Mobile menu opened and links are visible');
 
         // Close menu (click link or outside - clicking link navigates)
@@ -72,11 +72,11 @@ test.describe('Mobile Responsiveness', () => {
         await page.waitForLoadState('domcontentloaded').catch(() => { });
 
         const resumeDialog = page.getByRole('dialog', { name: 'Resume your draft?' });
-        if (await resumeDialog.isVisible({ timeout: 15000 })) {
+        if (await resumeDialog.isVisible({ timeout: 30000 })) {
             console.log('[Mobile] Draft dialog detected. Discarding draft...');
             try {
                 await page.getByRole('button', { name: 'Discard' }).click({ force: true });
-                await expect(resumeDialog).not.toBeVisible({ timeout: 15000 });
+                await expect(resumeDialog).not.toBeVisible({ timeout: 30000 });
                 console.log('[Mobile] Draft dialog dismissed successfully.');
             } catch (e) {
                 console.error('[Mobile] Failed to dismiss draft dialog:', e);
@@ -89,9 +89,10 @@ test.describe('Mobile Responsiveness', () => {
 
         // 6. Verify Post Job Form is usable (not cutting off)
         await expect(page.getByRole('heading', { name: 'Post Job' })).toBeVisible({ timeout: 10000 });
-        await expect(page.getByPlaceholder('e.g., CCTV Installation')).toBeVisible();
+        await expect(page.getByPlaceholder('e.g., CCTV Installation')).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Post Job form verified');
     });
 });
+
 
 

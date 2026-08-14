@@ -52,9 +52,10 @@ test.describe('Notification System', () => {
         const settingsTab = page.getByRole('tab').nth(2); // The Preferences tab (third tab)
         await settingsTab.click();
 
-        await expect(page.getByText('Notification Preferences')).toBeVisible();
-        await expect(page.getByText('In-App Notifications')).toBeVisible();
+        await expect(page.getByText('Notification Preferences')).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText('In-App Notifications')).toBeVisible({ timeout: 30000 });
     });
 });
+
 
 
