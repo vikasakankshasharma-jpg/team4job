@@ -240,6 +240,7 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
+          export JAVA_TOOL_OPTIONS="-Xmx1024m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -261,7 +262,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -313,7 +314,7 @@ jobs:
             fi
           done
           echo "Seeding test users..."
-          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=512 npx tsx scripts/ci-seed.ts; then
             echo "ERROR: Seeding failed. Aborting."
             exit 1
           fi
@@ -428,6 +429,7 @@ jobs:
       - name: Start Firebase Emulators in background
         run: |
           export JAVA_TOOL_OPTIONS="-Xmx1536m"
+          export JAVA_TOOL_OPTIONS="-Xmx1024m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -449,7 +451,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -491,7 +493,7 @@ jobs:
           done
           
           echo "Seeding test users via dedicated CLI script..."
-          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=512 npx tsx scripts/ci-seed.ts; then
              echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
              exit 1
           fi
@@ -744,6 +746,7 @@ jobs:
 
       - name: Start Firebase Emulators for Edge Cases
         run: |
+          export JAVA_TOOL_OPTIONS="-Xmx1024m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -761,7 +764,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -981,6 +984,7 @@ jobs:
       - name: Start Firebase Emulators in background
         run: |
           export JAVA_TOOL_OPTIONS="-Xmx1536m"
+          export JAVA_TOOL_OPTIONS="-Xmx1024m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -1002,7 +1006,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -1052,7 +1056,7 @@ jobs:
           done
           
           echo "Seeding test users via dedicated CLI script..."
-          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=512 npx tsx scripts/ci-seed.ts; then
              echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
              exit 1
           fi
@@ -1187,6 +1191,7 @@ jobs:
   #         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
   #       run: |
   #         npx firebase-tools@latest deploy --only hosting --project ${{ secrets.FIREBASE_PROJECT_ID }} --non-interactive --force
+
 
 
 
