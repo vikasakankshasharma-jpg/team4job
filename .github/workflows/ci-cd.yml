@@ -110,6 +110,8 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
@@ -216,6 +218,8 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
@@ -384,6 +388,8 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
@@ -440,7 +446,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -482,7 +488,7 @@ jobs:
           done
           
           echo "Seeding test users via dedicated CLI script..."
-          if ! npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
              echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
              exit 1
           fi
@@ -705,6 +711,8 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
@@ -749,7 +757,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -847,6 +855,8 @@ jobs:
           npm install -g @lhci/cli
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Download build artifacts
@@ -945,6 +955,8 @@ jobs:
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
 
       - name: Install Playwright browsers
+        env:
+          PLAYWRIGHT_DOWNLOAD_HOST: https://npmmirror.com/mirrors/playwright/
         run: npx playwright install --with-deps chromium webkit
 
       - name: Setup environment variables
@@ -984,7 +996,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=2048 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -1034,7 +1046,7 @@ jobs:
           done
           
           echo "Seeding test users via dedicated CLI script..."
-          if ! npx tsx scripts/ci-seed.ts; then
+          if ! NODE_OPTIONS=--max-old-space-size=2048 npx tsx scripts/ci-seed.ts; then
              echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
              exit 1
           fi

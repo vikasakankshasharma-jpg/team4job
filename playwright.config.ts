@@ -67,6 +67,8 @@ if (!process.env.CI) {
  * Playwright Configuration for E2E Testing
  * See https://playwright.dev/docs/test-configuration
  */
+const multiplier = process.env.TIMEOUT_MULTIPLIER ? parseFloat(process.env.TIMEOUT_MULTIPLIER) : 1;
+
 export default defineConfig({
     testDir: './tests',
     testMatch: '**/*.spec.ts',
@@ -108,10 +110,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 30 * 1000,
+        actionTimeout: 30 * 1000 * multiplier,
 
         /* Maximum time for navigation */
-        navigationTimeout: 60 * 1000,
+        navigationTimeout: 60 * 1000 * multiplier,
 
         /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
@@ -207,11 +209,11 @@ export default defineConfig({
      * - Keep at 8 min per test so a shard with 3-4 tests stays well within 60 min
      * - @slow tests (beta-squad, milestones) are excluded from the regression shard
      */
-    timeout: process.env.CI ? 15 * 60 * 1000 : 15 * 60 * 1000,
+    timeout: (process.env.CI ? 15 * 60 * 1000 : 15 * 60 * 1000) * multiplier,
 
     /* Expect timeout */
     expect: {
-        timeout: 30 * 1000,
+        timeout: 30 * 1000 * multiplier,
     },
 });
 
