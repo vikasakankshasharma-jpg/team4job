@@ -394,6 +394,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Expect Warning Dialog "Bid exceeds budget"
         const confirmBtn = page.getByRole('button', { name: /Proceed|Confirm|Yes/i });
+        await confirmBtn.last().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
         if (await confirmBtn.count() > 0) {
             // Handle potential warning modal
             await confirmBtn.last().click();

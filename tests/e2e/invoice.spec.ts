@@ -15,14 +15,24 @@ test.describe('Invoice Generation E2E', () => {
 
         console.log('--- START: Invoice Generation Test ---');
 
-        // 1. Login first to ensure DB is seeded and not cleared afterwards
+        // 1. Login as Client (This clears the DB and seeds test users)
         await helper.auth.loginAsClient();
 
+        // 2. Seed a completed job
         console.log('Seeding completed job...');
         let seededJobId: string;
         try {
-            const seedOutput = execSync('npx --no-install tsx scripts/seed-completed-job.ts').toString();
-            seededJobId = seedOutput.trim().split('\n').pop() || '';
+            const envVars = { 
+                ...process.env, 
+                NEXT_PUBLIC_USE_EMULATOR: 'true',
+                NEXT_PUBLIC_USE_FIREBASE_EMULATOR: 'true',
+                FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', 
+                FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
+                DO_FIREBASE_PROJECT_ID: 'team4job-live',
+                NEXT_PUBLIC_FIREBASE_PROJECT_ID: 'team4job-live'
+            };
+            const seedOutput = execSync('npx --no-install tsx scripts/seed-completed-job.ts', { env: envVars }).toString();
+            seededJobId = seedOutput.trim().replace(/\r/g, '').split('\n').pop()?.trim() || '';
             console.log(`Seeded Job ID: ${seededJobId}`);
         } catch (error) {
             console.error('Failed to seed completed job', error);

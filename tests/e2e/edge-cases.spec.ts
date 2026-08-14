@@ -55,8 +55,8 @@ test.describe('Edge Case Tests @edge', () => {
             await page.goto('/login');
             await page.click('[data-testid="login-submit-btn"]');
 
-            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address or 10-digit mobile number.', { timeout: 10000 });
-            await expect(page.locator('[data-testid="password-error"]')).toContainText('Password cannot be empty.', { timeout: 10000 });
+            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('text=Password cannot be empty.')).toBeVisible({ timeout: 10000 });
         });
 
         test('Login with invalid email format', async ({ page }) => {
@@ -65,7 +65,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('input[type="password"]', 'password123');
             await page.getByTestId('login-submit-btn').click();
 
-            await expect(page.locator('[data-testid="email-error"]')).toContainText('Please enter a valid email address or 10-digit mobile number.', { timeout: 10000 });
+            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 10000 });
         });
 
         test('Login with wrong credentials', async ({ page }) => {

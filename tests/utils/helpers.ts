@@ -113,16 +113,26 @@ export class AuthHelper {
         }
     }
 
+    async ensureSessionCookie() {
+        // Wait for session cookie to be set by our auth endpoint
+        await expect(async () => {
+            const cookies = await this.page.context().cookies();
+            expect(cookies.find(c => c.name === 'auth-token')).toBeDefined();
+        }).toPass({ timeout: 10000 });
+        // Give it an extra small buffer for any React state updates to flush
+        await this.page.waitForTimeout(500);
+    }
+
     async loginAsClient() {
         await this.login(TEST_ACCOUNTS.client.email, TEST_ACCOUNTS.client.password);
         await this.ensureRole('Client');
-        await this.page.waitForTimeout(3000); // Allow Firebase Auth IndexedDB to persist before tests execute hard navigations
+        await this.ensureSessionCookie();
     }
 
     async loginAsProfessional() {
         await this.login(TEST_ACCOUNTS.professional.email, TEST_ACCOUNTS.professional.password);
         await this.ensureRole('Professional');
-        await this.page.waitForTimeout(3000); // Allow Firebase Auth IndexedDB to persist before tests execute hard navigations
+        await this.ensureSessionCookie();
     }
 
     async waitForQuiescence() {

@@ -6,9 +6,15 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load .env.test into the main process so scripts like execSync inherit emulator vars locally
+if (!process.env.CI) {
+    dotenv.config({ path: path.resolve(__dirname, '.env.test'), override: true });
+}
+
 const getWebServerEnv = () => {
     const rawEnv: Record<string, string | undefined> = { ...process.env };
-    // Force CI indicator for consistency
+
+// Force CI indicator for consistency
     if (rawEnv.GITHUB_ACTIONS) rawEnv.CI = 'true';
 
     const env: Record<string, string> = {};

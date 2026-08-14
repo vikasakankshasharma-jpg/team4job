@@ -107,7 +107,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         );
         
         await customerPage.getByTestId('job-title-input').first().fill(uniqueTitle);
-        await customerPage.getByTestId('job-description-input').first().fill('Data synchronization audit job.');
+        await customerPage.getByTestId('job-description-input').first().fill('Data synchronization audit job for testing the cross-role interactions.');
         await clientHelper.form.fillPincodeAndSelectPO('560001');
         await customerPage.fill('[data-testid="min-budget-input"]', '1000');
         await customerPage.fill('[data-testid="max-budget-input"]', '2000');

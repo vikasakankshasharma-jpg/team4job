@@ -29,7 +29,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   collection,
-  getDocs,
+  onSnapshot,
   query,
   where,
   or
@@ -76,27 +76,29 @@ export default function TeamClient() {
     })
   }, [setHelp, t]);
 
-  const fetchTeamMembers = useCallback(async () => {
-    if (!db) return;
-    setLoading(true);
-    const q = query(collection(db, "users"), or(
-      where("roles", "array-contains", "Admin"),
-      where("roles", "array-contains", "Support Team")
-    ));
-    const querySnapshot = await getDocs(q);
-    const list = querySnapshot.docs.map((doc) => doc.data() as User);
-    // Exclude the current admin from the list
-    setTeamMembers(list.filter(s => s.id !== user?.id));
-    setLoading(false);
-  }, [db, user?.id]);
-
   useEffect(() => {
     if (!userLoading && !isAdmin) {
       router.push('/dashboard');
-    } else if (user && isAdmin) {
-      fetchTeamMembers();
+    } else if (user && isAdmin && db) {
+      setLoading(true);
+      const q = query(collection(db, "users"), or(
+        where("roles", "array-contains", "Admin"),
+        where("roles", "array-contains", "Support Team")
+      ));
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const list = querySnapshot.docs.map((doc) => doc.data() as User);
+        // Exclude the current admin from the list
+        setTeamMembers(list.filter(s => s.id !== user?.id));
+        setLoading(false);
+      }, (error) => {
+        console.error("Error fetching team members:", error);
+        setLoading(false);
+      });
+      
+      return () => unsubscribe();
     }
-  }, [isAdmin, userLoading, user, router, fetchTeamMembers]);
+  }, [isAdmin, userLoading, user, router, db]);
 
 
   // Filter team members
@@ -190,7 +192,7 @@ export default function TeamClient() {
         />
       </div>
 
-      <TeamManagementCard onTeamMemberAdded={fetchTeamMembers} />
+      <TeamManagementCard onTeamMemberAdded={() => {}} />
 
       <Card className="border-0 shadow-md shadow-primary/5 overflow-hidden">
         <CardHeader>
