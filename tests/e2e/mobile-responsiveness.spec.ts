@@ -52,12 +52,12 @@ test.describe('Mobile Responsiveness', () => {
         await expect(mobileMenuTrigger).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Hamburger menu trigger is visible');
 
-        // 4. Open Mobile Menu
-        await mobileMenuTrigger.click({ force: true });
-
-        // Verify Menu Content (Sheet) - filter by hasText to avoid Next.js error overlay
+        // 4. Open Mobile Menu and wait for Sheet
         const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
-        await expect(sheet).toBeVisible({ timeout: 30000 });
+        await expect(async () => {
+            await mobileMenuTrigger.click({ force: true });
+            await expect(sheet).toBeVisible({ timeout: 5000 });
+        }).toPass({ timeout: 30000 });
         await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Mobile menu opened and links are visible');
 

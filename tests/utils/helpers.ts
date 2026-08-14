@@ -1778,14 +1778,14 @@ export class JobHelper {
             const validStatuses = aliases[status] || [status];
             const selector = validStatuses.map(s => `[data-status="${s}"]`).join(', ');
 
-            // Try waiting initially
+            // Try waiting initially with a long timeout to give Firebase time to sync
             try {
                 await expect(this.page.locator(selector).first())
-                    .toBeVisible({ timeout: 5000 }); // Short initial wait
-                console.log(`Helper: Job status ${status} visible immediately.`);
+                    .toBeVisible({ timeout: 20000 });
+                console.log(`Helper: Job status ${status} visible initially.`);
                 return;
             } catch (e) {
-                console.log(`Helper: Status ${status} not immediately visible. Starting polling/reload loop...`);
+                console.log(`Helper: Status ${status} not visible within 20s. Starting polling/reload loop...`);
             }
 
             const startTime = Date.now();
@@ -1808,10 +1808,10 @@ export class JobHelper {
                 await this.page.reload();
                 await this.page.waitForLoadState('domcontentloaded');
 
-                // Wait a bit for components to mount
+                // Wait for components to mount and Firebase to fetch
                 try {
                     await expect(this.page.locator(selector).first())
-                        .toBeVisible({ timeout: 5000 });
+                        .toBeVisible({ timeout: 20000 });
                     console.log(`Helper: Job status ${status} visible after reload.`);
                     return;
                 } catch (ignore) {

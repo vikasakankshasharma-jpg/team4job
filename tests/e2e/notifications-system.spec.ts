@@ -24,8 +24,11 @@ test.describe('Notification System', () => {
         // Wait for hydration
         await page.waitForTimeout(2000);
 
-        // Click bell (force click for mobile viewports where it might be slightly overflowing)
-        await bell.click({ force: true });
+        // Click bell and wait for dropdown (using toPass to handle hydration/click interception)
+        await expect(async () => {
+            await bell.click({ force: true });
+            await expect(page.getByText(/Mission Intel/i).first()).toBeVisible({ timeout: 5000 });
+        }).toPass({ timeout: 30000 });
 
         // Check dropdown content
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
