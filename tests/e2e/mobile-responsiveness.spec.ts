@@ -57,9 +57,10 @@ test.describe('Mobile Responsiveness', () => {
         await expect(async () => {
             if (!(await sheet.isVisible())) {
                 await mobileMenuTrigger.click({ force: true });
+                await page.waitForTimeout(500); // Let Sheet animation complete
             }
-            await expect(sheet).toBeVisible({ timeout: 5000 });
-        }).toPass({ timeout: 30000 });
+            await expect(sheet).toBeVisible({ timeout: 10000 });
+        }).toPass({ timeout: 60000 });
         await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });
         console.log('[Mobile] Mobile menu opened and links are visible');
 

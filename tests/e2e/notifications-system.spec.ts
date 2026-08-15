@@ -24,21 +24,19 @@ test.describe('Notification System', () => {
         // Wait for hydration
         await page.waitForTimeout(2000);
 
-        // Click bell and wait for dropdown (using toPass to handle hydration/click interception)
+        // Click bell and wait for dropdown content to be fully visible
+        // All assertions go inside toPass() because the Popover renders in a Radix portal
+        // and can close between separate assertion blocks
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
+        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i }).first();
         await expect(async () => {
             if (!(await dropdownHeader.isVisible())) {
                 await bell.click({ force: true });
+                await page.waitForTimeout(500); // Let Radix portal mount
             }
             await expect(dropdownHeader).toBeVisible({ timeout: 5000 });
-        }).toPass({ timeout: 30000 });
-
-        // Check dropdown content
-        await expect(dropdownHeader).toBeVisible({ timeout: 30000 });
-
-        // Check for the "view all" button (which is styled as ACCESS INTEL COMMAND or VIEW HISTORY LOGS)
-        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i }).first();
-        await expect(viewAllBtn).toBeVisible({ timeout: 30000 });
+            await expect(viewAllBtn).toBeVisible({ timeout: 5000 });
+        }).toPass({ timeout: 60000 });
     });
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {

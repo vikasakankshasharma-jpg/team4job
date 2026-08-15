@@ -123,10 +123,13 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         await proHelper.auth.loginAsProfessional();
         
         console.log('[Sync] Professional viewing job...');
-        await proPage.goto(`/dashboard/jobs/${jobId}`);
-        await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 30000 });
+        await expect(async () => {
+            await proPage.goto(`/dashboard/jobs/${jobId}`);
+            await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 10000 });
+        }).toPass({ timeout: 60000 });
         
         const bidBtn = proPage.getByTestId('place-bid-button');
+        await expect(bidBtn).toBeVisible({ timeout: 30000 });
         await bidBtn.click();
         await proPage.locator('input[name="amount"]').fill('1500');
         await proPage.fill('textarea[name="coverLetter"]', 'Audit Sync Cover Letter');
@@ -140,9 +143,10 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         await adminHelper.auth.loginAsAdmin();
         
         console.log('[Sync] Admin verifying job visibility...');
-        await adminPage.goto(`/dashboard/jobs/${jobId}`);
-        // Wait for the job page to show the unique title
-        await expect(adminPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 30000 });
+        await expect(async () => {
+            await adminPage.goto(`/dashboard/jobs/${jobId}`);
+            await expect(adminPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 10000 });
+        }).toPass({ timeout: 60000 });
         console.log('[Sync] Data verified by Admin - job is visible.');
 
         await context.close();

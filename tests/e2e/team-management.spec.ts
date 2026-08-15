@@ -25,17 +25,20 @@ test.describe('Team Management', () => {
         await page.getByLabel(/Role/i).first().click();
         await page.getByRole('option', { name: /Support Team/i }).first().click();
 
-        // Send invitation
-        await page.getByRole('button', { name: /Create Team Member/i }).click();
-
-        // Verify success toast (flaky in CI if it disappears too quickly)
-        // await helper.form.waitForToast(/Team Member Added/i);
+        // Send invitation and wait for the API response
+        const [response] = await Promise.all([
+            page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 30000 }),
+            page.getByRole('button', { name: /Create Team Member/i }).click()
+        ]);
         
+        console.log(`[TeamMgmt] API response status: ${response.status()}`);
+
         // Verify member appears in the list (pending or active) - use toPass with reload fallback
         await expect(async () => {
             const isVisible = await page.getByText(email).isVisible();
             if (!isVisible) {
                 await page.reload();
+                await page.waitForLoadState('domcontentloaded');
             }
             await expect(page.getByText(email)).toBeVisible({ timeout: 10000 });
         }).toPass({ timeout: 60000 });

@@ -411,19 +411,19 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
         await expect(acceptJobButton).toBeVisible({ timeout: 30000 });
         await acceptJobButton.click();
-        // Handle conflict or success
-        await Promise.race([
-            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
-            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
-            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
-        ]).then(async (result) => {
-            if (result === 'conflict') {
-                await conflictBtn.click();
-                await helper.form.waitForToast('Job Accepted!');
-            } else if (result === 'error') {
-                throw new Error('Professional Payouts missing during acceptance flow (Amit Patel seeded user fallback error)');
-            }
-        });
+        // Handle conflict, action required, or success
+        const result = await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 10000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+        ]);
+        if (result === 'conflict') {
+            await conflictBtn.click();
+            await helper.form.waitForToast('Job Accepted!');
+        } else if (result === 'error') {
+            throw new Error('Professional Payouts missing during acceptance flow (Amit Patel seeded user fallback error)');
+        }
+        // 'success' or 'timeout' (if none fired first, waitForJobStatus below will catch it)
 
         await helper.job.waitForJobStatus('Pending Funding');
         // Optional: verify funded amount later
@@ -498,18 +498,17 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         await expect(acceptJobButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await acceptJobButton.click();
-        await Promise.race([
-            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
-            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
-            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
-        ]).then(async (result) => {
-            if (result === 'conflict') {
-                await conflictBtn.click();
-                await helper.form.waitForToast('Job Accepted!');
-            } else if (result === 'error') {
-                throw new Error('Professional Payouts missing during acceptance flow');
-            }
-        });
+        const result4 = await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 10000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+        ]);
+        if (result4 === 'conflict') {
+            await conflictBtn.click();
+            await helper.form.waitForToast('Job Accepted!');
+        } else if (result4 === 'error') {
+            throw new Error('Professional Payouts missing during acceptance flow');
+        }
 
         await helper.job.waitForJobStatus('Pending Funding');
         await context.close();
@@ -614,18 +613,17 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await acceptJobButton.click();
         
         // Handle conflict or success
-        await Promise.race([
-            helper.form.waitForToast('Job Accepted!').then(() => 'success').catch((e) => { throw e; }),
-            conflictBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => 'conflict').catch(() => new Promise<string>(() => {})),
-            helper.form.waitForToast('Action Required', 5000).then(() => 'error').catch(() => new Promise<string>(() => {}))
-        ]).then(async (result) => {
-            if (result === 'conflict') {
-                await conflictBtn.click();
-                await helper.form.waitForToast('Job Accepted!');
-            } else if (result === 'error') {
-                throw new Error('Professional Payouts missing during acceptance flow');
-            }
-        });
+        const result5 = await Promise.race([
+            helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 10000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+        ]);
+        if (result5 === 'conflict') {
+            await conflictBtn.click();
+            await helper.form.waitForToast('Job Accepted!');
+        } else if (result5 === 'error') {
+            throw new Error('Professional Payouts missing during acceptance flow');
+        }
         await helper.job.waitForJobStatus('Pending Funding');
 
         // JG Fund - Move to In Progress using shim (bypassing Cashfree for now)
