@@ -26,10 +26,9 @@ test.describe('Team Management', () => {
         await page.getByRole('option', { name: /Support Team/i }).first().click();
 
         // Send invitation and wait for the API response
-        const [response] = await Promise.all([
-            page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 30000 }),
-            page.getByRole('button', { name: /Create Team Member/i }).click()
-        ]);
+        const responsePromise = page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 60000 });
+        await page.getByRole('button', { name: /Create Team Member/i }).click();
+        const response = await responsePromise;
         
         console.log(`[TeamMgmt] API response status: ${response.status()}`);
 

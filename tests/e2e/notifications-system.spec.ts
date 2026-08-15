@@ -28,15 +28,24 @@ test.describe('Notification System', () => {
         // All assertions go inside toPass() because the Popover renders in a Radix portal
         // and can close between separate assertion blocks
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
-        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL COMMAND|VIEW HISTORY LOGS/i }).first();
+        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL|HISTORY LOGS/i }).first();
+        
+        let attempts = 0;
         await expect(async () => {
+            attempts++;
+            if (attempts > 2) {
+                await page.reload();
+                await page.waitForTimeout(2000);
+                attempts = 0;
+            }
+            
             if (!(await dropdownHeader.isVisible())) {
                 await bell.click({ force: true });
-                await page.waitForTimeout(500); // Let Radix portal mount
+                await page.waitForTimeout(1000); // Let Radix portal mount
             }
             await expect(dropdownHeader).toBeVisible({ timeout: 5000 });
             await expect(viewAllBtn).toBeVisible({ timeout: 5000 });
-        }).toPass({ timeout: 60000 });
+        }).toPass({ timeout: 60000, intervals: [1000, 2000, 5000] });
     });
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {

@@ -12,7 +12,7 @@ function generateUniqueJobTitle(base: string = 'Edge Case Job') {
 }
 
 test.describe('Edge Case Tests @edge', () => {
-    test.setTimeout(600000); // 90 seconds per test to prevent CI hangs while allowing for retries
+    test.setTimeout(90000); // 90 seconds per test to prevent CI hangs while allowing for retries
 
     test.beforeEach(async ({ page }) => {
         // Mock Pincode API
@@ -340,7 +340,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.auth.loginAsClient();
 
             // Set 120s timeout specifically for this test
-            test.setTimeout(600000);
+            test.setTimeout(120000); // 120s timeout for network edge cases
 
             const context = page.context();
             const client = await context.newCDPSession(page);

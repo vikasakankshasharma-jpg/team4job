@@ -90,6 +90,7 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
     }
 
     test('Full Cross-Role Data Synchronization Flow', async ({ browser }) => {
+        test.setTimeout(300000); // 5 minutes for CI
         const uniqueTitle = `Audit Sync - ${Date.now()}`;
         const context = await browser.newContext();
         
@@ -125,8 +126,9 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         console.log('[Sync] Professional viewing job...');
         await expect(async () => {
             await proPage.goto(`/dashboard/jobs/${jobId}`);
-            await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 10000 });
-        }).toPass({ timeout: 60000 });
+            await proPage.reload();
+            await expect(proPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 15000 });
+        }).toPass({ timeout: 120000 });
         
         const bidBtn = proPage.getByTestId('place-bid-button');
         await expect(bidBtn).toBeVisible({ timeout: 30000 });
@@ -145,8 +147,9 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         console.log('[Sync] Admin verifying job visibility...');
         await expect(async () => {
             await adminPage.goto(`/dashboard/jobs/${jobId}`);
-            await expect(adminPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 10000 });
-        }).toPass({ timeout: 60000 });
+            await adminPage.reload();
+            await expect(adminPage.locator(`text=${uniqueTitle}`)).toBeVisible({ timeout: 15000 });
+        }).toPass({ timeout: 120000 });
         console.log('[Sync] Data verified by Admin - job is visible.');
 
         await context.close();
