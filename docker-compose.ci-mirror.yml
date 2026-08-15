@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  ci-mirror:
+    image: mcr.microsoft.com/playwright:v1.47.0-jammy
+    # Mirror GitHub Actions Standard Runner limits:
+    # 2 vCPUs and 7GB RAM
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 7G
+    environment:
+      - CI=true
+      - NODE_ENV=test
+      - DO_FIREBASE_PROJECT_ID=team4job-ci-mirror
+      - FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+      - FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+      - PLAYWRIGHT_HTML_REPORT=/app/playwright-report
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: >
+      bash -c "
+        echo '🚀 Local CI Mirror Initializing...' &&
+        npm ci --quiet &&
+        npx playwright install --with-deps chromium &&
+        echo '🧪 Starting CI/CD E2E Suite...' &&
+        npx playwright test --reporter=html
+      "

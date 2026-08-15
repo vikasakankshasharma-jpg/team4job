@@ -262,7 +262,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=3072 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -451,7 +451,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=3072 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -764,7 +764,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=3072 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
@@ -1006,7 +1006,7 @@ jobs:
         run: tar -xzf build-artifacts.tar.gz
 
       - name: Start Next.js production server in background
-        run: NODE_OPTIONS=--max-old-space-size=3072 npm run start &
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
