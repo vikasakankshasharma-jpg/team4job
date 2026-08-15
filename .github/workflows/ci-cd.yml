@@ -240,7 +240,7 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
-          export JAVA_TOOL_OPTIONS="-Xmx1024m"
+          export JAVA_TOOL_OPTIONS="-Xmx2048m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -428,8 +428,8 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
-          export JAVA_TOOL_OPTIONS="-Xmx1536m"
-          export JAVA_TOOL_OPTIONS="-Xmx1024m"
+          
+          export JAVA_TOOL_OPTIONS="-Xmx2048m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -746,7 +746,7 @@ jobs:
 
       - name: Start Firebase Emulators for Edge Cases
         run: |
-          export JAVA_TOOL_OPTIONS="-Xmx1024m"
+          export JAVA_TOOL_OPTIONS="-Xmx2048m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
@@ -983,8 +983,8 @@ jobs:
 
       - name: Start Firebase Emulators in background
         run: |
-          export JAVA_TOOL_OPTIONS="-Xmx1536m"
-          export JAVA_TOOL_OPTIONS="-Xmx1024m"
+          
+          export JAVA_TOOL_OPTIONS="-Xmx2048m"
           npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
