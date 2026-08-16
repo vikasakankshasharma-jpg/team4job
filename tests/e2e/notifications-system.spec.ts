@@ -28,7 +28,7 @@ test.describe('Notification System', () => {
         // All assertions go inside toPass() because the Popover renders in a Radix portal
         // and can close between separate assertion blocks
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
-        const viewAllBtn = page.locator('button').filter({ hasText: /ACCESS INTEL|HISTORY LOGS/i }).first();
+        const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL|HISTORY LOGS/i }).first();
         
         let attempts = 0;
         await expect(async () => {

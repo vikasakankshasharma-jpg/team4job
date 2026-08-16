@@ -89,12 +89,18 @@ test.describe('Reviews & Ratings E2E', () => {
         
         const proSubmitBtn = page.getByTestId('submit-review-button');
         await proSubmitBtn.click({ force: true });
+        
+        // Wait for the toast to ensure it was submitted successfully
+        await expect(page.locator('text=Trust Protocol Unlocked').first()).toBeVisible({ timeout: 15000 }).catch(() => {});
 
         console.log('[PASS] Professional Review Submitted');
 
         console.log('--- END: Reviews & Ratings Test ---');
 
         // 5. Verify Reviews Revealed
+        // Reload to ensure we get the fully un-redacted job object from the server now that both reviews are in.
+        await page.reload();
+        
         await expect(page.getByTestId('reviews-revealed-section')).toBeVisible({ timeout: 30000 });
         await expect(page.getByText(/Self Assessment/i)).toBeVisible({ timeout: 30000 });
         await expect(page.getByText(/Counterparty Feedback/i)).toBeVisible({ timeout: 30000 });
