@@ -751,7 +751,6 @@ jobs:
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
           CI: true
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
 
@@ -791,7 +790,7 @@ jobs:
             sleep 5
           done
           for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:3000 > /dev/null 2>&1; then echo "Server ready"; break; fi
+            if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then echo "Server ready"; break; fi
             sleep 5
           done
           SEED_SUCCESS=false
