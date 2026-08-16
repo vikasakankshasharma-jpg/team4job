@@ -21,22 +21,18 @@ test.describe('Team Management', () => {
         await page.getByLabel(/Email Address/i).fill(email);
         await page.getByLabel(/Temporary Password/i).fill('password123');
         
-        // Select role
-        await page.getByLabel(/Role/i).first().click();
+        // Select role (specifically within the form to avoid clicking the filter bar)
+        await page.locator('form').getByRole('combobox').click();
         await page.getByRole('option', { name: /Support Team/i }).first().click();
 
-        // Send invitation and wait for the API response or an error toast
-        await page.getByRole('button', { name: /Create Team Member/i }).click();
-        
-        // Wait for either the API response or an error toast
-        await Promise.race([
-            page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 15000 }),
-            page.getByRole('status').filter({ hasText: /Error|Not authenticated/i }).waitFor({ state: 'visible', timeout: 15000 }).then(() => { throw new Error('Form submission failed with a Toast error') })
-        ]).catch(() => {
-            console.log('Timeout waiting for API response or Toast');
-        });
+        // Give Firebase Auth enough time to restore the session from IndexedDB
+        // to prevent the API request failing with "Not authenticated".
+        await page.waitForTimeout(2000);
 
-        // Verify member appears in the list (pending or active) - use toPass with reload fallback
+        // Send invitation
+        await page.getByRole('button', { name: /Create Team Member/i }).click();
+
+        // Verify member appears in the list - use toPass with reload fallback
         await expect(async () => {
             const isVisible = await page.getByText(email).isVisible();
             if (!isVisible) {
