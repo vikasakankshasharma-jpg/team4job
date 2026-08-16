@@ -29,11 +29,13 @@ test.describe('Team Management', () => {
         // to prevent the API request failing with "Not authenticated".
         await page.waitForTimeout(2000);
 
-        // Send invitation and wait for the success toast so we know the API call finished
+        // Send invitation and wait for the API call to finish
+        const submitPromise = page.waitForResponse(
+            resp => resp.url().includes('/api/admin/create-user') && resp.status() === 200,
+            { timeout: 15000 }
+        );
         await page.getByRole('button', { name: /Create Team Member/i }).click();
-        
-        // Wait for success toast
-        await expect(page.getByRole('status').filter({ hasText: /Success/i })).toBeVisible({ timeout: 15000 });
+        await submitPromise;
 
         // Verify member appears in the list (onSnapshot should update it automatically)
         await expect(page.getByText(email)).toBeVisible({ timeout: 15000 });
