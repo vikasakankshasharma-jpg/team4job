@@ -245,7 +245,6 @@ jobs:
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
           CI: true
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -434,7 +433,6 @@ jobs:
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
           CI: true
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -793,13 +791,18 @@ jobs:
             if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then echo "Server ready"; break; fi
             sleep 5
           done
-          SEED_SUCCESS=false
-          for i in $(seq 1 12); do
-            STATUS=$(curl -s -o /tmp/seed_response.json -w "%{http_code}" -X POST http://127.0.0.1:3000/api/e2e/seed-users)
-            if [ "$STATUS" = "200" ]; then SEED_SUCCESS=true; break; fi
-            echo "Seed attempt $i failed (status $STATUS)"; cat /tmp/seed_response.json || true; sleep 10
-          done
-          if [ "$SEED_SUCCESS" = "false" ]; then echo "ERROR: Seed failed"; exit 1; fi
+          echo "Seeding test users via dedicated CLI script..."
+          if ! NODE_OPTIONS=--max-old-space-size=512 npx tsx scripts/ci-seed.ts; then
+             echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting shard."
+             exit 1
+          fi
+          
+          echo "Confirming server health after CLI seeding..."
+          if ! curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+            echo "ERROR: Next.js server crashed during or immediately after seeding. Possible OOM. Aborting."
+            exit 1
+          fi
+          echo "Server health check passed. Starting tests."
 
       - name: Run edge case tests
         run: |
@@ -904,7 +907,6 @@ jobs:
           npx firebase emulators:exec "npm run test:perf" --project $DO_FIREBASE_PROJECT_ID --only auth,firestore,storage
         env:
           CI: true
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -992,7 +994,6 @@ jobs:
           echo "EMULATOR_PID=$!" >> $GITHUB_ENV
         env:
           CI: true
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
