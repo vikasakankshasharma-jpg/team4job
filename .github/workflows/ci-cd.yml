@@ -819,6 +819,7 @@ jobs:
           NEXT_PUBLIC_USE_EMULATOR: true
           NEXT_PUBLIC_E2E: true
           ALLOW_E2E_SEED: true
+          E2E_NO_CLEAR: true
           BASE_URL: http://127.0.0.1:3000
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
