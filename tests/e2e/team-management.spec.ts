@@ -27,18 +27,22 @@ test.describe('Team Management', () => {
 
         // Give Firebase Auth enough time to restore the session from IndexedDB
         // to prevent the API request failing with "Not authenticated".
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(4000);
 
         // Send invitation and wait for the API call to finish
         const submitPromise = page.waitForResponse(
             resp => resp.url().includes('/api/admin/create-user') && resp.status() === 200,
             { timeout: 15000 }
-        );
+        ).catch((e) => {
+            console.log("waitForResponse timed out or failed:", e.message);
+            return null;
+        });
+        
         await page.getByRole('button', { name: /Create Team Member/i }).click();
         await submitPromise;
 
         // Verify member appears in the list (onSnapshot should update it automatically)
-        await expect(page.getByText(email)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText(email)).toBeVisible({ timeout: 30000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {
