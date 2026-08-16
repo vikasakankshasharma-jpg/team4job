@@ -217,6 +217,7 @@ jobs:
         run: |
           npm ci
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
 
       - name: Install Playwright browsers
         run: |
@@ -388,6 +389,7 @@ jobs:
         run: |
           npm ci
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
 
       - name: Install Playwright browsers
         run: |
@@ -712,6 +714,7 @@ jobs:
         run: |
           npm ci
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
 
       - name: Install Playwright browsers
         run: |
@@ -864,6 +867,7 @@ jobs:
         run: |
           npm ci
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
           npm install -g @lhci/cli
 
       - name: Install Playwright browsers
@@ -966,6 +970,7 @@ jobs:
         run: |
           npm ci
           npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
 
       - name: Install Playwright browsers
         run: |
