@@ -104,8 +104,8 @@ export function LoginForm() {
       const isMobile = /^\d{10}$/.test(val);
       return isEmail || isMobile;
     }, { message: t("validation.identifierReq") }),
-    password: z.string().optional(),
-  }), [t]);
+    password: loginMode === 'password' ? z.string().min(1, { message: "Password cannot be empty." }) : z.string().optional(),
+  }), [t, loginMode]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
