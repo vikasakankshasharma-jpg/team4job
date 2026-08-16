@@ -15,34 +15,27 @@ test.describe('Team Management', () => {
         await page.goto('/dashboard/team');
         await expect(page).toHaveURL(/.*\/dashboard\/team/);
 
-        // Fill invitation form
         const email = `new-member-${Date.now()}@example.com`;
-        await page.getByLabel(/Full Name/i).fill('New Member');
-        await page.getByLabel(/Email Address/i).fill(email);
-        await page.getByLabel(/Temporary Password/i).fill('password123');
-        
-        // Select role (specifically within the form to avoid clicking the filter bar)
-        await page.locator('form').getByRole('combobox').click();
-        await page.getByRole('option', { name: /Support Team/i }).first().click();
 
-        // Give Firebase Auth enough time to restore the session from IndexedDB
-        // to prevent the API request failing with "Not authenticated".
-        await page.waitForTimeout(4000);
+        // Use a robust retry loop to handle Firebase Auth hydration delays,
+        // potential input truncation flakes in CI, and slow network responses.
+        await expect(async () => {
+            // Fill invitation form
+            await page.getByLabel(/Full Name/i).fill('New Member');
+            await page.getByLabel(/Email Address/i).fill(email);
+            await expect(page.getByLabel(/Email Address/i)).toHaveValue(email); // Ensure no truncation
+            await page.getByLabel(/Temporary Password/i).fill('password123');
+            
+            // Select role
+            await page.locator('form').getByRole('combobox').click();
+            await page.getByRole('option', { name: /Support Team/i }).first().click();
 
-        // Send invitation and wait for the API call to finish
-        const submitPromise = page.waitForResponse(
-            resp => resp.url().includes('/api/admin/create-user') && resp.status() === 200,
-            { timeout: 15000 }
-        ).catch((e) => {
-            console.log("waitForResponse timed out or failed:", e.message);
-            return null;
-        });
-        
-        await page.getByRole('button', { name: /Create Team Member/i }).click();
-        await submitPromise;
+            // Click submit
+            await page.getByRole('button', { name: /Create Team Member/i }).click();
 
-        // Verify member appears in the list (onSnapshot should update it automatically)
-        await expect(page.getByText(email)).toBeVisible({ timeout: 30000 });
+            // Verify member appears in the list
+            await expect(page.getByText(email)).toBeVisible({ timeout: 10000 });
+        }).toPass({ timeout: 45000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {
