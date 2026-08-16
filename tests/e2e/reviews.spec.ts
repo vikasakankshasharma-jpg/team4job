@@ -62,6 +62,9 @@ test.describe('Reviews & Ratings E2E', () => {
         const submitBtn = page.getByTestId('submit-review-button');
         await submitBtn.click({ force: true });
 
+        // Wait for the success toast to ensure the API call finishes before reloading
+        await expect(page.locator('text=Review Sealed & Secured').first()).toBeVisible({ timeout: 15000 });
+
         // Verify Locked/Sealed State
         // Reload to bypass optimistic UI flakes and fetch the actual redacted state from the database
         await page.reload();
@@ -94,7 +97,7 @@ test.describe('Reviews & Ratings E2E', () => {
         await proSubmitBtn.click({ force: true });
         
         // Wait for the toast to ensure it was submitted successfully
-        await expect(page.locator('text=Trust Protocol Unlocked').first()).toBeVisible({ timeout: 15000 }).catch(() => {});
+        await expect(page.locator('text=Trust Protocol Unlocked').first()).toBeVisible({ timeout: 15000 });
 
         console.log('[PASS] Professional Review Submitted');
 

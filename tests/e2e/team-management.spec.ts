@@ -29,18 +29,14 @@ test.describe('Team Management', () => {
         // to prevent the API request failing with "Not authenticated".
         await page.waitForTimeout(2000);
 
-        // Send invitation
+        // Send invitation and wait for the success toast so we know the API call finished
         await page.getByRole('button', { name: /Create Team Member/i }).click();
+        
+        // Wait for success toast
+        await expect(page.getByRole('status').filter({ hasText: /Success/i })).toBeVisible({ timeout: 15000 });
 
-        // Verify member appears in the list - use toPass with reload fallback
-        await expect(async () => {
-            const isVisible = await page.getByText(email).isVisible();
-            if (!isVisible) {
-                await page.reload();
-                await page.waitForLoadState('domcontentloaded');
-            }
-            await expect(page.getByText(email)).toBeVisible({ timeout: 10000 });
-        }).toPass({ timeout: 60000 });
+        // Verify member appears in the list (onSnapshot should update it automatically)
+        await expect(page.getByText(email)).toBeVisible({ timeout: 15000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {
