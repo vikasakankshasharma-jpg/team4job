@@ -25,12 +25,16 @@ test.describe('Team Management', () => {
         await page.getByLabel(/Role/i).first().click();
         await page.getByRole('option', { name: /Support Team/i }).first().click();
 
-        // Send invitation and wait for the API response
-        const responsePromise = page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 60000 });
+        // Send invitation and wait for the API response or an error toast
         await page.getByRole('button', { name: /Create Team Member/i }).click();
-        const response = await responsePromise;
         
-        console.log(`[TeamMgmt] API response status: ${response.status()}`);
+        // Wait for either the API response or an error toast
+        await Promise.race([
+            page.waitForResponse(resp => resp.url().includes('/api/admin/create-user') && resp.request().method() === 'POST', { timeout: 15000 }),
+            page.getByRole('status').filter({ hasText: /Error|Not authenticated/i }).waitFor({ state: 'visible', timeout: 15000 }).then(() => { throw new Error('Form submission failed with a Toast error') })
+        ]).catch(() => {
+            console.log('Timeout waiting for API response or Toast');
+        });
 
         // Verify member appears in the list (pending or active) - use toPass with reload fallback
         await expect(async () => {

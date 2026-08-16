@@ -63,6 +63,9 @@ test.describe('Reviews & Ratings E2E', () => {
         await submitBtn.click({ force: true });
 
         // Verify Locked/Sealed State
+        // Reload to bypass optimistic UI flakes and fetch the actual redacted state from the database
+        await page.reload();
+        
         await expect(page.getByTestId('review-locked-card')).toBeVisible({ timeout: 30000 });
         console.log('[PASS] Client Review Submitted');
 
