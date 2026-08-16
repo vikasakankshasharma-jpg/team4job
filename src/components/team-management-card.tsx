@@ -31,7 +31,7 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus } from "lucide-react";
 import React from "react";
-import { getAuth } from "firebase/auth";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 
 
 const teamMemberSchema = z.object({
@@ -44,6 +44,7 @@ const teamMemberSchema = z.object({
 export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: () => void }) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { auth } = useFirebase();
 
   const form = useForm<z.infer<typeof teamMemberSchema>>({
     resolver: zodResolver(teamMemberSchema),
@@ -58,7 +59,6 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
   async function onSubmit(values: z.infer<typeof teamMemberSchema>) {
     setIsLoading(true);
     try {
-      const auth = getAuth();
       const token = await auth.currentUser?.getIdToken();
       if (!token) throw new Error("Not authenticated");
 
@@ -83,9 +83,10 @@ export function TeamManagementCard({ onTeamMemberAdded }: { onTeamMemberAdded: (
       form.reset();
       onTeamMemberAdded(); // This will refresh the list of team members
     } catch (error: any) {
+      console.error("CREATE_USER_FRONTEND_ERROR:", error);
       toast({
         title: "Error Creating User",
-        description: error.response?.data?.error || "An unexpected error occurred.",
+        description: error.message || error.response?.data?.error || "An unexpected error occurred.",
         variant: "destructive"
       });
     } finally {
