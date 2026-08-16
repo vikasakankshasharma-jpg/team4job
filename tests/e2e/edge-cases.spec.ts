@@ -183,7 +183,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('[data-testid="max-budget-input"]', '5000');
 
             await helper.preparePostJobSubmission();
-            await helper.form.submitPostJob();
+            await page.getByRole('button', { name: /Post Job|Submit/i }).click();
 
             await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 30000 });
         });
@@ -199,7 +199,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('input[name="deadline"]', pastDate.toISOString().split('T')[0]);
 
             await helper.preparePostJobSubmission();
-            await helper.form.submitPostJob();
+            await page.getByRole('button', { name: /Post Job|Submit/i }).click();
 
             await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 30000 });
         });

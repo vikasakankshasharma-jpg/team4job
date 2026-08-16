@@ -92,10 +92,10 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
     test('Full Cross-Role Data Synchronization Flow', async ({ browser }) => {
         test.setTimeout(300000); // 5 minutes for CI
         const uniqueTitle = `Audit Sync - ${Date.now()}`;
-        const context = await browser.newContext();
         
         // 1. Customer Posts a Job
-        const customerPage = await context.newPage();
+        const customerContext = await browser.newContext();
+        const customerPage = await customerContext.newPage();
         const clientHelper = new TestHelper(customerPage);
         await clientHelper.auth.loginAsClient();
         console.log('[Sync] Posting job as Customer...');
@@ -119,7 +119,8 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         console.log(`[Sync] Job Created: ${jobId}`);
 
         // 2. Professional Finds and Bids on the Job
-        const proPage = await context.newPage();
+        const proContext = await browser.newContext();
+        const proPage = await proContext.newPage();
         const proHelper = new TestHelper(proPage);
         await proHelper.auth.loginAsProfessional();
         
@@ -140,7 +141,8 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         console.log('[Sync] Bid placed by Professional.');
 
         // 3. Admin Audits the Transaction
-        const adminPage = await context.newPage();
+        const adminContext = await browser.newContext();
+        const adminPage = await adminContext.newPage();
         const adminHelper = new TestHelper(adminPage);
         await adminHelper.auth.loginAsAdmin();
         
@@ -152,7 +154,9 @@ test.describe('Phase 6: Comprehensive UI Audit & Data Sync', () => {
         }).toPass({ timeout: 120000 });
         console.log('[Sync] Data verified by Admin - job is visible.');
 
-        await context.close();
+        await customerContext.close();
+        await proContext.close();
+        await adminContext.close();
     });
 });
 

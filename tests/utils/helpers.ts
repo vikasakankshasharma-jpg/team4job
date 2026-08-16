@@ -1489,9 +1489,16 @@ export class FormHelper {
         }
         // 5. Check for AI Review page explicitly because its URL overlaps with the Job dashboard
         try {
-            console.log('[FormHelper] Checking for AI Review compilation step...');
+            console.log('[FormHelper] Checking for AI Review compilation step or redirect...');
             const reviewBtn = this.page.getByRole('button', { name: /Looks Good, Post Job|Looks Good/i });
-            if (await reviewBtn.waitFor({ state: 'visible', timeout: 60000 }).catch(() => false)) {
+            
+            // Race between AI review button and successful redirect
+            const isAiReview = await Promise.race([
+                reviewBtn.waitFor({ state: 'visible', timeout: 60000 }).then(() => true).catch(() => false),
+                this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 }).then(() => false).catch(() => false)
+            ]);
+
+            if (isAiReview) {
                 console.log('[FormHelper] AI Review page finished generating, finalizing post...');
                 await reviewBtn.click({ force: true });
                 await this.page.waitForTimeout(1500); // Give the system time to handle the click
@@ -1499,7 +1506,7 @@ export class FormHelper {
                 // Extra check for "Save as Template" modals or post-submission delays
                 await this.page.waitForLoadState('domcontentloaded');
             } else {
-                console.log('[FormHelper] No AI Review page detected within timeout or not applicable.');
+                console.log('[FormHelper] No AI Review page detected (or already redirected).');
             }
         } catch (e) {
             console.log('[FormHelper] AI Review handling error:', e);
@@ -1510,9 +1517,9 @@ export class FormHelper {
         // Wait for redirect to job detail and confirm settlement
         console.log('[FormHelper] Waiting for job detail page settlement...');
         try {
-            // Increased timeout to 300s to handle extreme local dev server compilation latency
+            // Increased timeout to 60s to avoid test timeout
             await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { 
-                timeout: 300000,
+                timeout: 60000,
                 waitUntil: 'domcontentloaded' 
             });
         } catch (e: any) {
@@ -1520,7 +1527,9 @@ export class FormHelper {
             if (e.message.includes('net::ERR_INVALID_RESPONSE') || e.message.includes('net::ERR_ABORTED')) {
                 console.log('[FormHelper] Network error detected, attempting fallback reload...');
                 await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 }).catch(() => {});
+                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 }).catch(() => {});
+            } else {
+                throw e; // Throw the error so the test fails immediately
             }
         }
         
