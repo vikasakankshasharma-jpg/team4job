@@ -1586,10 +1586,10 @@ export class NavigationHelper {
         }).catch(() => { });
     }
 
-    async goToPostJobForm(): Promise<boolean> {
+    async goToPostJobForm(appendWizardCompleted = true): Promise<boolean> {
         // Navigate to the direct post-job form, bypassing the wizard using the wizardCompleted param
         const maxRetries = 2;
-        const formUrl = ROUTES.postJobForm + '?wizardCompleted=true';
+        const formUrl = ROUTES.postJobForm + (appendWizardCompleted ? '?wizardCompleted=true' : '');
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 console.log(`[NavigationHelper] Navigating to Post Job Form (Attempt ${attempt}/${maxRetries})...`);
