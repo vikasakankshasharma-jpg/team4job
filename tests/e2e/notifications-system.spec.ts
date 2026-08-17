@@ -30,22 +30,11 @@ test.describe('Notification System', () => {
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL|HISTORY LOGS/i }).first();
         
-        let attempts = 0;
-        await expect(async () => {
-            attempts++;
-            if (attempts > 2) {
-                await page.reload();
-                await page.waitForTimeout(2000);
-                attempts = 0;
-            }
-            
-            if (!(await dropdownHeader.isVisible())) {
-                await bell.click({ force: true });
-                await page.waitForTimeout(1000); // Let Radix portal mount
-            }
-            await expect(dropdownHeader).toBeVisible({ timeout: 10000 });
-            await expect(viewAllBtn).toBeVisible({ timeout: 10000 });
-        }).toPass({ timeout: 60000, intervals: [1000, 2000, 5000] });
+        if (!(await dropdownHeader.isVisible())) {
+            await bell.click({ force: true });
+        }
+        await expect(dropdownHeader).toBeVisible({ timeout: 30000 });
+        await expect(viewAllBtn).toBeVisible({ timeout: 30000 });
     });
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {
