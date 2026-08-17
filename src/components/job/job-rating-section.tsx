@@ -238,19 +238,19 @@ export function RatingSection({ job, onJobUpdate }: { job: Job, onJobUpdate?: (u
                                 key={star}
                                 whileHover={{ scale: 1.3, rotate: 12 }}
                                 whileTap={{ scale: 0.85 }}
-                                className="relative"
+                                className="relative cursor-pointer"
+                                onClick={() => setRating(star)}
+                                data-testid={`rating-star-${star}`}
                             >
                                 <Star
                                     className={cn(
-                                        "h-16 w-16 cursor-pointer transition-all duration-300",
+                                        "h-16 w-16 transition-all duration-300",
                                         (hoverRating >= star || rating >= star)
                                             ? "text-amber-400 fill-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]"
                                             : "text-slate-200"
                                     )}
                                     onMouseEnter={() => setHoverRating(star)}
                                     onMouseLeave={() => setHoverRating(0)}
-                                    onClick={() => setRating(star)}
-                                    data-testid={`rating-star-${star}`}
                                 />
                                 {(hoverRating >= star || rating >= star) && (
                                     <motion.div
