@@ -55,6 +55,9 @@ test.describe('Mobile Responsiveness', () => {
         // 4. Open Mobile Menu and wait for Sheet
         const sheet = page.locator('div[role="dialog"]').filter({ hasText: 'Dashboard' });
         
+        // Wait for page hydration on mobile to prevent swallowed clicks
+        await page.waitForTimeout(5000);
+
         if (!(await sheet.isVisible())) {
             console.log('[Mobile] Clicking hamburger menu...');
             await mobileMenuTrigger.click({ force: true });

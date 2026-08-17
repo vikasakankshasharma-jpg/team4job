@@ -1771,7 +1771,7 @@ export class JobHelper {
         await this.page.click(`[data-testid="job-card"]:has-text("${jobTitle}"), .job-card:has-text("${jobTitle}")`);
     }
 
-    async waitForJobStatus(status: string, timeout = TIMEOUTS.long) {
+    async waitForJobStatus(status: string, timeout = 120000) {
         try {
             console.log(`Helper: Waiting for job status: ${status}. Timeout: ${timeout}ms`);
             

@@ -30,6 +30,9 @@ test.describe('Notification System', () => {
         const dropdownHeader = page.getByText(/Mission Intel/i).first();
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL|HISTORY LOGS/i }).first();
         
+        // Wait for page hydration to prevent swallowed clicks
+        await page.waitForTimeout(5000);
+
         if (!(await dropdownHeader.isVisible())) {
             await bell.click({ force: true });
         }
