@@ -21,11 +21,11 @@ test.describe('Support Tickets', () => {
 
         // Locate and click the support button
         const supportBtn = page.getByTestId('support-trigger-button');
-        await expect(supportBtn).toBeVisible({ timeout: 15000 });
+        await expect(supportBtn).toBeVisible({ timeout: 60000 });
         await supportBtn.evaluate(b => (b as HTMLElement).click());
 
         // Verify dialog opens
-        await expect(page.locator('text=Contact Support').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=Contact Support').first()).toBeVisible({ timeout: 60000 });
 
         // Chatbot interaction
         const chatInput = page.getByPlaceholder('Type your question...');

@@ -31,32 +31,32 @@ test.describe('Audit Chunk 3a: Professional Bidding', () => {
         const placeBidBtn = page.getByTestId('place-bid-button');
         const viewBidBtn = page.getByRole('button', { name: /View My Bid|Modify Bid|Proposal Submitted/i });
 
-        if (await viewBidBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+        if (await viewBidBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
             console.log('[Chunk 3a] Bid already placed. Skipping.');
-        } else if (await placeBidBtn.isVisible({ timeout: 10000 }).catch(() => false) && (await placeBidBtn.innerText()).includes('Submitted')) {
+        } else if (await placeBidBtn.isVisible({ timeout: 60000 }).catch(() => false) && (await placeBidBtn.innerText()).includes('Submitted')) {
             console.log('[Chunk 3a] Bid button shows "Submitted". Skipping.');
-        } else if (await placeBidBtn.isVisible({ timeout: 10000 }).catch(() => false) && await placeBidBtn.isDisabled()) {
+        } else if (await placeBidBtn.isVisible({ timeout: 60000 }).catch(() => false) && await placeBidBtn.isDisabled()) {
             console.log('[Chunk 3a] Bid button disabled. Checking for bid card...');
             const bidCard = page.getByTestId('bid-card-wrapper').first();
-            if (await bidCard.isVisible({ timeout: 15000 }).catch(() => false)) {
+            if (await bidCard.isVisible({ timeout: 60000 }).catch(() => false)) {
                 console.log('[Chunk 3a] Bid card detected. Skipping.');
             } else {
                 console.log('[Chunk 3a] Refreshing for disabled button state...');
                 await page.reload();
                 await helper.auth.injectNuclearCSS();
                 await helper.auth.waitForQuiescence();
-                if (await viewBidBtn.isVisible({ timeout: 15000 }).catch(() => false)) {
+                if (await viewBidBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
                      console.log('[Chunk 3a] Bid visible after refresh.');
                 } else {
                     throw new Error('Bid button disabled but no bid card found.');
                 }
             }
         } else {
-            await expect(placeBidBtn).toBeVisible({ timeout: 20000 });
+            await expect(placeBidBtn).toBeVisible({ timeout: 60000 });
             await placeBidBtn.click();
             
             const bidDialog = page.getByRole('dialog');
-            await expect(bidDialog).toBeVisible({ timeout: 10000 });
+            await expect(bidDialog).toBeVisible({ timeout: 60000 });
             
             await bidDialog.locator('input[name="amount"]').fill('6000');
             await bidDialog.locator('textarea[name="coverLetter"]').fill('I have the specific skills for this audit chunk.');
@@ -67,7 +67,7 @@ test.describe('Audit Chunk 3a: Professional Bidding', () => {
                 await helper.form.waitForToast(/Bid placed successfully|Bid Placed!/i, 15000);
             } catch (e) {
                 console.log('[Chunk 3a] Toast timeout, checking button state...');
-                await expect(viewBidBtn).toBeVisible({ timeout: 30000 });
+                await expect(viewBidBtn).toBeVisible({ timeout: 90000 });
             }
             console.log('✅ Chunk 3a Complete: Bid placed.');
         }

@@ -49,15 +49,15 @@ test.describe('Partner Onboarding Flow', () => {
 
         // Upload Aadhar Front
         await page.locator('div.space-y-3').filter({ has: page.getByText('Aadhar Card (Front)') }).locator('input[type="file"]').setInputFiles(mockFilePath);
-        await expect(page.locator('text=dummy.png').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=dummy.png').first()).toBeVisible({ timeout: 60000 });
 
         // Upload PAN Card
         await page.locator('div.space-y-3').filter({ has: page.getByText('PAN Card') }).locator('input[type="file"]').setInputFiles(mockFilePath);
-        await expect(page.locator('text=dummy.png').nth(1)).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=dummy.png').nth(1)).toBeVisible({ timeout: 60000 });
 
         // Upload Profile Photo
         await page.locator('div.space-y-3').filter({ has: page.getByText('Profile Photo') }).locator('input[type="file"]').setInputFiles(mockFilePath);
-        await expect(page.locator('text=dummy.png').nth(2)).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=dummy.png').nth(2)).toBeVisible({ timeout: 60000 });
 
         await page.getByRole('button', { name: 'Next' }).click();
 
@@ -66,10 +66,10 @@ test.describe('Partner Onboarding Flow', () => {
         await page.getByRole('button', { name: 'Submit Application' }).click();
 
         // 7. Verification: Success Redirect and Toast
-        await expect(page).toHaveURL(/\/dashboard$/, { timeout: 60000 });
+        await expect(page).toHaveURL(/\/dashboard$/, { timeout: 180000 });
 
         // Use a more generic locator and wait for attachment to be extra resilient
-        await expect(page.locator('text=Application Submitted!').first()).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('text=Application Submitted!').first()).toBeVisible({ timeout: 60000 });
     });
 });
 

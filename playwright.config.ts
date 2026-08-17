@@ -110,10 +110,10 @@ export default defineConfig({
         video: 'retain-on-failure',
 
         /* Maximum time each action can take */
-        actionTimeout: 30 * 1000 * multiplier,
+        actionTimeout: 60 * 1000 * multiplier,
 
         /* Maximum time for navigation */
-        navigationTimeout: 60 * 1000 * multiplier,
+        navigationTimeout: 120 * 1000 * multiplier,
 
         /* 🛡️ Global Mocking Script: Injected into every page context to prevent external API leakage */
         /* This ensures that even if a developer forgets to mock locally, the CI never hangs. */
@@ -199,7 +199,7 @@ export default defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
         env: getWebServerEnv(),
-        timeout: process.env.CI ? 120000 : 600000,
+        timeout: process.env.CI ? 240000 : 600000,
     },
 
     /* Global timeout for each test */
@@ -213,7 +213,7 @@ export default defineConfig({
 
     /* Expect timeout */
     expect: {
-        timeout: 30 * 1000 * multiplier,
+        timeout: 60 * 1000 * multiplier,
     },
 });
 

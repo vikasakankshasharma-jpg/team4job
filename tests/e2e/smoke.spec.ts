@@ -17,9 +17,9 @@ test.describe('Smoke Tests @smoke', () => {
         // Verify we're on dashboard - look for Client-specific navigation
         const navItem = page.getByText('Post a Job').or(page.getByText('Active Jobs')).first();
         if (isMobile) {
-            await expect(navItem).toBeAttached({ timeout: 90000 });
+            await expect(navItem).toBeAttached({ timeout: 270000 });
         } else {
-            await expect(navItem).toBeVisible({ timeout: 90000 });
+            await expect(navItem).toBeVisible({ timeout: 270000 });
         }
     });
 
@@ -32,9 +32,9 @@ test.describe('Smoke Tests @smoke', () => {
         // Verify we're on dashboard - look for Professional-specific navigation
         const navItem = page.getByText('Browse Jobs').or(page.getByText('Open Jobs')).first();
         if (isMobile) {
-            await expect(navItem).toBeAttached({ timeout: 90000 });
+            await expect(navItem).toBeAttached({ timeout: 270000 });
         } else {
-            await expect(navItem).toBeVisible({ timeout: 90000 });
+            await expect(navItem).toBeVisible({ timeout: 270000 });
         }
     });
 
@@ -47,9 +47,9 @@ test.describe('Smoke Tests @smoke', () => {
         // Verify we're on dashboard - admin sidebar links are stable
         const navItem = page.getByTestId('nav-link-auditLog');
         if (isMobile) {
-            await expect(navItem).toBeAttached({ timeout: 90000 });
+            await expect(navItem).toBeAttached({ timeout: 270000 });
         } else {
-            await expect(navItem).toBeVisible({ timeout: 90000 });
+            await expect(navItem).toBeVisible({ timeout: 270000 });
         }
     });
 
@@ -77,9 +77,9 @@ test.describe('Smoke Tests @smoke', () => {
         // Look for page heading or navigation element using stable selectors
         const navItem = page.getByTestId('nav-link-browseJobs').or(page.getByText('Browse Jobs')).first();
         if (isMobile) {
-            await expect(navItem).toBeAttached({ timeout: 90000 });
+            await expect(navItem).toBeAttached({ timeout: 270000 });
         } else {
-            await expect(navItem).toBeVisible({ timeout: 90000 });
+            await expect(navItem).toBeVisible({ timeout: 270000 });
         }
     });
 

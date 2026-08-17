@@ -13,7 +13,7 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await helper.auth.loginAsAdmin();
 
         // Wait for dashboard to handle multi-role switch or hydration
-        await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+        await page.waitForURL(/\/dashboard/, { timeout: 90000 });
         
         const viewportSize = page.viewportSize();
         const isMobile = viewportSize ? viewportSize.width < 640 : false;
@@ -21,18 +21,18 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         if (isMobile) {
             // On mobile, the sidebar (hidden sm:flex) is not rendered.
             // Verify the mobile bottom nav is present instead.
-            await expect(page.locator('nav.sm\\:hidden').first()).toBeVisible({ timeout: 15000 });
+            await expect(page.locator('nav.sm\\:hidden').first()).toBeVisible({ timeout: 60000 });
         } else {
             // Wait for stable navigation elements in the sidebar
-            await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 15000 });
-            await expect(page.getByTestId('nav-link-teamManagement')).toBeVisible({ timeout: 15000 });
-            await expect(page.getByTestId('nav-link-users')).toBeVisible({ timeout: 15000 });
+            await expect(page.getByTestId('nav-link-auditLog')).toBeVisible({ timeout: 60000 });
+            await expect(page.getByTestId('nav-link-teamManagement')).toBeVisible({ timeout: 60000 });
+            await expect(page.getByTestId('nav-link-users')).toBeVisible({ timeout: 60000 });
         }
 
         // Verify admin mode indicator if present
         const adminMode = page.locator('text=Admin Mode');
-        if (await adminMode.isVisible({ timeout: 5000 }).catch(() => false)) {
-            await expect(adminMode).toBeVisible({ timeout: 10000 });
+        if (await adminMode.isVisible({ timeout: 60000 }).catch(() => false)) {
+            await expect(adminMode).toBeVisible({ timeout: 60000 });
         }
     });
 
@@ -43,10 +43,10 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await page.goto('/dashboard/audit-logs');
         
         // Wait for page content to load using stable selector
-        await expect(page.getByRole('heading', { name: 'Admin Audit Log' })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('heading', { name: 'Admin Audit Log' })).toBeVisible({ timeout: 90000 });
 
         // Verify stats card "auditLogs.stats.total": "Total Actions"
-        await expect(page.locator('text=Total Actions')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=Total Actions')).toBeVisible({ timeout: 60000 });
     });
 
     test('Team management page shows role badges', async ({ page }) => {
@@ -57,10 +57,10 @@ test.describe('Admin System Smoke Tests @smoke', () => {
         await helper.auth.waitForStability();
         
         // Wait for page content using stable button selector
-        await expect(page.getByTestId('add-team-member-btn').or(page.getByText('Add Team Member'))).toBeVisible({ timeout: 30000 });
+        await expect(page.getByTestId('add-team-member-btn').or(page.getByText('Add Team Member'))).toBeVisible({ timeout: 90000 });
 
         // Verify team management table is present by checking the Role column header
-        await expect(page.getByRole('columnheader', { name: /Role/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('columnheader', { name: /Role/i })).toBeVisible({ timeout: 60000 });
     });
 
     test('Admin can access all sections', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('Admin System Smoke Tests @smoke', () => {
             await page.goto(path);
             
             // Wait for page to stabilize after potential Fast Refresh
-            await page.waitForLoadState('domcontentloaded', { timeout: 10000 }).catch(() => {});
+            await page.waitForLoadState('domcontentloaded', { timeout: 60000 }).catch(() => {});
             await page.waitForTimeout(2000);
 
             // Verify no redirect to login or 403

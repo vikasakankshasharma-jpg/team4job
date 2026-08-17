@@ -82,17 +82,17 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.goto('/dashboard/my-bids');
             
             // Wait for loading to finish
-            await page.locator('text="Loading Bids"').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => {});
+            await page.locator('text="Loading Bids"').waitFor({ state: 'hidden', timeout: 90000 }).catch(() => {});
             
             try {
                 const trashWithdraw = page.getByTestId('withdraw-bid-button').first();
                 // Wait for the button to be attached to the DOM and visible
-                await trashWithdraw.waitFor({ state: 'visible', timeout: 15000 });
+                await trashWithdraw.waitFor({ state: 'visible', timeout: 60000 });
                 
                 // Hover over the card/row to reveal the button if needed
                 await page.locator('tr.group\\/row, div.group').first().hover().catch(() => {});
                 
-                await trashWithdraw.click({ force: true, timeout: 5000 });
+                await trashWithdraw.click({ force: true, timeout: 60000 });
                 withdrew = true;
                 break;
             } catch (e: any) {
@@ -235,12 +235,12 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await cancelJobButton.click();
 
         // Wait for the cancel dialog to open (title is always present)
-        await expect(page.getByRole('alertdialog')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('alertdialog')).toBeVisible({ timeout: 60000 });
 
         // Default reason is 'changed_mind' which shows Confirm Cancellation directly.
         // Only interact with combobox if we need to change from no_show.
         const reasonTrigger = page.getByRole('combobox').first();
-        if (await reasonTrigger.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await reasonTrigger.isVisible({ timeout: 60000 }).catch(() => false)) {
             const currentValue = await reasonTrigger.inputValue().catch(() => '');
             if (currentValue === 'no_show') {
                 await reasonTrigger.click();

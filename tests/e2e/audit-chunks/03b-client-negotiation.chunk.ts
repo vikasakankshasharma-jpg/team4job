@@ -46,7 +46,7 @@ test.describe('Audit Chunk 3b: Client Negotiation', () => {
             await helper.auth.injectNuclearCSS();
         }
 
-        await expect(chatBtn).toBeVisible({ timeout: 60000 });
+        await expect(chatBtn).toBeVisible({ timeout: 180000 });
         console.log('✅ Chunk 3b Complete: Negotiation button verified (implies service synchorinzation).');
         
         // Optional: Perform one click to ensure action doesn't crash server

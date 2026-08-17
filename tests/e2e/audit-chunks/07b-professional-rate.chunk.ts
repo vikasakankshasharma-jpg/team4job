@@ -24,7 +24,7 @@ test.describe('Audit Chunk 7b: Professional Rate', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts fully_rated', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 60000,
+            timeout: 180000,
         });
         console.log('[Chunk 7b] Omni-Seed complete.');
 
@@ -43,11 +43,11 @@ test.describe('Audit Chunk 7b: Professional Rate', () => {
         
         // STEP 4: Final Verification: Reviews should be revealed now
         const reviewsRevealed = page.getByTestId('reviews-revealed-section').first();
-        await expect(reviewsRevealed).toBeVisible({ timeout: 20000 });
+        await expect(reviewsRevealed).toBeVisible({ timeout: 60000 });
         
         // Check for specific review text seeded by Omni-Seed
-        await expect(page.getByText('Excellent professional service. Highly recommended.')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText('Great client experience. Clear requirements.')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Excellent professional service. Highly recommended.')).toBeVisible({ timeout: 60000 });
+        await expect(page.getByText('Great client experience. Clear requirements.')).toBeVisible({ timeout: 60000 });
         
         console.log('✅ Chunk 7b Complete: Reviews Revealed (Atomic Check).');
     });

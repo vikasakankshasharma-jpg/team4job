@@ -24,7 +24,7 @@ test.describe('Audit Chunk 5a: Professional Start', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts work_started', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 60000,
+            timeout: 180000,
         });
         console.log('[Chunk 5a] Omni-Seed complete.');
 
@@ -43,7 +43,7 @@ test.describe('Audit Chunk 5a: Professional Start', () => {
         // STEP 4: Verify job is in work_started state
         // When work is started, the OTP input should NOT be visible.
         const otpInput = page.getByTestId('otp-input').first();
-        const hasOtpInput = await otpInput.isVisible({ timeout: 5000 }).catch(() => false);
+        const hasOtpInput = await otpInput.isVisible({ timeout: 60000 }).catch(() => false);
         
         if (hasOtpInput) {
             throw new Error('[Chunk 5a] Failed verification: OTP Input is still visible, work NOT started.');

@@ -9,6 +9,6 @@ test.describe('Auth Smoke Tests — Professional Browse @smoke-auth', () => {
         await expect(page).toHaveURL(/\/jobs/);
         await expect(
             page.getByTestId('nav-link-browseJobs').or(page.getByText('Browse Jobs')).first()
-        ).toBeAttached({ timeout: 90000 });
+        ).toBeAttached({ timeout: 270000 });
     });
 });

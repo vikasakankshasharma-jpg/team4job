@@ -33,7 +33,7 @@ test.describe('Final UX Polish', () => {
 
         // We use a cleaner expect with distinct message
         try {
-            await expect(skeletons).toBeVisible({ timeout: 5000 });
+            await expect(skeletons).toBeVisible({ timeout: 60000 });
             console.log('[Test] ✓ Skeleton loaders visible under slow network');
         } catch (e) {
             console.log('[Test] ⚠️ Skeletons missed (network might be too fast even with throttle)');

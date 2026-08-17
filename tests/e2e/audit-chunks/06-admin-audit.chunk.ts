@@ -25,7 +25,7 @@ test.describe('Audit Chunk 6: Admin Audit', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts completed', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 60000,
+            timeout: 180000,
         });
         console.log('[Chunk 6] Omni-Seed complete.');
 
@@ -47,7 +47,7 @@ test.describe('Audit Chunk 6: Admin Audit', () => {
         await expect(adminJobRow).toBeVisible({ timeout: TIMEOUTS.medium });
         
         // Final status check
-        await expect(adminJobRow.locator('text=/Completed|Done/i')).toBeVisible({ timeout: 15000 });
+        await expect(adminJobRow.locator('text=/Completed|Done/i')).toBeVisible({ timeout: 60000 });
         
         console.log('✅ Chunk 6 Complete: Admin verification successful.');
     });

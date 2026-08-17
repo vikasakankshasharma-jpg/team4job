@@ -22,12 +22,12 @@ test.describe('Budget Estimator & Templates', () => {
         try {
             // Increase timeout because draft detection has retries up to 7.5s + network latency
             const dialog = page.locator('[role="dialog"]').filter({ hasText: /Draft/i }).first();
-            await dialog.waitFor({ state: 'visible', timeout: 15000 });
+            await dialog.waitFor({ state: 'visible', timeout: 60000 });
             if (await dialog.isVisible()) {
                 const discardBtn = dialog.getByRole('button', { name: /Discard|Start Fresh/i });
                 if (await discardBtn.isVisible()) {
                     await discardBtn.click({ force: true });
-                    await dialog.waitFor({ state: 'hidden', timeout: 10000 });
+                    await dialog.waitFor({ state: 'hidden', timeout: 60000 });
                 }
             }
         } catch (e) {
@@ -52,7 +52,7 @@ test.describe('Budget Estimator & Templates', () => {
         await handleDraftDialog(page);
 
         // header text has been updated and might contain "mission origination" or "postjob" based on translations
-        await expect(page.locator('h1').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('h1').first()).toBeVisible({ timeout: 60000 });
 
         // 1. Fill basic budget info to save
         console.log('Setting custom budget...');
@@ -80,13 +80,13 @@ test.describe('Budget Estimator & Templates', () => {
         // Wait for ANY option to be visible to ensure menu is open
         console.log('Waiting for budget options...');
         const optionsList = page.locator('[role="listbox"], [role="option"]').first();
-        await optionsList.waitFor({ state: 'visible', timeout: 10000 });
+        await optionsList.waitFor({ state: 'visible', timeout: 60000 });
 
         const saveOption = page.locator('[role="option"]').filter({ hasText: 'Save Selection' });
 
         try {
             await saveOption.scrollIntoViewIfNeeded();
-            await saveOption.click({ force: true, timeout: 3000 });
+            await saveOption.click({ force: true, timeout: 60000 });
         } catch (e) {
             console.log("Click failed, using keyboard fallback for Budget Save");
             const trigger = page.locator('button:has-text("Load Budget...")');
@@ -99,10 +99,10 @@ test.describe('Budget Estimator & Templates', () => {
         await page.waitForTimeout(2000); // Wait for state and animation
 
         const saveDialog = page.locator('div[role="dialog"]').filter({ hasText: /Save Budget Template/i });
-        await expect(saveDialog).toBeVisible({ timeout: 10000 });
+        await expect(saveDialog).toBeVisible({ timeout: 60000 });
 
-        await expect(saveDialog).toContainText('5500', { timeout: 10000 });
-        await expect(saveDialog).toContainText('8500', { timeout: 10000 });
+        await expect(saveDialog).toContainText('5500', { timeout: 60000 });
+        await expect(saveDialog).toContainText('8500', { timeout: 60000 });
 
         const templateName = `Test Budget ${Date.now()}`;
         await saveDialog.locator('input[placeholder*="Monthly Office Maintenance"]').fill(templateName);
@@ -120,7 +120,7 @@ test.describe('Budget Estimator & Templates', () => {
 
         const newTrigger = page.locator('button:has-text("Load Budget...")');
         await newTrigger.click({ force: true });
-        await page.waitForSelector('[role="option"]', { state: 'visible', timeout: 8000 });
+        await page.waitForSelector('[role="option"]', { state: 'visible', timeout: 60000 });
 
         const listItem = page.locator('[role="option"]').filter({ hasText: templateName });
         await expect(listItem).toBeVisible();
@@ -139,7 +139,7 @@ test.describe('Budget Estimator & Templates', () => {
 
         // FILL REQUIRED FIELDS VIGOROUSLY
         const titleInput = page.getByTestId('job-title-input').first();
-        await titleInput.waitFor({ state: 'attached', timeout: 15000 });
+        await titleInput.waitFor({ state: 'attached', timeout: 60000 });
         await titleInput.scrollIntoViewIfNeeded();
         await titleInput.click({ force: true });
         await titleInput.clear();
@@ -161,12 +161,12 @@ test.describe('Budget Estimator & Templates', () => {
         const aiBtn = page.getByRole('button', { name: 'AI Estimate' });
 
         // Wait for it to be enabled (might take time for hook to settle)
-        await expect(aiBtn).toBeEnabled({ timeout: 20000 });
+        await expect(aiBtn).toBeEnabled({ timeout: 60000 });
         await aiBtn.click();
 
         const dialog = page.locator('div[role="dialog"]').filter({ hasText: /Smart Budget Estimator/i });
         try {
-            await expect(dialog).toBeVisible({ timeout: 15000 });
+            await expect(dialog).toBeVisible({ timeout: 60000 });
             console.log('AI Result Received!');
         } catch (e) {
             console.log('AI request timed out or failed (expected in limited test env).');

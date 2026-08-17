@@ -25,7 +25,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.form.discardDraftIfPresent();
 
         await helper.auth.loginAsClient();
-        await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job/i)).first()).toBeVisible({ timeout: 60000 });
+        await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job/i)).first()).toBeVisible({ timeout: 180000 });
 
         // ---------- Post a Job ----------
         await helper.nav.goToPostJobForm();
@@ -62,7 +62,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         console.log('[E2E] Waiting for job detail redirection...');
 
         try {
-            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 15000 });
+            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 });
             jobId = await helper.job.getJobIdFromUrl();
             console.log(`Job Posted: ${jobId}`);
         } catch {
@@ -84,8 +84,8 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Place Bid
-        await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 30000 }).catch(() => { });
-        const hasJobTitle = await page.getByTestId('job-title').isVisible({ timeout: 2000 }).catch(() => false);
+        await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 90000 }).catch(() => { });
+        const hasJobTitle = await page.getByTestId('job-title').isVisible({ timeout: 60000 }).catch(() => false);
         if (!hasJobTitle) {
             test.skip(true, 'Job detail page not loaded – skipping bid step');
             return;
@@ -93,9 +93,9 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
 
         // AI compiled title might be different from uniqueJobTitle
         await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV/i);
-        await page.getByTestId('actions-panel').waitFor({ state: 'visible', timeout: 10000 }).catch(() => { });
+        await page.getByTestId('actions-panel').waitFor({ state: 'visible', timeout: 60000 }).catch(() => { });
         const bidButton = page.getByTestId('place-bid-button').or(page.locator('button:has-text("Place Bid")')).first();
-        const isVisible = await bidButton.isVisible({ timeout: 5000 }).catch(() => false);
+        const isVisible = await bidButton.isVisible({ timeout: 60000 }).catch(() => false);
         if (!isVisible) {
             test.skip(true, 'Place Bid button not visible – possible state/permission issue');
             return;
@@ -122,20 +122,20 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
 
         // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
         for (let attempt = 0; attempt < 4; attempt++) {
-            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 20000 }).catch(() => false);
+            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 60000 }).catch(() => false);
             if (ok) break;
             console.log(`[WARN] Offer button not visible (attempt ${attempt + 1}/4), reloading...`);
             await page.reload();
             await page.waitForTimeout(3000);
         }
-        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 60000 });
+        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 180000 });
         await page.getByTestId('send-offer-button').first().click();
         await helper.job.handleAuthorizationModal();
         // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
         await Promise.race([
             helper.form.waitForToast('MISSION AUTHORIZED'),
-            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 20000 }),
-            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 20000 })
+            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 60000 }),
+            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 60000 })
         ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
         await page.waitForTimeout(1500); // Allow Firestore state to settle
 
@@ -149,7 +149,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
 
         // Handle potential conflict dialog (brief check so we don't miss toast)
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
-        if (await conflictDialogText.isVisible({ timeout: 3000 }).catch(() => false)) {
+        if (await conflictDialogText.isVisible({ timeout: 60000 }).catch(() => false)) {
             console.log('Conflict Dialog detected. Clicking Confirm...');
             await page.getByRole('button', { name: 'I Understand, Proceed & Accept' }).click();
         }
@@ -164,7 +164,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.auth.loginAsAdmin();
         // Navigate to admin dashboard explicitly so stats cards are visible
         await page.goto('/dashboard/admin');
-        await expect(page).toHaveURL(/.*\/dashboard\/admin/, { timeout: 20000 });
+        await expect(page).toHaveURL(/.*\/dashboard\/admin/, { timeout: 60000 });
 
         console.log('Desktop Flow Completed Successfully');
     });

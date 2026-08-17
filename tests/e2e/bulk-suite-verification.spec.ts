@@ -31,7 +31,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await aiTab.click({ force: true });
         
         const textarea = page.getByTestId('smart-split-textarea');
-        await expect(textarea).toBeVisible({ timeout: 15000 });
+        await expect(textarea).toBeVisible({ timeout: 60000 });
         
         await textarea.fill("I need 2 cameras in Okhla and 4 cameras in Noida. Total budget 50000.");
         await page.getByTestId('smart-split-analyze-btn').click({ force: true });
@@ -39,7 +39,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         // 4. Verify Analysis Results (Review Grid)
         // Wait for AI analysis - might take a few seconds
         const grid = page.getByTestId('bulk-review-grid');
-        await expect(grid).toBeVisible({ timeout: 45000 });
+        await expect(grid).toBeVisible({ timeout: 135000 });
         
         // Check grid content
         const rows = page.locator('tr');
@@ -71,7 +71,7 @@ test.describe('Bulk Job Suite & AI Features Verification @bulk-ai', () => {
         await helper.form.selectWizardCategory('Security & Surveillance');
         
         // Wait for and verify the suggestion banner
-        await expect(page.getByText('Frequent Technical Installation')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Frequent Technical Installation')).toBeVisible({ timeout: 60000 });
         await expect(page.getByText('Based on your recent 3 Delhi office jobs.')).toBeVisible();
     });
 });

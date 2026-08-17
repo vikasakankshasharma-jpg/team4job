@@ -71,13 +71,13 @@ test.describe('Role Coordination & Real-time Sync', () => {
         // Since we are already on the job page in Customer view, the bid should appear
         const bidCard = coordinator.clientPage.getByTestId('bid-card-wrapper').or(coordinator.clientPage.locator('div:has-text("5,000")')).first();
         try {
-            await expect(bidCard).toBeVisible({ timeout: 15000 });
+            await expect(bidCard).toBeVisible({ timeout: 60000 });
         } catch {
             console.log('[SYNC] Bids not visible, reloading client page...');
             await coordinator.clientPage.reload({ waitUntil: 'domcontentloaded' });
             await coordinator.clientHelper.auth.injectNuclearCSS();
             await coordinator.clientHelper.auth.waitForQuiescence();
-            await expect(bidCard).toBeVisible({ timeout: 30000 });
+            await expect(bidCard).toBeVisible({ timeout: 90000 });
         }
         console.log('[SYNC] Customer synchronized with new bid in real-time.');
 

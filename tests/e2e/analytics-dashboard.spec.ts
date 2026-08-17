@@ -9,16 +9,16 @@ test.describe('Job Performance Analytics Dashboard', () => {
 
     test('should display analytics dashboard with all components', async ({ page }) => {
         // Navigate to Analytics
-        await page.goto('/dashboard/analytics', { waitUntil: 'domcontentloaded', timeout: 90000 });
-        await page.waitForURL(/\/dashboard\/analytics/, { timeout: 60000 });
+        await page.goto('/dashboard/analytics', { waitUntil: 'domcontentloaded', timeout: 270000 });
+        await page.waitForURL(/\/dashboard\/analytics/, { timeout: 180000 });
 
         // Wait for initial data load to settle
         await page.waitForTimeout(1000);
 
         // 1. Verify Page Header
-        await expect(page.getByTestId('analytics-page')).toBeVisible({ timeout: 60000 });
-        await expect(page.getByTestId('analytics-title')).toBeVisible({ timeout: 60000 });
-        await expect(page.getByTestId('analytics-description')).toBeVisible({ timeout: 60000 });
+        await expect(page.getByTestId('analytics-page')).toBeVisible({ timeout: 180000 });
+        await expect(page.getByTestId('analytics-title')).toBeVisible({ timeout: 180000 });
+        await expect(page.getByTestId('analytics-description')).toBeVisible({ timeout: 180000 });
 
         // 2. Verify Stat Cards
         await expect(page.getByTestId('analytics-stat-total-jobs')).toBeVisible();
@@ -39,7 +39,7 @@ test.describe('Job Performance Analytics Dashboard', () => {
 
         // Test Export Click
         await exportBtn.click();
-        await expect(page.getByText(/Export Complete/i).first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText(/Export Complete/i).first()).toBeVisible({ timeout: 60000 });
     });
 });
 

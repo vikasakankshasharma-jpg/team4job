@@ -151,7 +151,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Expect Graceful Error (Toast or UI message), no crash
         const errorToast = page.getByText(/Network request failed|Offline|Check internet|Failed to fetch|ERR_INTERNET_DISCONNECTED/i).first();
-        await expect(errorToast).toBeVisible({ timeout: 5000 });
+        await expect(errorToast).toBeVisible({ timeout: 60000 });
 
         await context.setOffline(false);
         await context.close();

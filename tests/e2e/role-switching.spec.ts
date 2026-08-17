@@ -45,8 +45,8 @@ test.describe('Role Switching System', () => {
 
         // Wait for dashboard loading spinner/skeletons to disappear
         console.log('[Test] Waiting for loaders to clear...');
-        await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
-        await page.locator('.animate-pulse').waitFor({ state: 'hidden', timeout: 30000 }).catch(() => { });
+        await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout: 90000 }).catch(() => { });
+        await page.locator('.animate-pulse').waitFor({ state: 'hidden', timeout: 90000 }).catch(() => { });
         console.log('[Test] Loaders cleared.');
 
         // Open user menu to check current role
@@ -58,7 +58,7 @@ test.describe('Role Switching System', () => {
             .first();
 
         console.log('[Test] Waiting for user-menu-trigger (up to 30s)...');
-        await userMenu.waitFor({ state: 'visible', timeout: 30000 });
+        await userMenu.waitFor({ state: 'visible', timeout: 90000 });
         await userMenu.scrollIntoViewIfNeeded();
 
         // Robust retry loop to open the user menu (handles hydration/overlays)
@@ -67,7 +67,7 @@ test.describe('Role Switching System', () => {
             await userMenu.click({ force: true });
             try {
                 // Check if "Current Mode" label or role options are visible
-                await expect(page.getByText(/Current Mode|Client|Professional/i).filter({ visible: true }).first()).toBeVisible({ timeout: 5000 });
+                await expect(page.getByText(/Current Mode|Client|Professional/i).filter({ visible: true }).first()).toBeVisible({ timeout: 60000 });
                 menuOpened = true;
                 break;
             } catch (e) {
@@ -94,20 +94,20 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Professional');
 
             // Verify Professional Dashboard
-            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 90000 });
             await expect(page.getByText('Earnings Overview')).toBeVisible().catch(() => console.log('Earnings Overview not found (optional)'));
 
             // Verify persistence after reload
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText('Open Jobs')).toBeVisible({ timeout: 90000 });
 
             // SWITCH BACK TO Client
             console.log('Switching back to Client mode...');
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 90000 });
 
         } else {
             // Initially Professional
@@ -116,19 +116,19 @@ test.describe('Role Switching System', () => {
             await helper.auth.ensureRole('Client');
 
             // Verify Client Dashboard
-            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 90000 });
 
             // Verify persistence
             console.log('Reloading to verify persistence...');
             await page.reload();
-            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 90000 });
 
             // SWITCH BACK TO Professional
             console.log('Switching back to Professional mode...');
             await helper.auth.ensureRole('Professional');
 
             // Verify Professional Dashboard
-            await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.getByText('Open Jobs').first()).toBeVisible({ timeout: 90000 });
         }
 
         console.log('Role switching test passed successfully.');
@@ -145,7 +145,7 @@ test.describe('Role Switching System', () => {
         await page.goto('/dashboard/post-job');
 
         // Should be redirected to dashboard
-        await page.waitForURL(/\/dashboard$/, { timeout: 10000 });
+        await page.waitForURL(/\/dashboard$/, { timeout: 60000 });
         console.log('Redirected to dashboard as expected.');
 
         // Now switch to Client

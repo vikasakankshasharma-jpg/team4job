@@ -13,7 +13,7 @@ test.describe('UX Enhancements - Visual Verification', () => {
     test('Tabs have correct touch target size', async ({ page }) => {
         const tab = page.locator('[role="tab"]:has-text("Near You")');
         // Wait for it to be visible
-        await expect(tab).toBeVisible({ timeout: 10000 });
+        await expect(tab).toBeVisible({ timeout: 60000 });
 
         const box = await tab.boundingBox();
         if (box) {

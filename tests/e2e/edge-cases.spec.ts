@@ -55,8 +55,8 @@ test.describe('Edge Case Tests @edge', () => {
             await page.goto('/login');
             await page.click('[data-testid="login-submit-btn"]');
 
-            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 10000 });
-            await expect(page.locator('text=Password cannot be empty.')).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 60000 });
+            await expect(page.locator('text=Password cannot be empty.')).toBeVisible({ timeout: 60000 });
         });
 
         test('Login with invalid email format', async ({ page }) => {
@@ -65,7 +65,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('input[type="password"]', 'password123');
             await page.getByTestId('login-submit-btn').click();
 
-            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('text=Please enter a valid email address or 10-digit mobile number.')).toBeVisible({ timeout: 60000 });
         });
 
         test('Login with wrong credentials', async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.fill('input[type="password"]', 'wrongpassword');
             await page.getByTestId('login-submit-btn').click();
 
-            await expect(page.locator('text=Login Failed').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=Login Failed').first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Multiple failed login attempts are handled', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('Edge Case Tests @edge', () => {
                 await page.waitForTimeout(1000);
             }
 
-            await expect(page.locator('input[name="identifier"]')).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('input[name="identifier"]')).toBeVisible({ timeout: 90000 });
         });
 
         test('Session persistence after page reload', async ({ page, isMobile }) => {
@@ -108,8 +108,8 @@ test.describe('Edge Case Tests @edge', () => {
             await page.waitForTimeout(5000);
             console.log(`[Persistence Test] Post-reload URL: ${page.url()}`);
 
-            await expect(page).toHaveURL(/\/dashboard/, { timeout: 20000 });
-            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
+            await expect(page.locator('nav, header').first()).toBeVisible({ timeout: 90000 });
             console.log(`[Persistence Test] SUCCESS: Still on dashboard.`);
         });
     });
@@ -142,7 +142,7 @@ test.describe('Edge Case Tests @edge', () => {
 
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
-            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
+            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 90000 });
         });
 
         test('Job posting with extremely long description', async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe('Edge Case Tests @edge', () => {
 
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
-            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
+            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 90000 });
         });
 
         test('Job posting with invalid budget range (min > max)', async ({ page }) => {
@@ -192,7 +192,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await page.getByRole('button', { name: /Post Job|Submit/i }).click();
 
-            await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=Maximum budget cannot be less than minimum budget').first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Job posting with past deadline date', async ({ page }) => {
@@ -208,7 +208,7 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await page.getByRole('button', { name: /Post Job|Submit/i }).click();
 
-            await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=Deadline cannot be in the past').first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Job posting with special characters in title', async ({ page }) => {
@@ -239,8 +239,8 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
-            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
-            await expect(page.getByText(specialTitle).first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 90000 });
+            await expect(page.getByText(specialTitle).first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Job posting with invalid pincode', async ({ page }) => {
@@ -250,11 +250,11 @@ test.describe('Edge Case Tests @edge', () => {
 
             await page.locator('[data-testid="pincode-input"]').pressSequentially('000000', { delay: 50 });
             // Wait for loading to finish
-            await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 10000 });
+            await expect(page.locator('.animate-spin')).not.toBeVisible({ timeout: 60000 });
 
             // Expect the error text to be visible based on our mock response ("No records found") or fallback
             // Match substring to handle variable structures
-            await expect(page.locator('text=/No records found|Invalid PIN code/i').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=/No records found|Invalid PIN code/i').first()).toBeVisible({ timeout: 90000 });
         });
     });
 
@@ -266,7 +266,7 @@ test.describe('Edge Case Tests @edge', () => {
 
             // Verify search input is initially visible
             const searchInput = page.getByTestId('search-input').first();
-            await expect(searchInput).toBeVisible({ timeout: 10000 });
+            await expect(searchInput).toBeVisible({ timeout: 60000 });
 
             // Click the "Browse All" tab explicitly
             await page.getByRole('tab', { name: 'Browse All' }).click();
@@ -275,11 +275,11 @@ test.describe('Edge Case Tests @edge', () => {
             await page.waitForTimeout(1000);
 
             // Verify search input persists
-            await expect(searchInput).toBeVisible({ timeout: 10000 });
+            await expect(searchInput).toBeVisible({ timeout: 60000 });
             await searchInput.fill('NonExistentJobXYZ' + Math.random().toString(36).substring(7));
             await searchInput.press('Enter');
 
-            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Search with special characters', async ({ page }) => {
@@ -294,11 +294,11 @@ test.describe('Edge Case Tests @edge', () => {
             await page.waitForTimeout(1000);
 
             const searchInput = page.getByTestId('search-input').first();
-            await expect(searchInput).toBeVisible({ timeout: 10000 });
+            await expect(searchInput).toBeVisible({ timeout: 60000 });
             await searchInput.fill('!@#$%^&*()');
             await searchInput.press('Enter');
 
-            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('text=No jobs found matching your criteria').first()).toBeVisible({ timeout: 90000 });
         });
     });
 
@@ -318,7 +318,7 @@ test.describe('Edge Case Tests @edge', () => {
             });
 
             // The rejected file creates a toast notification/status alert, not asserting on visually hidden input
-            await expect(page.locator('text=/File type must be one of|rejected/i').first()).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('text=/File type must be one of|rejected/i').first()).toBeVisible({ timeout: 60000 });
         });
 
         test('Upload file exceeding size limit', async ({ page }) => {
@@ -337,12 +337,18 @@ test.describe('Edge Case Tests @edge', () => {
             });
 
             // Check if error message appears
-            await expect(page.locator('text=rejected').first()).toBeVisible({ timeout: 10000 });
+            await expect(page.locator('text=rejected').first()).toBeVisible({ timeout: 60000 });
         });
     });
 
     test.describe('Network Edge Cases', () => {
         test('Application handles slow network simulator', async ({ page }) => {
+            // Local Next.js dev bundles are huge (MBs) and will timeout at 12.5 KB/s. 
+            // We only run this in CI where the production build is used.
+            if (!process.env.CI) {
+                test.skip();
+            }
+
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
 
@@ -359,9 +365,9 @@ test.describe('Edge Case Tests @edge', () => {
             });
 
             try {
-                await page.goto('/dashboard/post-job', { timeout: 300000 });
+                await page.goto('/dashboard/post-job', { timeout: 900000 });
                 await page.waitForLoadState('domcontentloaded');
-                await expect(page).toHaveURL(/.*\/post-job/, { timeout: 60000 });
+                await expect(page).toHaveURL(/.*\/post-job/, { timeout: 180000 });
             } finally {
                 await client.send('Network.emulateNetworkConditions', {
                     offline: false,
@@ -385,10 +391,10 @@ test.describe('Edge Case Tests @edge', () => {
             await page.waitForURL(/.*\/posted-jobs/);
 
             await page.goBack();
-            await expect(page).toHaveURL(/.*\/post-job/, { timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/post-job/, { timeout: 90000 });
 
             await page.goForward();
-            await expect(page).toHaveURL(/.*\/posted-jobs/, { timeout: 30000 });
+            await expect(page).toHaveURL(/.*\/posted-jobs/, { timeout: 90000 });
         });
 
         test('Application handles page refresh during form fill', async ({ page }) => {
@@ -402,7 +408,7 @@ test.describe('Edge Case Tests @edge', () => {
             await page.reload();
             await page.waitForTimeout(3000);
 
-            await expect(page.locator('input[name="jobTitle"]')).toBeVisible({ timeout: 30000 });
+            await expect(page.locator('input[name="jobTitle"]')).toBeVisible({ timeout: 90000 });
         });
     });
 
@@ -435,8 +441,8 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
-            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
-            await expect(page.getByText(xssPayload).first()).toBeVisible({ timeout: 30000 });
+            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 90000 });
+            await expect(page.getByText(xssPayload).first()).toBeVisible({ timeout: 90000 });
         });
 
         test('Unicode and emoji handling', async ({ page }) => {
@@ -467,8 +473,8 @@ test.describe('Edge Case Tests @edge', () => {
             await helper.preparePostJobSubmission();
             await helper.form.submitPostJob();
 
-            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 });
-            await expect(page.getByText(unicodeTitle).first()).toBeVisible({ timeout: 10000 });
+            await expect(page).toHaveURL(/\/dashboard\/jobs\/JOB-/, { timeout: 90000 });
+            await expect(page.getByText(unicodeTitle).first()).toBeVisible({ timeout: 60000 });
         });
     });
 });

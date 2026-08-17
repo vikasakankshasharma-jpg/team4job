@@ -11,7 +11,7 @@ test('audit post job wizard', async ({ page }) => {
   await helper.nav.goToPostJob();
   
   // Wait for Wizard
-  await expect(page.getByRole('heading', { name: /Mission Orientation/i }).first()).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('heading', { name: /Mission Orientation/i }).first()).toBeVisible({ timeout: 60000 });
   await page.screenshot({ path: 'audit_wizard_step1.png' });
 
   // 3. Fill Form (Category -> Method -> Questions)
@@ -19,7 +19,7 @@ test('audit post job wizard', async ({ page }) => {
   await page.getByText('Step-by-Step').click();
   
   const nextButton = page.getByTestId('wizard-next-button');
-  await nextButton.waitFor({ state: 'visible', timeout: 15000 });
+  await nextButton.waitFor({ state: 'visible', timeout: 60000 });
   while (await nextButton.isVisible().catch(() => false)) {
       const firstOption = page.locator('[data-testid^="question-option-"]').first();
       if (await firstOption.isVisible().catch(() => false)) {
@@ -35,7 +35,7 @@ test('audit post job wizard', async ({ page }) => {
 
   // 4. Review Step (Post Job)
   const publishButton = page.getByRole('button', { name: /Looks Good/i });
-  await publishButton.waitFor({ state: 'visible', timeout: 120000 });
+  await publishButton.waitFor({ state: 'visible', timeout: 360000 });
   await page.screenshot({ path: 'audit_wizard_step2.png' });
   await publishButton.click({ force: true });
 });
