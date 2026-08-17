@@ -95,6 +95,9 @@ test.describe('Edge Case Tests @edge', () => {
             const helper = new TestHelper(page);
             await helper.auth.loginAsClient();
 
+            console.log(`[Persistence Test] Waiting for Firebase Auth IndexedDB persistence...`);
+            await page.waitForTimeout(3000); // Give slow CI emulators time to save session
+
             console.log(`[Persistence Test] Reloading page...`);
             await page.reload();
 
