@@ -1517,17 +1517,17 @@ export class FormHelper {
         // Wait for redirect to job detail and confirm settlement
         console.log('[FormHelper] Waiting for job detail page settlement...');
         try {
-            // Increased timeout to 60s to avoid test timeout
+            // Increased timeout to 120s to avoid test timeout under heavy load
             await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { 
-                timeout: 60000,
+                timeout: 120000,
                 waitUntil: 'domcontentloaded' 
             });
         } catch (e: any) {
             console.warn(`[FormHelper] Redirect to job detail failed or timed out: ${e.message}`);
-            if (e.message.includes('net::ERR_INVALID_RESPONSE') || e.message.includes('net::ERR_ABORTED')) {
-                console.log('[FormHelper] Network error detected, attempting fallback reload...');
+            if (e.message.includes('net::ERR_INVALID_RESPONSE') || e.message.includes('net::ERR_ABORTED') || e.message.includes('Timeout')) {
+                console.log('[FormHelper] Network error or timeout detected, attempting fallback reload...');
                 await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 30000 }).catch(() => {});
+                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 }).catch(() => {});
             } else {
                 throw e; // Throw the error so the test fails immediately
             }

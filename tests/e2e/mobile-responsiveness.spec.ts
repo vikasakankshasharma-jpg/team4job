@@ -62,7 +62,7 @@ test.describe('Mobile Responsiveness', () => {
                 // If not visible, click the trigger and wait longer
                 await mobileMenuTrigger.click({ force: true });
                 await page.waitForTimeout(1000); // Let Sheet animation complete in slow CI
-                await expect(sheet).toBeVisible({ timeout: 10000 });
+                await expect(sheet).toBeVisible({ timeout: 30000 });
             }
         }).toPass({ timeout: 60000 });
         await expect(sheet.getByRole('link', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });

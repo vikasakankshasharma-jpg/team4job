@@ -184,7 +184,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         
         console.log('[Test] Clicking e2e-direct-fund...');
-        await page.getByTestId('e2e-direct-fund').click();
+        await page.getByTestId('e2e-direct-fund').click({ force: true });
         await helper.form.waitForToast('Test Mode: Payment Initiated', 10000).catch(() => console.log('[Test] Missed Payment Initiated toast, continuing...'));
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');

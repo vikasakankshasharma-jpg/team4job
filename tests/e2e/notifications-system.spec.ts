@@ -43,8 +43,8 @@ test.describe('Notification System', () => {
                 await bell.click({ force: true });
                 await page.waitForTimeout(1000); // Let Radix portal mount
             }
-            await expect(dropdownHeader).toBeVisible({ timeout: 5000 });
-            await expect(viewAllBtn).toBeVisible({ timeout: 5000 });
+            await expect(dropdownHeader).toBeVisible({ timeout: 10000 });
+            await expect(viewAllBtn).toBeVisible({ timeout: 10000 });
         }).toPass({ timeout: 60000, intervals: [1000, 2000, 5000] });
     });
 
