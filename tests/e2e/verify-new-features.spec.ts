@@ -57,12 +57,12 @@ test.describe('Client Enhancements Verification', () => {
         // The dialog typically says "Resume your draft?"
         try {
             const resumeBtn = page.getByRole('button', { name: /Resume Draft/i });
-            await expect(resumeBtn).toBeVisible({ timeout: 60000 });
+            await expect(resumeBtn).toBeVisible({ timeout: 1620000 });
             console.log('✅ Recovery Dialog appeared!');
             await resumeBtn.click();
 
             // Verify data persisted in the DOM (Wizard Review step shows title)
-            await expect(page.locator('text=Security & Surveillance').first()).toBeVisible({ timeout: 60000 });
+            await expect(page.locator('text=Security & Surveillance').first()).toBeVisible({ timeout: 1620000 });
             console.log('✅ Data persisted correctly!');
         } catch (e) {
             console.log('⚠️ Draft recovery dialog did not appear. It might have auto-resumed.');

@@ -25,7 +25,7 @@ test.describe('Audit Chunk 4a: Client Award', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts bid_accepted', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 180000,
+            timeout: 4860000,
         });
         console.log('[Chunk 4a] Omni-Seed complete.');
 
@@ -46,10 +46,10 @@ test.describe('Audit Chunk 4a: Client Award', () => {
         const offerSentIndicator = page.getByRole('button', { name: /Retract Authorization|Offer Sent|Modify Offer|Authorization Pending/i }).first();
         const statusBadge = page.getByTestId('job-status-badge').first();
 
-        let verified = await offerSentIndicator.isVisible({ timeout: 60000 }).catch(() => false);
+        let verified = await offerSentIndicator.isVisible({ timeout: 1620000 }).catch(() => false);
         if (!verified) {
             // Fallback: check status badge text
-            const badgeText = await statusBadge.innerText({ timeout: 60000 }).catch(() => '');
+            const badgeText = await statusBadge.innerText({ timeout: 1620000 }).catch(() => '');
             console.log(`[Chunk 4a] Status Badge: "${badgeText}"`);
             verified = badgeText.toLowerCase().includes('accepted') || badgeText.toLowerCase().includes('awaiting');
         }

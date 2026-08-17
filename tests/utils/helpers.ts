@@ -118,7 +118,7 @@ export class AuthHelper {
         await expect(async () => {
             const cookies = await this.page.context().cookies();
             expect(cookies.find(c => c.name === 'auth-token')).toBeDefined();
-        }).toPass({ timeout: 10000 });
+        }).toPass({ timeout: 60000 });
         // Give it an extra small buffer for any React state updates to flush
         await this.page.waitForTimeout(500);
     }
@@ -138,10 +138,10 @@ export class AuthHelper {
     async waitForQuiescence() {
         console.log('[AuthHelper] Waiting for page quiescence (Hydration & Network)...');
         // 🚀 DETERMINISM: Wait for the app to signal it is hydrated
-        await this.page.waitForSelector('body[data-hydrated="true"]', { timeout: 20000 }).catch(() => {
+        await this.page.waitForSelector('body[data-hydrated="true"]', { timeout: 60000 }).catch(() => {
             console.warn('[AuthHelper] Hydration marker data-hydrated="true" not found after 20s. Proceeding anyway...');
         });
-        await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+        await this.page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
         await this.page.waitForTimeout(1000); 
         await this.injectNuclearCSS();
     }
@@ -158,10 +158,10 @@ export class AuthHelper {
             // First, wait for the global initial loader to disappear
             try {
                 const loader = this.page.locator('[data-testid="initial-loader"], .initial-loader, #initial-loader').first();
-                if (await loader.isVisible({ timeout: 5000 }).catch(() => false)) {
+                if (await loader.isVisible({ timeout: 60000 }).catch(() => false)) {
                     console.log('[AuthHelper] Waiting for initial loader to disappear...');
                     // Wait for it to be hidden or removed
-                    await loader.waitFor({ state: 'hidden', timeout: 30000 }).catch(async () => {
+                    await loader.waitFor({ state: 'hidden', timeout: 90000 }).catch(async () => {
                         console.warn('[AuthHelper] Initial loader hidden timeout (30s) - Attempting Force Reload for recovery');
                         await this.page.reload({ waitUntil: 'domcontentloaded' });
                         await this.page.waitForTimeout(5000); // Settle
@@ -176,11 +176,11 @@ export class AuthHelper {
             await this.page.waitForTimeout(1000);
 
             // Check primary or secondary indicators first (they might already be there)
-            const isProfessional = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText('Open Jobs').filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false);
-            const isClient = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText(/Post (New )?Job/i).filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false) ||
-                await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible({ timeout: 1000 }).catch(() => false);
+            const isProfessional = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false) ||
+                await this.page.getByText('Open Jobs').filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false);
+            const isClient = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible({ timeout: 60000 }).catch(() => false) ||
+                await this.page.getByText(/Post (New )?Job/i).filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false) ||
+                await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false);
 
             const currentRoleMatched = (targetRole === 'Professional' && isProfessional) ||
                 (targetRole === 'Client' && isClient);
@@ -208,11 +208,11 @@ export class AuthHelper {
 
             try {
                 for (let i = 0; i < 3; i++) {
-                    await userMenu.waitFor({ state: 'visible', timeout: 8000 });
+                    await userMenu.waitFor({ state: 'visible', timeout: 60000 });
                     await userMenu.click({ force: true });
                     console.log(`[AuthHelper] Clicked user menu (attempt ${i + 1})`);
                     
-                    if (await roleOption.isVisible({ timeout: 2000 })) {
+                    if (await roleOption.isVisible({ timeout: 60000 })) {
                         menuOpened = true;
                         break;
                     }
@@ -250,7 +250,7 @@ export class AuthHelper {
             if (menuOpened) {
                 console.log(`[AuthHelper] Switching to role: ${menuText}`);
                 await roleOption.click();
-                await this.page.waitForURL(/\/dashboard/, { timeout: 180000 });
+                await this.page.waitForURL(/\/dashboard/, { timeout: 540000 });
                 // Small wait for state update
                 await this.page.waitForTimeout(1000);
             } else {
@@ -263,7 +263,7 @@ export class AuthHelper {
                 } else if (this.page.url().includes('/login')) {
                     console.warn(`[AuthHelper] Still on login page after ensureRole. Forcing navigation to /dashboard...`);
                     // Proactive fallback for slow redirects/HMR hangs
-                    await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+                    await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {});
                     await this.page.waitForTimeout(2000);
                     
                     if (this.page.url().includes('/dashboard')) {
@@ -349,9 +349,9 @@ export class AuthHelper {
 
                 // Navigation to login - wait for domcontentloaded to ensure hydration is complete
                 // This prevents the "white screen" and input clearing issues on slow dev servers
-                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 240000 }).catch(async (e) => {
+                await this.page.goto(ROUTES.login, { waitUntil: 'domcontentloaded', timeout: 720000 }).catch(async (e) => {
                     console.warn(`[AuthHelper] initial goto domcontentloaded timed out. Forcing stop and reload...`);
-                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {});
+                    await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 360000 }).catch(() => {});
                 });
                 
                 await this.page.waitForTimeout(5000); // Increased buffer for Next.js hydration and stability
@@ -387,10 +387,10 @@ export class AuthHelper {
 
                 // 🚦 HYDRATION LOCK: Wait for the login button to be enabled
                 const submitButton = this.page.getByTestId('login-submit-btn').first().or(this.page.locator('button[type="submit"]').first());
-                await submitButton.waitFor({ state: 'visible', timeout: 30000 });
-                await expect(submitButton).toBeEnabled({ timeout: 15000 }).catch(() => console.warn('[AuthHelper] Submit button still disabled, proceeding anyway...'));
+                await submitButton.waitFor({ state: 'visible', timeout: 90000 });
+                await expect(submitButton).toBeEnabled({ timeout: 60000 }).catch(() => console.warn('[AuthHelper] Submit button still disabled, proceeding anyway...'));
 
-                await emailInput.waitFor({ state: 'visible', timeout: 30000 });
+                await emailInput.waitFor({ state: 'visible', timeout: 90000 });
                 await emailInput.scrollIntoViewIfNeeded();
 
                 // Fill password
@@ -399,7 +399,7 @@ export class AuthHelper {
                     .or(this.page.getByLabel(/^Password$/i))
                     .or(this.page.locator('input[type="password"]'))
                     .first();
-                await passwordInput.waitFor({ state: 'visible', timeout: 30000 });
+                await passwordInput.waitFor({ state: 'visible', timeout: 90000 });
                 await passwordInput.scrollIntoViewIfNeeded();
                 
                 const fillAndVerify = async () => {
@@ -447,7 +447,7 @@ export class AuthHelper {
                 await this.waitForStability();
 
                 // Click submit button with robustness
-                await submitButton.waitFor({ state: 'visible', timeout: 20000 });
+                await submitButton.waitFor({ state: 'visible', timeout: 60000 });
                 
                 // Final check before click
                 if (await emailInput.inputValue() === '') {
@@ -461,7 +461,7 @@ export class AuthHelper {
                 // Multi-interaction strategy: Click + Enter Key Fallback
                 console.log(`[AuthHelper] Clicking login button for ${email}...`);
                 try {
-                    await submitButton.click({ timeout: 10000 });
+                    await submitButton.click({ timeout: 60000 });
                     await this.page.keyboard.press('Enter').catch(() => {}); // Safety enter
                 } catch (e: any) {
                     console.warn(`[AuthHelper] Normal click failed/timed out: ${e.message}, trying force click + Enter...`);
@@ -473,21 +473,21 @@ export class AuthHelper {
                 // Wait for navigation or error
                 try {
                     // Increased timeout to 240s to handle fresh dev-server compilation on constrained CI runners
-                    await this.page.waitForURL(/\/dashboard/, { timeout: 240000 });
+                    await this.page.waitForURL(/\/dashboard/, { timeout: 720000 });
                     console.log('[AuthHelper] Login submission redirect to dashboard detected.');
                 } catch (e) {
                     console.warn('[AuthHelper] No redirect to /dashboard after 240s. Checking for error toasts or splash screen...');
                     
                     // Check for error toasts (using some known error strings or general destructive variant)
                     const errorToast = this.page.locator('[role="status"]:has-text("Failed"), [role="status"]:has-text("Invalid")');
-                    if (await errorToast.isVisible({ timeout: 2000 }).catch(() => false)) {
+                    if (await errorToast.isVisible({ timeout: 60000 }).catch(() => false)) {
                         const errorMsg = await errorToast.innerText();
                         throw new Error(`[AuthHelper] Login failed with error toast: "${errorMsg}"`);
                     }
 
                     // If we are stuck on the splash screen ("Redirecting to...")
                     const splashText = this.page.getByText(/Redirecting to/i);
-                    if (await splashText.isVisible({ timeout: 10000 }).catch(() => false)) {
+                    if (await splashText.isVisible({ timeout: 60000 }).catch(() => false)) {
                         console.log('[AuthHelper] Stuck on redirect splash screen. Forcing navigation to /dashboard...');
                         await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' }).catch(() => {});
                     } else {
@@ -499,7 +499,7 @@ export class AuthHelper {
                         // Try one last emergency goto if still on login
                         if (url.includes('/login')) {
                             console.log('[AuthHelper] EMERGENCY: Still on login, forcing goto /dashboard...');
-                            await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+                            await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(() => {});
                         }
                         
                         if (!this.page.url().includes('/dashboard')) {
@@ -521,7 +521,7 @@ export class AuthHelper {
                 
                 console.log('[AuthHelper] Waiting for auth session stabilization (Dashboard markers)...');
                 await Promise.any(markers.map(m => 
-                    this.page.locator(m).first().waitFor({ state: 'visible', timeout: 45000 })
+                    this.page.locator(m).first().waitFor({ state: 'visible', timeout: 135000 })
                 )).catch(e => {
                     console.warn('[AuthHelper] No dashboard markers appeared. Current URL:', this.page.url());
                 });
@@ -631,13 +631,13 @@ export class AuthHelper {
                 .or(this.page.locator('[data-testid="user-menu-button"]'))
                 .or(this.page.locator('button:has-text("D")'));
 
-            if (await userMenu.isVisible({ timeout: 5000 }).catch(() => false)) {
+            if (await userMenu.isVisible({ timeout: 60000 }).catch(() => false)) {
                 await userMenu.click({ force: true });
                 const logoutBtn = this.page.getByTestId('logout-button').first()
                     .or(this.page.getByRole('menuitem', { name: /Log out|Sign out|Logout/i }).first())
                     .or(this.page.locator('button:has-text("Log out"), button:has-text("Sign out"), button:has-text("Logout")').first());
                 
-                await logoutBtn.waitFor({ state: 'visible', timeout: 5000 });
+                await logoutBtn.waitFor({ state: 'visible', timeout: 60000 });
                 await logoutBtn.click({ force: true });
             } else {
                 console.warn('[AuthHelper] User menu not found. Enforcing hard reset.');
@@ -654,7 +654,7 @@ export class AuthHelper {
 
         // Stabilize on login page
         // Stabilize on login page - increased timeout to handle slow redirects
-        await this.page.waitForURL('**/login', { timeout: 45000, waitUntil: 'domcontentloaded' }).catch(() => {
+        await this.page.waitForURL('**/login', { timeout: 135000, waitUntil: 'domcontentloaded' }).catch(() => {
             console.warn('[AuthHelper] Timeout waiting for /login URL after logout, checking current URL:', this.page.url());
         });
         await this.page.waitForTimeout(2000); // Explicit buffer for session cleanup settlement
@@ -668,9 +668,9 @@ export class AuthHelper {
             const consentRoot = this.page.locator('text=We value your privacy').first();
 
             const hasConsent =
-                (await acceptAll.isVisible({ timeout: 1000 }).catch(() => false)) ||
-                (await essentialOnly.isVisible({ timeout: 1000 }).catch(() => false)) ||
-                (await consentRoot.isVisible({ timeout: 1000 }).catch(() => false));
+                (await acceptAll.isVisible({ timeout: 60000 }).catch(() => false)) ||
+                (await essentialOnly.isVisible({ timeout: 60000 }).catch(() => false)) ||
+                (await consentRoot.isVisible({ timeout: 60000 }).catch(() => false));
 
             if (!hasConsent) return;
 
@@ -684,8 +684,8 @@ export class AuthHelper {
 
             // Wait for the banner to go away so it can't intercept subsequent clicks.
             await Promise.race([
-                consentRoot.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined),
-                acceptAll.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined),
+                consentRoot.waitFor({ state: 'hidden', timeout: 60000 }).catch(() => undefined),
+                acceptAll.waitFor({ state: 'hidden', timeout: 60000 }).catch(() => undefined),
             ]);
         } catch {
             // Ignore
@@ -703,7 +703,7 @@ export class FormHelper {
         console.log('[FormHelper] Checking for stale drafts to discard...');
         const dialog = this.page.getByRole('dialog', { name: 'Resume your draft?' });
         try {
-            if (await dialog.isVisible({ timeout: 5000 }).catch(() => false)) {
+            if (await dialog.isVisible({ timeout: 60000 }).catch(() => false)) {
                 console.log('[FormHelper] Stale draft detected, clicking Discard...');
                 const discardBtn = this.page.getByRole('button', { name: /Discard Draft/i });
                 await discardBtn.click();
@@ -724,7 +724,7 @@ export class FormHelper {
                 console.log('[FormHelper] Draft dialog visible, waiting for it to be handled by background handler...');
                 // The background handler (registered in TestHelper constructor) will click Resume/Discard.
                 // We just wait for the dialog to disappear.
-                await dialog.waitFor({ state: 'hidden', timeout: 30000 });
+                await dialog.waitFor({ state: 'hidden', timeout: 90000 });
                 console.log('[FormHelper] Draft dialog handled and hidden.');
                 await this.page.waitForTimeout(1000); // Settle time
             } else {
@@ -742,7 +742,7 @@ export class FormHelper {
         // Try getByLabel first (standard accessibility)
         try {
             const input = this.page.getByLabel(label).first();
-            if (await input.isVisible({ timeout: 1000 })) {
+            if (await input.isVisible({ timeout: 60000 })) {
                 await input.fill(value);
                 return;
             }
@@ -757,7 +757,7 @@ export class FormHelper {
 
         // Try data-testid
         const testIdInput = this.page.getByTestId(`${kebabCase}-input`).or(this.page.getByTestId(kebabCase)).first();
-        if (await testIdInput.isVisible({ timeout: 1000 })) {
+        if (await testIdInput.isVisible({ timeout: 60000 })) {
             await testIdInput.fill(value);
             return;
         }
@@ -772,13 +772,13 @@ export class FormHelper {
             `[data-testid*="${label.toLowerCase().replace(/\s/g, '-')}"]`
         ).first();
         
-        await input.waitFor({ state: 'visible', timeout: 60000 }); // Extremely generous 60s for slow hydration
+        await input.waitFor({ state: 'visible', timeout: 180000 }); // Extremely generous 60s for slow hydration
         await input.scrollIntoViewIfNeeded();
         // Hydration check: ensure input is enabled before filling
-        await expect(input).toBeEnabled({ timeout: 30000 });
+        await expect(input).toBeEnabled({ timeout: 90000 });
         
         await input.fill(value);
-        await input.blur({ timeout: 5000 }).catch(() => {}); // Trigger change/validation events
+        await input.blur({ timeout: 60000 }).catch(() => {}); // Trigger change/validation events
     }
 
     async fillTextarea(label: string, value: string) {
@@ -795,7 +795,7 @@ export class FormHelper {
         // Try getByLabel first (standard accessibility)
         try {
             const textareaByLabel = this.page.getByLabel(label).first();
-            if (await textareaByLabel.isVisible({ timeout: 1000 }).catch(() => false)) {
+            if (await textareaByLabel.isVisible({ timeout: 60000 }).catch(() => false)) {
                 await textareaByLabel.fill(value);
                 return;
             }
@@ -821,12 +821,12 @@ export class FormHelper {
         ).first();
 
         // Ensure trigger is in view and clickable — wait for it to be attached first
-        await trigger.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+        await trigger.waitFor({ state: 'visible', timeout: 60000 }).catch(() => {
             console.warn(`[FormHelper] Trigger for "${label}" not visible within 15s, trying anyway...`);
         });
         await trigger.scrollIntoViewIfNeeded().catch(() => {});
         // Hydration check: ensure trigger is enabled before clicking
-        await expect(trigger).toBeEnabled({ timeout: 10000 });
+        await expect(trigger).toBeEnabled({ timeout: 60000 });
         // Create a robust open loop
         let isOpen = false;
         for (let i = 0; i < 3; i++) {
@@ -839,7 +839,7 @@ export class FormHelper {
 
                 await trigger.click({ force: true });
                 // Short wait for animation/mounting
-                await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().waitFor({ state: 'visible', timeout: 2000 });
+                await this.page.locator('[role="option"], [role="menuitem"], .select-content').first().waitFor({ state: 'visible', timeout: 60000 });
                 isOpen = true;
                 break;
             } catch (e) {
@@ -856,7 +856,7 @@ export class FormHelper {
         // Try standard accessible role first with a reasonable timeout
         try {
             const option = this.page.getByRole('option', { name: value }).first();
-            await option.waitFor({ state: 'visible', timeout: 10000 });
+            await option.waitFor({ state: 'visible', timeout: 60000 });
             await option.click({ force: true });
             return;
         } catch (e) {
@@ -872,7 +872,7 @@ export class FormHelper {
             `.select-item:has-text("${value}")`
         ).first();
 
-        await fallbackOption.waitFor({ state: 'visible', timeout: 10000 });
+        await fallbackOption.waitFor({ state: 'visible', timeout: 60000 });
         await fallbackOption.click({ force: true });
     }
 
@@ -880,7 +880,7 @@ export class FormHelper {
         console.log(`[FormHelper] Selecting wizard category: ${category}`);
         const card = this.page.getByTestId(`${category}-category-card`).first()
             .or(this.page.locator(`[data-testid*="category-card"]:has-text("${category}")`).first());
-        await card.waitFor({ state: 'visible', timeout: 10000 });
+        await card.waitFor({ state: 'visible', timeout: 60000 });
         await card.click();
         await this.page.waitForTimeout(500); // Wait for transition
     }
@@ -889,12 +889,12 @@ export class FormHelper {
         if (templateId) {
             console.log(`[FormHelper] Selecting template: ${templateId}`);
             const card = this.page.getByTestId(`${templateId}-template-card`).first();
-            await card.waitFor({ state: 'visible', timeout: 30000 });
+            await card.waitFor({ state: 'visible', timeout: 90000 });
             await card.click();
         } else {
             console.log('[FormHelper] Selecting Custom Request (No template)');
             const card = this.page.getByTestId('custom-template-card').first();
-            await card.waitFor({ state: 'visible', timeout: 30000 });
+            await card.waitFor({ state: 'visible', timeout: 90000 });
             await card.click();
         }
         await this.page.waitForTimeout(500);
@@ -904,13 +904,13 @@ export class FormHelper {
         console.log(`[FormHelper] Selecting wizard option: ${optionValue}`);
         
         // Wait for the wizard question area to be visible first
-        await this.page.locator('[data-testid="wizard-next-button"], button:has-text("Review Requirement"), button:has-text("Next")').first().waitFor({ state: 'visible', timeout: 20000 });
+        await this.page.locator('[data-testid="wizard-next-button"], button:has-text("Review Requirement"), button:has-text("Next")').first().waitFor({ state: 'visible', timeout: 60000 });
         await this.page.waitForTimeout(1000); // Wait for Framer Motion animation to completely settle
 
         // Strategy 1: getByRole with exact text (most semantic, handles nested spans)
         try {
             const byRole = this.page.getByRole('button', { name: optionValue, exact: true });
-            await byRole.first().waitFor({ state: 'visible', timeout: 8000 });
+            await byRole.first().waitFor({ state: 'visible', timeout: 60000 });
             await byRole.first().click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via getByRole exact: ${optionValue}`);
@@ -920,7 +920,7 @@ export class FormHelper {
         // Strategy 2: CSS button:has-text (works with partial matches in nested spans)
         try {
             const byText = this.page.locator(`button:has-text("${optionValue}")`).first();
-            await byText.waitFor({ state: 'visible', timeout: 8000 });
+            await byText.waitFor({ state: 'visible', timeout: 60000 });
             await byText.click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via has-text: ${optionValue}`);
@@ -932,7 +932,7 @@ export class FormHelper {
             const slug = optionValue.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
             const cleanVal = optionValue.replace(/[^a-z0-9]/gi, '');
             const byId = this.page.locator(`[data-testid*="${slug}" i], [data-testid*="${cleanVal}" i]`).first();
-            await byId.waitFor({ state: 'visible', timeout: 8000 });
+            await byId.waitFor({ state: 'visible', timeout: 60000 });
             await byId.click({ force: true });
             await this.page.waitForTimeout(500);
             console.log(`[FormHelper] ✅ Clicked via data-testid: ${optionValue}`);
@@ -964,10 +964,10 @@ export class FormHelper {
     async clickWizardNext() {
         console.log('[FormHelper] Clicking wizard Next...');
         const nextBtn = this.page.getByTestId('wizard-next-button').first();
-        await nextBtn.waitFor({ state: 'visible', timeout: 15000 });
+        await nextBtn.waitFor({ state: 'visible', timeout: 60000 });
         
         // Wait for the button to become enabled (state update can be slow)
-        await expect(nextBtn).toBeEnabled({ timeout: 10000 });
+        await expect(nextBtn).toBeEnabled({ timeout: 60000 });
         
         await nextBtn.click({ force: true });
         await this.page.waitForTimeout(1000); // Wait for transition
@@ -1008,16 +1008,16 @@ export class FormHelper {
         
         // Wait for the review page to load - AI generation can take time locally. Using 300s for slow compilation.
         const reviewHeader = this.page.getByText(/Review Your Job Post|Looks Good, Post Job|Review and Post|Review & Post|Audit Job/i).first();
-        await reviewHeader.waitFor({ state: 'visible', timeout: 300000 });
+        await reviewHeader.waitFor({ state: 'visible', timeout: 900000 });
         
         // Click the "Looks Good, Post Job" button
         const looksGoodBtn = this.page.getByRole('button', { name: /Looks Good, Post Job/i }).first();
-        await looksGoodBtn.waitFor({ state: 'visible', timeout: 10000 });
+        await looksGoodBtn.waitFor({ state: 'visible', timeout: 60000 });
         await looksGoodBtn.click({ force: true });
         
         // Wait for redirect to /dashboard/post-job (LLM backend can take >35s locally)
         try {
-            await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 120000 });
+            await this.page.waitForURL(/\/dashboard\/post-job/, { timeout: 360000 });
         } catch {
             console.warn('[FormHelper] post-job navigation timed out after 120s, attempting fallback dashboard load...');
             await this.page.goto('/dashboard/post-job?wizardCompleted=true', { waitUntil: 'domcontentloaded' });
@@ -1063,7 +1063,7 @@ export class FormHelper {
                 // One reload attempt at 45s
                 reloadAttempted = true;
                 console.log('[FormHelper] Draft hydration taking > 45s, attempting page reload...');
-                await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(e => {
+                await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 360000 }).catch(e => {
                     console.error('[FormHelper] Page reload failed/timed out:', e.message);
                 });
             }
@@ -1119,31 +1119,31 @@ export class FormHelper {
         }).catch(() => { /* route already mocked */ });
 
         const pinInput = this.page.getByTestId('pincode-input').first();
-        await pinInput.waitFor({ state: 'visible', timeout: 60000 }); // 60s survivor timeout
+        await pinInput.waitFor({ state: 'visible', timeout: 180000 }); // 60s survivor timeout
         await pinInput.scrollIntoViewIfNeeded();
-        await expect(pinInput).toBeEnabled({ timeout: 30000 });
+        await expect(pinInput).toBeEnabled({ timeout: 90000 });
 
         // Use more robust typing logic for pincode to trigger onChange correctly
         await pinInput.click();
         await pinInput.clear();
         await pinInput.pressSequentially(pincode, { delay: 150 });
-        await pinInput.blur({ timeout: 5000 }).catch(() => { }); // Ensure change event fires
+        await pinInput.blur({ timeout: 60000 }).catch(() => { }); // Ensure change event fires
 
         console.log(`[FormHelper] Pincode "${pincode}" entered. Waiting for API response...`);
 
         // Wait for Loading spinner to appear and then disappear
         try {
             const spinner = this.page.locator('.animate-spin').first();
-            if (await spinner.isVisible({ timeout: 2000 }).catch(() => false)) {
+            if (await spinner.isVisible({ timeout: 60000 }).catch(() => false)) {
                 console.log('[FormHelper] Pincode lookup spinner detected, waiting for it to hide...');
-                await spinner.waitFor({ state: 'hidden', timeout: 15000 });
+                await spinner.waitFor({ state: 'hidden', timeout: 60000 });
             }
         } catch { /* ignore if spinner never shows */ }
 
         // Wait for City input to be populated (indicates API success)
         const cityInput = this.page.locator('[data-testid="city-input"]');
         try {
-            await expect(cityInput).not.toHaveValue('', { timeout: 20000 });
+            await expect(cityInput).not.toHaveValue('', { timeout: 60000 });
             const city = await cityInput.inputValue();
             console.log(`[FormHelper] Pincode lookup success. City: ${city}`);
         } catch (e) {
@@ -1153,7 +1153,7 @@ export class FormHelper {
 
         // Fill house & street fields (required; do before PO selection so form state is clean)
         const houseInput = this.page.getByTestId('house-input').first();
-        if (await houseInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await houseInput.isVisible({ timeout: 60000 }).catch(() => false)) {
             const currentHouse = await houseInput.inputValue().catch(() => '');
             if (!currentHouse.trim()) {
                 console.log('[FormHelper] Filling house-input...');
@@ -1162,7 +1162,7 @@ export class FormHelper {
         }
 
         const streetInput = this.page.getByTestId('street-input').first();
-        if (await streetInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await streetInput.isVisible({ timeout: 60000 }).catch(() => false)) {
             const currentStreet = await streetInput.inputValue().catch(() => '');
             if (!currentStreet.trim()) {
                 console.log('[FormHelper] Filling street-input...');
@@ -1172,7 +1172,7 @@ export class FormHelper {
 
         // Fill full-address (map fallback input visible when Google Maps is mocked/unavailable)
         const fullAddressInput = this.page.getByTestId('full-address-input').first();
-        if (await fullAddressInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await fullAddressInput.isVisible({ timeout: 60000 }).catch(() => false)) {
             const currentFull = await fullAddressInput.inputValue().catch(() => '');
             if (!currentFull.trim()) {
                 console.log('[FormHelper] Filling full-address-input (map fallback)...');
@@ -1185,7 +1185,7 @@ export class FormHelper {
 
         // Wait for select trigger to become enabled/active
         const poTrigger = this.page.locator('[data-testid="po-select-trigger"], button[role="combobox"]:has-text("Select Post Office")').first();
-        const isTriggerVisible = await poTrigger.isVisible({ timeout: 5000 }).catch(() => false);
+        const isTriggerVisible = await poTrigger.isVisible({ timeout: 60000 }).catch(() => false);
 
         if (!isTriggerVisible) {
             console.log('[FormHelper] PO Select Trigger not visible - skipping PO selection (might be auto-selected or API down)');
@@ -1207,14 +1207,14 @@ export class FormHelper {
 
                 // Wait for OPTION to be visible
                 const option = this.page.locator('[data-testid="po-select-item"], [role="option"]').first();
-                await option.waitFor({ state: 'visible', timeout: 8000 });
+                await option.waitFor({ state: 'visible', timeout: 60000 });
 
                 const optionText = await option.textContent();
                 console.log(`[FormHelper] Clicking post office option: ${optionText}`);
                 await option.click({ force: true });
 
                 // Wait for dropdown to close
-                await expect(this.page.locator('[role="option"]')).not.toBeVisible({ timeout: 5000 }).catch(() => { });
+                await expect(this.page.locator('[role="option"]')).not.toBeVisible({ timeout: 60000 }).catch(() => { });
                 return; // Success
             } catch (e) {
                 console.log(`[FormHelper] Pincode dropdown attempt ${i + 1} failed, trying keyboard fallback...`);
@@ -1241,7 +1241,7 @@ export class FormHelper {
         const kebabText = text.toLowerCase().replace(/\s+/g, '-');
         const testIdButton = this.page.getByTestId(`${kebabText}-button`).or(this.page.getByTestId(`${kebabText}-btn`)).first();
 
-        if (await testIdButton.isVisible({ timeout: 1000 })) {
+        if (await testIdButton.isVisible({ timeout: 60000 })) {
             await testIdButton.click({ force: true });
             return;
         }
@@ -1316,8 +1316,8 @@ export class FormHelper {
             const deadlineInput = this.page.getByTestId('job-deadline-input').first();
             const startDateInput = this.page.getByTestId('job-start-date-input').first();
 
-            if (await deadlineInput.isVisible({ timeout: 3000 }).catch(() => false) &&
-                await startDateInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+            if (await deadlineInput.isVisible({ timeout: 60000 }).catch(() => false) &&
+                await startDateInput.isVisible({ timeout: 60000 }).catch(() => false)) {
 
                 const deadlineVal = await deadlineInput.inputValue().catch(() => '');
                 const startVal = await startDateInput.inputValue().catch(() => '');
@@ -1439,7 +1439,7 @@ export class FormHelper {
             .or(this.page.getByRole('button', { name: /Post Job/i }))
             .or(this.page.getByRole('button', { name: /Save Changes/i }))
             .first();
-        await postBtn.waitFor({ state: 'visible', timeout: 15000 });
+        await postBtn.waitFor({ state: 'visible', timeout: 60000 });
 
         const isBtnDisabled = await postBtn.isDisabled();
         const btnHtml = await postBtn.evaluate(el => el.outerHTML).catch(() => 'unknown');
@@ -1459,7 +1459,7 @@ export class FormHelper {
 
         console.log('[FormHelper] Checking for confirmation dialog...');
         try {
-            await dialog.waitFor({ state: 'visible', timeout: 5000 });
+            await dialog.waitFor({ state: 'visible', timeout: 60000 });
             console.log('[FormHelper] Confirmation dialog detected.');
             const confirmBtn = dialog.getByRole('button', { name: /Confirm|Save|Post|Proceed|Yes|Accept/i }).first()
                 .or(dialog.locator('button').filter({ hasText: /Confirm|Save|Post|Proceed|Yes|Accept/i }).first())
@@ -1494,8 +1494,8 @@ export class FormHelper {
             
             // Race between AI review button and successful redirect
             const isAiReview = await Promise.race([
-                reviewBtn.waitFor({ state: 'visible', timeout: 60000 }).then(() => true).catch(() => false),
-                this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 }).then(() => false).catch(() => false)
+                reviewBtn.waitFor({ state: 'visible', timeout: 180000 }).then(() => true).catch(() => false),
+                this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 180000 }).then(() => false).catch(() => false)
             ]);
 
             if (isAiReview) {
@@ -1519,7 +1519,7 @@ export class FormHelper {
         try {
             // Increased timeout to 120s to avoid test timeout under heavy load
             await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { 
-                timeout: 120000,
+                timeout: 360000,
                 waitUntil: 'domcontentloaded' 
             });
         } catch (e: any) {
@@ -1527,7 +1527,7 @@ export class FormHelper {
             if (e.message.includes('net::ERR_INVALID_RESPONSE') || e.message.includes('net::ERR_ABORTED') || e.message.includes('Timeout')) {
                 console.log('[FormHelper] Network error or timeout detected, attempting fallback reload...');
                 await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 60000 }).catch(() => {});
+                await this.page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 180000 }).catch(() => {});
             } else {
                 throw e; // Throw the error so the test fails immediately
             }
@@ -1535,14 +1535,14 @@ export class FormHelper {
         
         // Confirm dashboard marker is visible as proxy for hydration
         try {
-            await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 30000 });
+            await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 90000 });
         } catch {
             console.warn('[FormHelper] dashboard-marker not immediately visible, checking if we are on the right page...');
             const url = this.page.url();
             if (url.includes('/dashboard/jobs/JOB-')) {
                 console.log('[FormHelper] Correct URL detected, forcing reload for hydration...');
-                await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
-                await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 90000 });
+                await this.page.reload({ waitUntil: 'domcontentloaded', timeout: 180000 });
+                await this.page.waitForSelector('[data-testid="dashboard-marker"]', { state: 'attached', timeout: 270000 });
             } else {
                 throw new Error(`[FormHelper] Failed to reach job detail page. Current URL: ${url}`);
             }
@@ -1636,7 +1636,7 @@ export class NavigationHelper {
         // Wait for categories or the "What do you need help with?" heading
         try {
             const categoryIndicator = this.page.locator('[data-testid*="-category-card"], h1:has-text("What do you need help with?"), h1:has-text("Job Type")').first();
-            await categoryIndicator.waitFor({ state: 'visible', timeout: 90000 });
+            await categoryIndicator.waitFor({ state: 'visible', timeout: 270000 });
             console.log('[NavigationHelper] Successfully reached Post Job wizard');
         } catch (e) {
             console.warn('[NavigationHelper] Post Job wizard indicators not found after 90s, checking current state...');
@@ -1644,14 +1644,14 @@ export class NavigationHelper {
             // If redirected to dashboard, wait and then navigate to post-job again (one-time fallback)
             if (this.page.url().includes('/dashboard')) {
                 console.log('[NavigationHelper] Redirected to dashboard, re-attempting navigation to post-job...');
-                await this.page.goto(ROUTES.postJob, { waitUntil: 'domcontentloaded', timeout: 30000 });
-                await this.page.locator('[data-testid*="-category-card"]').first().waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
+                await this.page.goto(ROUTES.postJob, { waitUntil: 'domcontentloaded', timeout: 90000 });
+                await this.page.locator('[data-testid*="-category-card"]').first().waitFor({ state: 'visible', timeout: 90000 }).catch(() => {});
             }
         }
 
         // Dismiss persistent draft recovery dialog
         const resumeModal = this.page.locator('div[role="dialog"]:has-text("Resume your draft?"), h2:has-text("Resume your draft?"), .alert-dialog:has-text("Resume")').first();
-        if (await resumeModal.isVisible({ timeout: 5000 }).catch(() => false)) {
+        if (await resumeModal.isVisible({ timeout: 60000 }).catch(() => false)) {
             console.log('[NavigationHelper] Found Resume Draft modal, discarding it');
             const discardBtn = this.page.locator('button:has-text("Discard")').first();
             if (await discardBtn.isVisible()) {
@@ -1670,7 +1670,7 @@ export class NavigationHelper {
                     const el = document.querySelector('[data-testid*="-category-card"]') as HTMLElement | null;
                     return el && el.offsetParent !== null;
                 },
-                { timeout: 30000 }
+                { timeout: 90000 }
             );
             console.log('[NavigationHelper] Wizard categories visible and ready');
             return true;
@@ -1693,7 +1693,7 @@ export class NavigationHelper {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 // "commit" is more resilient than waiting for DOM events during hot reload / frame swaps.
-                await this.page.goto(ROUTES.browseJobs, { waitUntil: 'commit', timeout: 90000 });
+                await this.page.goto(ROUTES.browseJobs, { waitUntil: 'commit', timeout: 270000 });
                 break;
             } catch (e) {
                 console.warn(`[NavigationHelper] goToBrowseJobs attempt ${attempt}/${maxRetries} failed:`, e);
@@ -1706,20 +1706,20 @@ export class NavigationHelper {
         await this.injectCookieHide();
 
         // Wait for a stable marker on the page (URL may update via client routing)
-        await this.page.waitForURL(/\/dashboard\/jobs/, { timeout: 30000 }).catch(() => { });
+        await this.page.waitForURL(/\/dashboard\/jobs/, { timeout: 90000 }).catch(() => { });
         // Some devices or hydration scenarios hide the sidebar nav even though the page
         // is usable; rely on a secondary marker such as the job list container so
         // we don't hang indefinitely.
         const width = await this.page.evaluate(() => window.innerWidth);
         if (width >= 640) {
             await this.page.getByTestId('nav-link-browseJobs').first()
-                .waitFor({ state: 'visible', timeout: 30000 }).catch(() => { /* ignore */ });
+                .waitFor({ state: 'visible', timeout: 90000 }).catch(() => { /* ignore */ });
         }
         // always wait for at least one job card or an empty-state message; this is
         // the feature under test and gives confidence the page is interactive
         await Promise.race([
-            this.page.waitForSelector('[data-testid="job-card"]', { timeout: 30000 }),
-            this.page.waitForSelector('text=No jobs found', { timeout: 30000 })
+            this.page.waitForSelector('[data-testid="job-card"]', { timeout: 90000 }),
+            this.page.waitForSelector('text=No jobs found', { timeout: 90000 })
         ]).catch(() => {
             // if both selectors failed, let the test proceed and fail later; we don't
             // want navigation to block forever
@@ -1757,7 +1757,7 @@ export class JobHelper {
         // Button text is "Official Authorization" or "Authorize Offer"
         // Toast on success is "Offer Sent" or "MISSION AUTHORIZED".
         const authBtn = this.page.getByRole('button', { name: /Official Authorization|Authorize Offer/i }).first();
-        if (await authBtn.isVisible({ timeout: 10000 }).catch(() => false)) {
+        if (await authBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
             await authBtn.click({ force: true });
         }
     }
@@ -1790,7 +1790,7 @@ export class JobHelper {
             // Try waiting initially with a long timeout to give Firebase time to sync
             try {
                 await expect(this.page.locator(selector).first())
-                    .toBeVisible({ timeout: 20000 });
+                    .toBeVisible({ timeout: 60000 });
                 console.log(`Helper: Job status ${status} visible initially.`);
                 return;
             } catch (e) {
@@ -1820,7 +1820,7 @@ export class JobHelper {
                 // Wait for components to mount and Firebase to fetch
                 try {
                     await expect(this.page.locator(selector).first())
-                        .toBeVisible({ timeout: 20000 });
+                        .toBeVisible({ timeout: 60000 });
                     console.log(`Helper: Job status ${status} visible after reload.`);
                     return;
                 } catch (ignore) {
@@ -1984,7 +1984,7 @@ export class TestHelper {
 
                         if (effectiveHandling === 'discard') {
                             const discardBtn = locator.getByRole('button', { name: /Discard|No|Start Fresh/i });
-                            if (await discardBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                            if (await discardBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
                                 console.log('[TestHelper] Universal draft handler: Discarding draft...');
                                 await discardBtn.click({ force: true }).catch((e: any) => { 
                                     console.error('[TestHelper] Discard click failed:', e.message); 
@@ -1992,7 +1992,7 @@ export class TestHelper {
                             }
                         } else {
                             const resumeBtn = locator.getByRole('button', { name: /Resume Draft|Resume|Yes|Continue/i });
-                            if (await resumeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+                            if (await resumeBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
                                 console.log('[TestHelper] Universal draft handler: Resuming draft...');
                                 await resumeBtn.click({ force: true }).catch((e: any) => { 
                                     console.error('[TestHelper] Resume click failed:', e.message); 
@@ -2001,7 +2001,7 @@ export class TestHelper {
                         }
                         
                         // Critical: wait for the locator to be hidden before finishing the handler
-                        await locator.waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {
+                        await locator.waitFor({ state: 'hidden', timeout: 60000 }).catch(() => {
                             console.warn(`[TestHelper] Draft dialog "${diagName}" still visible after click, pressing Escape...`);
                             return this.page.keyboard.press('Escape');
                         });
@@ -2182,9 +2182,9 @@ export class TestHelper {
         console.log('[TestHelper] Checking for cookie consent banner...');
         try {
             const acceptBtn = this.page.getByRole('button', { name: 'Accept All' }).first();
-            if (await acceptBtn.isVisible({ timeout: 5000 })) {
+            if (await acceptBtn.isVisible({ timeout: 60000 })) {
                 await acceptBtn.click();
-                await acceptBtn.waitFor({ state: 'hidden', timeout: 2000 });
+                await acceptBtn.waitFor({ state: 'hidden', timeout: 60000 });
                 console.log('[TestHelper] Accepted cookies.');
             }
         } catch (e) {

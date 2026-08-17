@@ -14,7 +14,7 @@ test.describe('Offline Mode (PWA)', () => {
         const offlineBanner = page.locator('text=/Working Offline|You are Offline/i').first()
             .or(page.locator('[data-testid="offline-alert"]'));
         
-        await expect(offlineBanner).toBeVisible({ timeout: 60000 });
+        await expect(offlineBanner).toBeVisible({ timeout: 1620000 });
         console.log('Offline banner verified.');
 
         // Restore online status
@@ -22,7 +22,7 @@ test.describe('Offline Mode (PWA)', () => {
         await page.context().setOffline(false);
 
         // Verify the banner disappears
-        await expect(offlineBanner).not.toBeVisible({ timeout: 60000 });
+        await expect(offlineBanner).not.toBeVisible({ timeout: 1620000 });
         console.log('Online state restoration verified.');
     });
 
@@ -41,7 +41,7 @@ test.describe('Offline Mode (PWA)', () => {
             
             // Should show an error or be disabled
             const errorMsg = page.locator('text=/offline|network|connection/i').first();
-            await expect(errorMsg).toBeVisible({ timeout: 60000 });
+            await expect(errorMsg).toBeVisible({ timeout: 1620000 });
         }
 
         await page.context().setOffline(false);

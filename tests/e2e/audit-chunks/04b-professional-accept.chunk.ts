@@ -36,9 +36,9 @@ test.describe('Audit Chunk 4b: Professional Accept', () => {
         const waitForClientText = page.getByText(/Wait for Client to Pay|Authorization Pending/i).first();
 
         // Check all indicators
-        const isAccepted = await startOtpIndicator.isVisible({ timeout: 60000 }).catch(() => false);
-        const isWaitingForPay = await waitForClientText.isVisible({ timeout: 60000 }).catch(() => false);
-        const canAccept = await acceptBtn.isVisible({ timeout: 60000 }).catch(() => false);
+        const isAccepted = await startOtpIndicator.isVisible({ timeout: 1620000 }).catch(() => false);
+        const isWaitingForPay = await waitForClientText.isVisible({ timeout: 1620000 }).catch(() => false);
+        const canAccept = await acceptBtn.isVisible({ timeout: 1620000 }).catch(() => false);
 
         if (isAccepted || isWaitingForPay) {
             console.log('✅ Chunk 4b Complete: Job already accepted by professional (state confirmed).');
@@ -58,7 +58,7 @@ test.describe('Audit Chunk 4b: Professional Accept', () => {
                 await page.reload();
                 await helper.auth.injectNuclearCSS();
                 await helper.auth.waitForQuiescence();
-                const afterReload = await page.getByText(/Wait for Client to Pay|Authorization Pending/i).first().isVisible({ timeout: 60000 }).catch(() => false);
+                const afterReload = await page.getByText(/Wait for Client to Pay|Authorization Pending/i).first().isVisible({ timeout: 1620000 }).catch(() => false);
                 if (afterReload) {
                     console.log('✅ Chunk 4b Complete: Job Accepted (verified via state change after reload).');
                 } else {

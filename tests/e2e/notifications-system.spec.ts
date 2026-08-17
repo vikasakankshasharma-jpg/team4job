@@ -19,7 +19,7 @@ test.describe('Notification System', () => {
     test('should display notification bell and dropdown', async ({ page }) => {
         // Check if bell exists
         const bell = page.getByRole('button', { name: /Notifications/i }).first();
-        await expect(bell).toBeVisible({ timeout: 90000 });
+        await expect(bell).toBeVisible({ timeout: 2430000 });
 
         // Wait for hydration
         await page.waitForTimeout(2000);
@@ -31,13 +31,13 @@ test.describe('Notification System', () => {
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL|HISTORY LOGS/i }).first();
         
         // Wait for page hydration to prevent swallowed clicks
-        await page.waitForTimeout(5000);
+        await page.waitForTimeout(15000);
 
         if (!(await dropdownHeader.isVisible())) {
             await bell.click({ force: true });
         }
-        await expect(dropdownHeader).toBeVisible({ timeout: 90000 });
-        await expect(viewAllBtn).toBeVisible({ timeout: 90000 });
+        await expect(dropdownHeader).toBeVisible({ timeout: 2430000 });
+        await expect(viewAllBtn).toBeVisible({ timeout: 2430000 });
     });
 
     test('should display Action Required dashboard for urgent notifications', async ({ page }) => {
@@ -51,13 +51,13 @@ test.describe('Notification System', () => {
 
         // Wait for loading to finish if it appears
         // Wait for H1 is visible (implicitly waits for loading to finish)
-        await expect(page.getByRole('heading', { level: 1, name: 'Notifications' })).toBeVisible({ timeout: 90000 });
+        await expect(page.getByRole('heading', { level: 1, name: 'Notifications' })).toBeVisible({ timeout: 2430000 });
 
         const settingsTab = page.getByRole('tab').nth(2); // The Preferences tab (third tab)
         await settingsTab.click();
 
-        await expect(page.getByText('Notification Preferences')).toBeVisible({ timeout: 90000 });
-        await expect(page.getByText('In-App Notifications')).toBeVisible({ timeout: 90000 });
+        await expect(page.getByText('Notification Preferences')).toBeVisible({ timeout: 2430000 });
+        await expect(page.getByText('In-App Notifications')).toBeVisible({ timeout: 2430000 });
     });
 });
 

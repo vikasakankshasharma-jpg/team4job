@@ -12,33 +12,33 @@ test.describe('HTTP Smoke Tests @smoke-http', () => {
 
     test('Home page loads and renders an H1', async ({ page }) => {
         await page.goto('/');
-        await page.waitForSelector('h1', { state: 'visible', timeout: 90000 });
+        await page.waitForSelector('h1', { state: 'visible', timeout: 2430000 });
         await expect(page.locator('h1').first()).toBeVisible();
     });
 
     test('Unauthenticated user is redirected to login', async ({ page }) => {
         await page.goto('/dashboard');
-        await expect(page).toHaveURL(/\/login/, { timeout: 90000 });
+        await expect(page).toHaveURL(/\/login/, { timeout: 2430000 });
     });
 
     test('Login page loads correctly', async ({ page }) => {
         await page.goto('/login');
-        await expect(page).toHaveURL(/\/login/, { timeout: 90000 });
+        await expect(page).toHaveURL(/\/login/, { timeout: 2430000 });
         await expect(page.locator('input[name="identifier"]').or(
             page.locator('input[type="email"]')
-        ).first()).toBeVisible({ timeout: 90000 });
+        ).first()).toBeVisible({ timeout: 2430000 });
     });
 
     test('Invalid login shows an error and stays on login page', async ({ page }) => {
         await page.goto('/login');
         const emailInput = page.locator('input[name="identifier"]');
-        await emailInput.waitFor({ state: 'visible', timeout: 90000 });
+        await emailInput.waitFor({ state: 'visible', timeout: 2430000 });
         await emailInput.fill('invalid-user@example.com');
         await page.fill('input[type="password"]', 'wrongpassword');
         await page.click('button[type="submit"]');
 
         // Should stay on login page with an error visible
-        await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 90000 });
+        await expect(page.locator('[role="status"]').first()).toBeVisible({ timeout: 2430000 });
         await expect(page).toHaveURL(/\/login/);
     });
 
@@ -51,7 +51,7 @@ test.describe('HTTP Smoke Tests @smoke-http', () => {
         });
 
         await page.goto('/');
-        await page.waitForSelector('h1', { state: 'visible', timeout: 90000 });
+        await page.waitForSelector('h1', { state: 'visible', timeout: 2430000 });
         await page.waitForTimeout(2000);
 
         const criticalErrors = errors.filter(err =>

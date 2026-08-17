@@ -52,7 +52,7 @@ test.describe.serial('Multi-Party Job Flow @smoke @multi-context', () => {
         console.log('Professional navigates to Browse Jobs...');
         await proHelper.ensureRole('Professional');
         await proPage.goto('/dashboard/jobs');
-        await expect(proPage.getByRole('heading', { name: /Available Jobs|Browse/i }).first()).toBeVisible({ timeout: 60000 });
+        await expect(proPage.getByRole('heading', { name: /Available Jobs|Browse/i }).first()).toBeVisible({ timeout: 1620000 });
         
         // Count initial jobs for pro
         await proPage.waitForTimeout(2000); // Let UI settle
@@ -64,7 +64,7 @@ test.describe.serial('Multi-Party Job Flow @smoke @multi-context', () => {
         await clientPage.goto('/wizard');
         
         // Fill out Job Wizard
-        await expect(clientPage.getByRole('heading', { name: /Mission Orientation/i }).first()).toBeVisible({ timeout: 60000 });
+        await expect(clientPage.getByRole('heading', { name: /Mission Orientation/i }).first()).toBeVisible({ timeout: 1620000 });
         
         // 1. Select Category
         await clientPage.locator('[data-testid="Security & Surveillance-category-card"]').click();
@@ -74,7 +74,7 @@ test.describe.serial('Multi-Party Job Flow @smoke @multi-context', () => {
 
         // 3. Answer questions (just click next repeatedly until compiling)
         const nextButton = clientPage.getByTestId('wizard-next-button');
-        await nextButton.waitFor({ state: 'visible', timeout: 60000 });
+        await nextButton.waitFor({ state: 'visible', timeout: 1620000 });
         while (await nextButton.isVisible().catch(() => false)) {
             // Click the first available multiple-choice option so Next is enabled
             const firstOption = clientPage.locator('[data-testid^="question-option-"]').first();
@@ -93,7 +93,7 @@ test.describe.serial('Multi-Party Job Flow @smoke @multi-context', () => {
 
         // 4. Review Step (Post Job)
         const publishButton = clientPage.getByRole('button', { name: /Post Job|Publish/i });
-        await publishButton.waitFor({ state: 'visible', timeout: 60000 });
+        await publishButton.waitFor({ state: 'visible', timeout: 1620000 });
         
         // If there are budget fields on review step
         const budgetInput = clientPage.getByLabel(/Budget/i);

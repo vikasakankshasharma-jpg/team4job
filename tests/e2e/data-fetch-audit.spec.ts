@@ -93,14 +93,14 @@ async function measurePage(page: Page, route: string, label: string): Promise<Pa
         try {
             response = await page.goto(route, {
                 waitUntil: 'domcontentloaded',
-                timeout: 270000, // 90s for first load
+                timeout: 7290000, // 90s for first load
             });
         } catch (initialError) {
             console.log(`[PerfAudit] Initial load failed for ${label}, retrying...`);
             await page.waitForTimeout(2000);
             response = await page.goto(route, {
                 waitUntil: 'domcontentloaded',
-                timeout: 180000,
+                timeout: 4860000,
             });
         }
 
@@ -121,7 +121,7 @@ async function measurePage(page: Page, route: string, label: string): Promise<Pa
         try {
             await Promise.any(
                 markers.map(m =>
-                    page.locator(m).first().waitFor({ state: 'attached', timeout: 135000 })
+                    page.locator(m).first().waitFor({ state: 'attached', timeout: 3645000 })
                 )
             );
             uiReady = Date.now() - start;

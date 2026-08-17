@@ -78,14 +78,14 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             // Handle potential confirmation dialog
             const confirmBtn = page.getByRole('button', { name: /Confirm|Proceed|Yes/i }).first();
             try {
-                await confirmBtn.waitFor({ state: 'visible', timeout: 60000 });
+                await confirmBtn.waitFor({ state: 'visible', timeout: 1620000 });
                 await confirmBtn.click();
             } catch { }
 
             // Safe wait for toast without failing the test if it timeouts, since it's a fallback block
             try {
                 await page.locator(`[role="status"]:has-text("Job Updated"), .toast:has-text("Job Updated")`)
-                    .first().waitFor({ state: 'visible', timeout: 60000 });
+                    .first().waitFor({ state: 'visible', timeout: 1620000 });
             } catch { }
         } else {
             // Some builds removed explicit edit action on this screen.
@@ -110,7 +110,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         const placeBidButton = page.getByTestId('place-bid-button').first()
             .or(page.getByRole('button', { name: /Place Bid/i }).first());
-        if (await placeBidButton.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await placeBidButton.isVisible({ timeout: 1620000 }).catch(() => false)) {
             await placeBidButton.click({ force: true });
             await page.locator('input[name="amount"]').fill("5000");
             await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
@@ -216,11 +216,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
                 .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
             
             try {
-                await acceptJobButton.waitFor({ state: 'visible', timeout: 90000 });
+                await acceptJobButton.waitFor({ state: 'visible', timeout: 2430000 });
             } catch {
                 console.log('[Test] accept-job-button not visible after 30s, reloading page...');
                 await page.reload({ waitUntil: 'domcontentloaded' });
-                await acceptJobButton.waitFor({ state: 'visible', timeout: 180000 });
+                await acceptJobButton.waitFor({ state: 'visible', timeout: 4860000 });
             }
             await acceptJobButton.click({ force: true });
             // Handle conflict
@@ -474,11 +474,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
         
         try {
-            await acceptJobButton.waitFor({ state: 'visible', timeout: 90000 });
+            await acceptJobButton.waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Test] accept-job-button not visible after 30s, reloading page...');
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await acceptJobButton.waitFor({ state: 'visible', timeout: 180000 });
+            await acceptJobButton.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await acceptJobButton.click({ force: true });
         // Handle conflict

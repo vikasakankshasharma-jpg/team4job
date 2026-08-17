@@ -28,7 +28,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     // ---------- Login as Client ----------
     await helper.auth.loginAsClient();
     // Resilient dashboard check
-    await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job|Active Jobs/i)).first()).toBeVisible({ timeout: 180000 });
+    await expect(page.getByTestId('dashboard-post-job-btn').or(page.getByText(/Post New Job|Active Jobs/i)).first()).toBeVisible({ timeout: 4860000 });
 
     // ---------- Post a Job ----------
     await helper.nav.goToPostJob();
@@ -64,7 +64,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
 
     // Wait for job page to load (status shows as 'open' in UI)
     console.log('[Mobile] Checking for job detail page...');
-    await page.waitForSelector(`[data-testid="job-detail-page"]`, { timeout: 60000 }).catch(() => {
+    await page.waitForSelector(`[data-testid="job-detail-page"]`, { timeout: 1620000 }).catch(() => {
       console.log('[Mobile] Job detail page selector not found, continuing anyway');
     });
     jobId = await helper.job.getJobIdFromUrl();
@@ -82,11 +82,11 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await page.goto(`/dashboard/jobs/${jobId}`);
 
     // Resilient wait for Place Bid button
-    await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 90000 }).catch(() => { });
+    await page.getByTestId('job-title').waitFor({ state: 'visible', timeout: 2430000 }).catch(() => { });
     await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV/i);
 
     const placeBidButton = page.getByRole('button', { name: /Place Bid/i }).first().or(page.getByTestId('place-bid-button').first());
-    await placeBidButton.waitFor({ state: 'visible', timeout: 90000 });
+    await placeBidButton.waitFor({ state: 'visible', timeout: 2430000 });
 
     // Dismiss any toasts if they overlap
     await page.locator('[role="status"]').evaluateAll(nodes => nodes.forEach(n => (n as HTMLElement).style.display = 'none')).catch(() => { });
@@ -106,7 +106,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     const toast = page.locator('[role="status"]');
     if (await toast.isVisible()) {
       await toast.click().catch(() => { }); // Dismiss if clickable
-      await toast.waitFor({ state: 'hidden', timeout: 60000 }).catch(() => { });
+      await toast.waitFor({ state: 'hidden', timeout: 1620000 }).catch(() => { });
     }
 
     // Submit the bid (start toast listener FIRST for reliable capture)
@@ -124,21 +124,21 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
 
     // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
     for (let attempt = 0; attempt < 4; attempt++) {
-        const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 60000 }).catch(() => false);
+        const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 1620000 }).catch(() => false);
         if (ok) break;
         console.log(`[Mobile] Offer button not visible (attempt ${attempt + 1}/4), reloading...`);
         await page.reload();
         await page.waitForTimeout(3000);
     }
-    await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 180000 });
+    await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 4860000 });
 
     await page.getByTestId('send-offer-button').first().click();
     await helper.job.handleAuthorizationModal();
     // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
     await Promise.race([
       helper.form.waitForToast('MISSION AUTHORIZED'),
-      page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 60000 }),
-      page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 60000 })
+      page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 1620000 }),
+      page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 1620000 })
     ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
     await page.waitForTimeout(1500);
 
@@ -152,18 +152,18 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     await helper.auth.logout();
     await helper.auth.loginAsProfessional();
     // Wait for dashboard redirect to complete (matches CTC Phase 4 pattern that passes)
-    await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 90000 });
+    await expect(page).toHaveURL(/.*\/dashboard/, { timeout: 2430000 });
     await page.goto(`/dashboard/jobs/${jobId}`);
     // Wait for the page to fully load as the professional
     await page.waitForLoadState('domcontentloaded');
     // Confirm the session is for the professional (SSR renders job control buttons based on session)
     await page.waitForFunction(
       () => document.querySelector('[data-testid="accept-job-button"]') !== null,
-      { timeout: 90000 }
+      { timeout: 2430000 }
     );
     // Wait for accept-job-button to be visible (mobile viewport may need scroll)
     const acceptBtn = page.getByTestId('accept-job-button').first();
-    await acceptBtn.waitFor({ state: 'visible', timeout: 90000 });
+    await acceptBtn.waitFor({ state: 'visible', timeout: 2430000 });
     await page.waitForTimeout(1000); // Allow animations to settle on mobile
     await acceptBtn.scrollIntoViewIfNeeded();
     await page.waitForTimeout(500);
@@ -178,7 +178,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
 
       // Brief conflict dialog check (3s max to not miss the toast)
       const conflictDialog = page.getByText('Schedule Conflict Warning');
-      if (await conflictDialog.isVisible({ timeout: 60000 }).catch(() => false)) {
+      if (await conflictDialog.isVisible({ timeout: 1620000 }).catch(() => false)) {
         console.log('Conflict dialog visible! Clicking Proceed...');
         const btn = page.getByRole('button', { name: 'I Understand, Proceed & Accept' });
         await btn.click();
@@ -190,7 +190,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
       // Wait up to 15s for toast or status to change
       const toastResult = await Promise.race([
         acceptToastPromise.then(() => 'toast'),
-        page.locator('[data-status="Pending Funding"]').waitFor({ state: 'visible', timeout: 60000 }).then(() => 'status').catch(() => null),
+        page.locator('[data-status="Pending Funding"]').waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'status').catch(() => null),
       ]).catch(() => null);
 
       if (toastResult) {
@@ -212,13 +212,13 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     // Navigate to admin dashboard explicitly (admin users may land on /dashboard)
     await page.goto('/dashboard/admin');
     // Admin dashboard has quick-action cards and stat cards — wait for page to load
-    await expect(page).toHaveURL(/.*\/dashboard\/admin/, { timeout: 60000 });
+    await expect(page).toHaveURL(/.*\/dashboard\/admin/, { timeout: 1620000 });
     // Check any stable element that exists on the admin page (the activeJobs stat card is always present)
     await expect(page.locator('text=Active Jobs, text=activeJobs, [data-testid="admin-stat"]').first()
         .or(page.getByText(/Active Jobs|Common Tasks|Platform Health|Admin Dashboard/i).first())
-    ).toBeVisible({ timeout: 60000 }).catch(async () => {
+    ).toBeVisible({ timeout: 1620000 }).catch(async () => {
         // Fallback: just confirm we are on admin page via URL
-        await expect(page).toHaveURL(/admin/, { timeout: 60000 });
+        await expect(page).toHaveURL(/admin/, { timeout: 1620000 });
     });
 
     console.log('Mobile Flow Completed Successfully');

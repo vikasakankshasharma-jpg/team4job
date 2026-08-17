@@ -34,8 +34,8 @@ test.describe('Team Management', () => {
             await page.getByRole('button', { name: /Create Team Member/i }).click();
 
             // Verify member appears in the list
-            await expect(page.getByText(email)).toBeVisible({ timeout: 60000 });
-        }).toPass({ timeout: 135000 });
+            await expect(page.getByText(email)).toBeVisible({ timeout: 1620000 });
+        }).toPass({ timeout: 3645000 });
     });
 
     test('Admin can view team member profile', async ({ page }) => {

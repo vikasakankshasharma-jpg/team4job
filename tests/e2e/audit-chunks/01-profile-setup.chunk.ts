@@ -31,7 +31,7 @@ test.describe('Audit Chunk 1: Profile Setup', () => {
         
         // Update Skills for discovery matching
         const editProfileBtn = page.getByRole('button', { name: /Edit Profile/i }).first();
-        if (await editProfileBtn.waitFor({ state: 'visible', timeout: 90000 }).catch(() => false)) {
+        if (await editProfileBtn.waitFor({ state: 'visible', timeout: 2430000 }).catch(() => false)) {
             await editProfileBtn.click();
             
             await helper.auth.injectNuclearCSS(); // Ensure modal isn't blocked

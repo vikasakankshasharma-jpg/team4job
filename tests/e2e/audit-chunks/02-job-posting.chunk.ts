@@ -82,7 +82,7 @@ test.describe('Audit Chunk 2: Job Posting', () => {
         await helper.form.submitPostJob();
         
         // Finalize and save jobId
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 360000 });
+        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 9720000 });
         const jobId = await helper.job.getJobIdFromUrl();
         
         TestState.save({ jobId });

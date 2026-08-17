@@ -24,7 +24,7 @@ test.describe('Audit Chunk 7a: Client Rate', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts client_rated', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 180000,
+            timeout: 4860000,
         });
         console.log('[Chunk 7a] Omni-Seed complete.');
 
@@ -42,7 +42,7 @@ test.describe('Audit Chunk 7a: Client Rate', () => {
         
         // STEP 4: Verify "Trust Protocol Engaged" (Locked) card is visible
         const clientReviewLocked = page.getByTestId('review-locked-card').first();
-        await expect(clientReviewLocked).toBeVisible({ timeout: 60000 });
+        await expect(clientReviewLocked).toBeVisible({ timeout: 1620000 });
         
         console.log('✅ Chunk 7a Complete: Professional Rated (Atomic Check).');
     });

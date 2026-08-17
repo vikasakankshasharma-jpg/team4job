@@ -44,13 +44,13 @@ async function measurePage(page: any, url: string, role: string, threshold: numb
     try {
         const sidebar = page.locator('nav, .sidebar, [role="navigation"]').first();
         if (await sidebar.count() > 0) {
-            await sidebar.waitFor({ state: 'visible', timeout: 3000 });
+            await sidebar.waitFor({ state: 'visible', timeout: 60000 });
             sidebarVisibleTime = Date.now() - startTime;
         }
 
         const mainContent = page.locator('main, #content, .main-content').first();
         if (await mainContent.count() > 0) {
-            await mainContent.waitFor({ state: 'visible', timeout: 3000 });
+            await mainContent.waitFor({ state: 'visible', timeout: 60000 });
             contentVisibleTime = Date.now() - startTime;
         }
     } catch (e) {

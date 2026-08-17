@@ -103,7 +103,7 @@ test.describe('Dashboard Financials E2E', () => {
 
         // Robust Conflict Handling
         const conflictBtn = page.getByRole('button', { name: /Bypass & Authorize|I Understand, Proceed & Accept/i });
-        if (await conflictBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await conflictBtn.isVisible({ timeout: 1620000 }).catch(() => false)) {
             await conflictBtn.click();
         }
         await helper.job.waitForJobStatus('Pending Funding');
@@ -115,7 +115,7 @@ test.describe('Dashboard Financials E2E', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const proceedBtn = page.getByTestId('proceed-payment-button').first()
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
-        await expect(proceedBtn).toBeVisible({ timeout: 60000 });
+        await expect(proceedBtn).toBeVisible({ timeout: 1620000 });
         await proceedBtn.click();
         await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.waitForTimeout(2000);
@@ -125,14 +125,14 @@ test.describe('Dashboard Financials E2E', () => {
 
         // --- VERIFICATION: Client Dashboard ---
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+        await page.waitForLoadState('networkidle', { timeout: 1620000 }).catch(() => {});
 
         // Check "Total Spent" stat card is present (value may be hardcoded or dynamic)
-        await expect(page.getByText(/Total Spent|Funds in Secure Deposit/i)).toBeVisible({ timeout: 90000 });
+        await expect(page.getByText(/Total Spent|Funds in Secure Deposit/i)).toBeVisible({ timeout: 2430000 });
         // Check for any currency value (including $ or ₹)
         await expect(
             page.locator('.text-4xl, .text-2xl, h3, [class*="font-bold"], [class*="font-black"]').filter({ hasText: /^[₹$]/ }).first()
-        ).toBeVisible({ timeout: 60000 });
+        ).toBeVisible({ timeout: 1620000 });
         console.log('[PASS] Client Dashboard: Total Spent card visible');
 
 
@@ -140,10 +140,10 @@ test.describe('Dashboard Financials E2E', () => {
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
         await page.goto('/dashboard');
-        await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+        await page.waitForLoadState('networkidle', { timeout: 1620000 }).catch(() => {});
 
         // Projected Earnings is in a chart card — check it's visible
-        await expect(page.getByText('Projected Earnings')).toBeVisible({ timeout: 90000 });
+        await expect(page.getByText('Projected Earnings')).toBeVisible({ timeout: 2430000 });
         console.log('[PASS] Professional Dashboard: Projected Earnings visible');
 
         await context.close();

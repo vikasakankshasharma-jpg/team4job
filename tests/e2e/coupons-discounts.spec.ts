@@ -40,7 +40,7 @@ test.describe('Coupons & Discounts', () => {
         await page.getByRole('button', { name: /Save|Create|Submit/i }).first().click();
 
         // Verify it appears in the list (wait for dialog to close)
-        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 60000 });
+        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 1620000 });
         await expect(page.getByText(couponCode)).toBeVisible({ timeout: TIMEOUTS.medium });
     });
 

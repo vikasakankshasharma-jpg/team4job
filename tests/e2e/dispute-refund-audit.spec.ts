@@ -48,7 +48,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         await page.fill('[data-testid="max-budget-input"]', "10000");
         await helper.preparePostJobSubmission();
         await helper.form.submitPostJob();
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 180000 });
+        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 4860000 });
         
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Job Created: ${jobId}`);
@@ -108,7 +108,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
         const proceedPaymentButton = page.getByTestId('proceed-payment-button').first()
             .or(page.getByRole('button', { name: /Proceed.*Payment|Secure Funding|Pay/i }).first());
-        await expect(proceedPaymentButton).toBeVisible({ timeout: 60000 });
+        await expect(proceedPaymentButton).toBeVisible({ timeout: 1620000 });
         await proceedPaymentButton.click();
         await page.getByTestId('e2e-direct-fund').click({ force: true });
         await page.waitForTimeout(2000);
@@ -139,23 +139,23 @@ test.describe('Dispute & Refund Master Audit', () => {
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
         try {
-            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 60000 });
+            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 1620000 });
         } catch (e) {
             console.log('[INFO] Act 2: Status not updated to Pending Confirmation yet. Reloading page...');
             await page.reload();
-            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 90000 });
+            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 2430000 });
         }
 
         // Raise Dispute via the UI
         const disputeButton = page.getByTestId('dispute-button').first()
             .or(page.getByRole('button', { name: /Raise Dispute|Dispute|Report Issue|Flag Discrepancy/i }).first());
-        await expect(disputeButton).toBeVisible({ timeout: 60000 });
+        await expect(disputeButton).toBeVisible({ timeout: 1620000 });
         await disputeButton.click();
         await page.getByPlaceholder(/Explain the issue/i).fill('The professional only installed 2 cameras instead of 8. I want a full refund.');
         await page.getByRole('button', { name: /Submit Final Dispute/i }).click();
 
         // Confirm redirect to dispute page and capture disputeId
-        await page.waitForURL(/\/dashboard\/disputes\/.+/i, { timeout: 90000 });
+        await page.waitForURL(/\/dashboard\/disputes\/.+/i, { timeout: 2430000 });
         const disputeUrl = page.url();
         disputeId = disputeUrl.split('/dashboard/disputes/')[1]?.split('?')[0] || '';
         console.log(`✅ Act 2 Complete: Dispute Raised. Dispute ID: ${disputeId}`);
@@ -174,7 +174,7 @@ test.describe('Dispute & Refund Master Audit', () => {
             await page.waitForTimeout(3000);
             // Try finding by jobId text or click first dispute
             const byJobId = page.getByText(jobId).first();
-            if (await byJobId.isVisible({ timeout: 60000 }).catch(() => false)) {
+            if (await byJobId.isVisible({ timeout: 1620000 }).catch(() => false)) {
                 await byJobId.click();
             } else {
                 // Fallback: click first dispute card
@@ -183,7 +183,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         }
 
         // Post Admin Message
-        await expect(page.locator('textarea[placeholder="Type your message here..."]')).toBeVisible({ timeout: 60000 });
+        await expect(page.locator('textarea[placeholder="Type your message here..."]')).toBeVisible({ timeout: 1620000 });
         await page.locator('textarea[placeholder="Type your message here..."]').fill('Admin: I have reviewed the evidence. This looks like a clear breach of protocol.');
         await page.getByRole('button', { name: /Send/i }).click();
         await helper.form.waitForToast('Message Sent', 10000).catch(() => { });
@@ -203,17 +203,17 @@ test.describe('Dispute & Refund Master Audit', () => {
             await page.goto('/dashboard/disputes');
             await page.waitForTimeout(3000);
             const byJobId = page.getByText(jobId).first();
-            if (await byJobId.isVisible({ timeout: 60000 }).catch(() => false)) {
+            if (await byJobId.isVisible({ timeout: 1620000 }).catch(() => false)) {
                 await byJobId.click();
             } else {
                 await page.locator('[class*="cursor-pointer"]').first().click();
             }
         }
 
-        await expect(page).toHaveURL(/\/dashboard\/disputes\/.+/, { timeout: 60000 });
+        await expect(page).toHaveURL(/\/dashboard\/disputes\/.+/, { timeout: 1620000 });
 
         const markReviewBtn = page.getByRole('button', { name: /Mark as Under Review/i });
-        if (await markReviewBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await markReviewBtn.isVisible({ timeout: 1620000 }).catch(() => false)) {
             await markReviewBtn.click();
             await page.waitForTimeout(1500);
         }

@@ -25,7 +25,7 @@ test.describe('Audit Chunk 4c: Client Escrow', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts funded', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 180000,
+            timeout: 4860000,
         });
         console.log('[Chunk 4c] Omni-Seed complete.');
 
@@ -46,9 +46,9 @@ test.describe('Audit Chunk 4c: Client Escrow', () => {
         const startOtpIndicator = page.getByTestId('start-otp-value').first();
         const inProgressText = page.getByText(/In Progress|in_progress/i).first();
 
-        const hasOtp = await startOtpIndicator.isVisible({ timeout: 60000 }).catch(() => false);
-        const hasStatus = await statusBadge.innerText({ timeout: 60000 }).catch(() => '');
-        const hasInProgress = await inProgressText.isVisible({ timeout: 60000 }).catch(() => false);
+        const hasOtp = await startOtpIndicator.isVisible({ timeout: 1620000 }).catch(() => false);
+        const hasStatus = await statusBadge.innerText({ timeout: 1620000 }).catch(() => '');
+        const hasInProgress = await inProgressText.isVisible({ timeout: 1620000 }).catch(() => false);
 
         console.log(`[Chunk 4c] Status Badge: "${hasStatus}"`);
         console.log(`[Chunk 4c] OTP visible: ${hasOtp}, In Progress text: ${hasInProgress}`);

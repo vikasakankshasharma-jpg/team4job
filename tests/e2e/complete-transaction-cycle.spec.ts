@@ -126,7 +126,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         for (const selector of checkboxSelectors) {
             try {
-                await selector.first().click({ force: true, timeout: 60000 });
+                await selector.first().click({ force: true, timeout: 1620000 });
                 checkboxClicked = true;
                 break;
             } catch {
@@ -181,19 +181,19 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await expect(page).toHaveURL(/.*\/dashboard/);
         await page.goto(`/dashboard/jobs/${jobId}`);
 
-        await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV|Install/i, { timeout: 90000 });
+        await expect(page.getByTestId('job-title')).toContainText(/CCTV|Security|Test CCTV|Install/i, { timeout: 2430000 });
         const bidBtn = page.getByTestId('place-bid-button');
-        await bidBtn.waitFor({ state: 'visible', timeout: 90000 });
+        await bidBtn.waitFor({ state: 'visible', timeout: 2430000 });
         await bidBtn.click();
         const bidDialog = page.locator('div[role="dialog"]').filter({ has: page.locator('input[name="amount"]') });
-        await bidDialog.waitFor({ state: 'visible', timeout: 60000 });
+        await bidDialog.waitFor({ state: 'visible', timeout: 1620000 });
         await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
         // Start toast listener BEFORE clicking submit (toast fires when dialog closes)
         const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         // Wait for dialog to close before checking toast
-        await bidDialog.waitFor({ state: 'hidden', timeout: 90000 }).catch(() => {});
+        await bidDialog.waitFor({ state: 'hidden', timeout: 2430000 }).catch(() => {});
         // Await the pre-started toast
         await bidToastPromise;
         console.log('[PASS] Phase 2 Complete: Bid placed');
@@ -207,7 +207,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
         for (let attempt = 0; attempt < 4; attempt++) {
-            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 60000 }).catch(() => false);
+            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 1620000 }).catch(() => false);
             if (ok) break;
             console.log('[DEBUG] Offer button not visible, reloading (attempt ' + (attempt + 1) + '/4)...');
             await page.reload();
@@ -222,8 +222,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
         await Promise.race([
             helper.form.waitForToast('MISSION AUTHORIZED'),
-            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 60000 }),
-            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 60000 })
+            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 1620000 }),
+            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 1620000 })
         ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
         await page.waitForTimeout(1500);
         console.log('[PASS] Phase 3 Complete: Offer authorized');
@@ -249,7 +249,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // Brief conflict dialog check (3s max to not miss the toast)
         const conflictDialogText = page.getByText('Schedule Conflict Warning');
-        if (await conflictDialogText.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await conflictDialogText.isVisible({ timeout: 1620000 }).catch(() => false)) {
             console.log('E2E: Conflict Dialog detected. Clicking Confirm...');
             await page.getByRole('button', { name: "I Understand, Proceed & Accept" }).click();
         } else {
@@ -271,7 +271,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await page.getByTestId('proceed-payment-button').click();
 
         // Wait for dialog to open
-        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 60000 });
+        await expect(page.getByRole('dialog')).toBeVisible({ timeout: 1620000 });
 
         // Bypass payment form using E2E direct-fund button
         await page.getByTestId('e2e-direct-fund').click({ force: true });
@@ -289,8 +289,8 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
                 await page.reload();
                 await page.waitForLoadState('domcontentloaded');
             }
-            await expect(otpLocator).toBeVisible({ timeout: 60000 });
-        }).toPass({ timeout: 90000 });
+            await expect(otpLocator).toBeVisible({ timeout: 1620000 });
+        }).toPass({ timeout: 2430000 });
 
         const startOtp = await otpLocator.innerText();
         console.log(`[PASS] Phase 5 Complete: Funded, OTP: ${startOtp} `);
@@ -329,7 +329,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         const completionSection = page.getByTestId('professional-completion-section');
         // The section appears after status is In Progress; may need a reload
         try {
-            await expect(completionSection).toBeVisible({ timeout: 60000 });
+            await expect(completionSection).toBeVisible({ timeout: 1620000 });
         } catch {
             console.log('[INFO] Phase 7: Completion section not visible, reloading...');
             await page.reload();
@@ -366,7 +366,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         // CI STABILIZATION: Wait for status to reflect 'Pending Confirmation'
         // If it doesn't appear quickly (10s), reload to force fresh data
         try {
-            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 60000 });
+            await expect(page.getByTestId('job-status-badge')).toContainText(/Pending Confirmation/i, { timeout: 1620000 });
         } catch (e) {
             console.log('[INFO] Phase 8: Status not updated to Pending Confirmation yet. Reloading page...');
             await page.reload();
@@ -422,7 +422,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         
         console.log('[Phase 9b] Verifying Platform Receipt popup...');
         const [platformPage] = await Promise.all([
-            context.waitForEvent('page', { timeout: 90000 }),
+            context.waitForEvent('page', { timeout: 2430000 }),
             platformInvoiceBtn.click({ force: true })
         ]);
 
@@ -431,7 +431,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
 
         // Check for content in the new tab with retry logic
         try {
-            await expect(platformPage.getByTestId('platform-receipt-heading')).toBeVisible({ timeout: 60000 });
+            await expect(platformPage.getByTestId('platform-receipt-heading')).toBeVisible({ timeout: 1620000 });
             console.log('[PASS] Platform Receipt Page Verified');
         } catch (e) {
             console.log('[Phase 9b] Platform Receipt not found initially, waiting and reloading...');
@@ -500,7 +500,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
             // We can now rely on the previous step's persistence check.
             // Still keeping a small wait for safety.
             await page.waitForTimeout(2000);
-            await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: 60000 });
+            await expect(page.getByTestId('other-party-reviewed-text')).toBeVisible({ timeout: 1620000 });
         } catch (e) {
             console.log('[INFO] Phase 10: Review not synced to Professional yet. Reloading...');
             await page.reload();

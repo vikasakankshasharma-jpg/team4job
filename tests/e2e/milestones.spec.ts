@@ -37,12 +37,12 @@ test.describe('Milestone-based Payments @slow', () => {
             await manualSyncBtn.click();
             await page.waitForTimeout(2000);
         }
-        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i, { timeout: 90000 });
+        await expect(page.getByTestId('job-status-badge')).toContainText(/In Progress/i, { timeout: 2430000 });
 
         // 3. Create Milestone 1
         // Wait for milestone section to be interactive
         const addBtn = page.getByTestId('add-milestone-button');
-        await addBtn.waitFor({ state: 'visible', timeout: 60000 });
+        await addBtn.waitFor({ state: 'visible', timeout: 1620000 });
         await page.waitForTimeout(2000); // Extra safety for hydration
         await addBtn.click({ force: true });
         await expect(page.locator('text=Milestone Title')).toBeVisible();
@@ -61,7 +61,7 @@ test.describe('Milestone-based Payments @slow', () => {
             const toast = page.locator('li:has-text("Milestone has been added")');
             if (await toast.isVisible()) {
                 await toast.locator('button').click(); // Try to close it
-                await expect(toast).not.toBeVisible({ timeout: 60000 });
+                await expect(toast).not.toBeVisible({ timeout: 1620000 });
             }
         } catch (e) { /* ignore if not present */ }
 

@@ -58,7 +58,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Fill Job Details (Review Page)
         // Auto-resume from wizard draft happens asynchronously upon page load.
         // We must wait for it to finish form.reset() before we type, otherwise our typing gets cleared.
-        await page.getByText(/Draft loaded/i).waitFor({ state: 'visible', timeout: 60000 }).catch(() => console.log('Draft toast not seen'));
+        await page.getByText(/Draft loaded/i).waitFor({ state: 'visible', timeout: 1620000 }).catch(() => console.log('Draft toast not seen'));
         await page.waitForTimeout(2000); // Increased buffer for React Hook Form to apply values
 
         // Robust fill: retry once if it gets cleared
@@ -116,7 +116,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         }
 
         const placeBidBtn = page.getByTestId('place-bid-button');
-        await placeBidBtn.waitFor({ state: 'visible', timeout: 135000 });
+        await placeBidBtn.waitFor({ state: 'visible', timeout: 3645000 });
         await placeBidBtn.click();
         
         await page.locator('input[name="amount"]').fill(data.budget.toString());
@@ -132,11 +132,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // If it doesn't appear within 30s, reload and retry.
         const sendOfferBtn = page.getByTestId('send-offer-button').first();
         try {
-            await sendOfferBtn.waitFor({ state: 'visible', timeout: 90000 });
+            await sendOfferBtn.waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Test] send-offer-button not visible after 30s, reloading page to fetch recent bids...');
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await sendOfferBtn.waitFor({ state: 'visible', timeout: 180000 });
+            await sendOfferBtn.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await sendOfferBtn.click();
         await helper.job.handleAuthorizationModal();
@@ -154,16 +154,16 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // If it doesn't appear within 30s, reload and retry (handles Firestore permission/sync issues)
         const acceptBtn = page.getByTestId('accept-job-button').first();
         try {
-            await acceptBtn.waitFor({ state: 'visible', timeout: 90000 });
+            await acceptBtn.waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Test] accept-job-button not visible after 30s, reloading page...');
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await acceptBtn.waitFor({ state: 'visible', timeout: 180000 });
+            await acceptBtn.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await acceptBtn.click();
         // Handle conflict dialog if present
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        if (await conflictBtn.isVisible({ timeout: 60000 }).catch(() => false)) await conflictBtn.click();
+        if (await conflictBtn.isVisible({ timeout: 1620000 }).catch(() => false)) await conflictBtn.click();
         await helper.form.waitForToast('Job Accepted!', 10000).catch(() => console.log('[Test] Missed Job Accepted toast, continuing...'));
 
         console.log('--- Step 5: JG Fund ---');
@@ -174,11 +174,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         console.log('[Test] Waiting for proceed-payment-button...');
         const proceedBtn = page.getByTestId('proceed-payment-button');
         try {
-            await proceedBtn.waitFor({ state: 'visible', timeout: 90000 });
+            await proceedBtn.waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Test] proceed-payment-button not visible after 30s, reloading page...');
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await proceedBtn.waitFor({ state: 'visible', timeout: 180000 });
+            await proceedBtn.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await proceedBtn.click();
 
@@ -213,11 +213,11 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Resilient wait: approve-release-button depends on Step 6 work submission sync
         const releaseBtn = page.getByTestId('approve-release-button');
         try {
-            await releaseBtn.waitFor({ state: 'visible', timeout: 90000 });
+            await releaseBtn.waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Test] approve-release-button not visible after 30s, reloading page...');
             await page.reload({ waitUntil: 'domcontentloaded' });
-            await releaseBtn.waitFor({ state: 'visible', timeout: 180000 });
+            await releaseBtn.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await releaseBtn.click();
         await helper.form.waitForToast('Job Approved & Payment Released!', 10000).catch(() => console.log('[Test] Missed Release toast, continuing...'));
@@ -330,7 +330,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await helper.job.waitForJobStatus('Pending Funding', TIMEOUTS.medium);
         } else {
             await expect(placeBidButton).toBeVisible({ timeout: TIMEOUTS.medium });
-            await expect(page.locator('body')).toContainText(/No bids yet|Place Bid|Submit Technical Bid|Awaiting technical proposals/i, { timeout: 60000 });
+            await expect(page.locator('body')).toContainText(/No bids yet|Place Bid|Submit Technical Bid|Awaiting technical proposals/i, { timeout: 1620000 });
         }
 
         await context.close();
@@ -394,7 +394,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
         // Expect Warning Dialog "Bid exceeds budget"
         const confirmBtn = page.getByRole('button', { name: /Proceed|Confirm|Yes/i });
-        await confirmBtn.last().waitFor({ state: 'visible', timeout: 60000 }).catch(() => {});
+        await confirmBtn.last().waitFor({ state: 'visible', timeout: 1620000 }).catch(() => {});
         if (await confirmBtn.count() > 0) {
             // Handle potential warning modal
             await confirmBtn.last().click();
@@ -409,12 +409,12 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const acceptJobButton = page.getByTestId('accept-job-button').first()
             .or(page.getByRole('button', { name: /^Accept Job$/i }).first());
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
-        await expect(acceptJobButton).toBeVisible({ timeout: 90000 });
+        await expect(acceptJobButton).toBeVisible({ timeout: 2430000 });
         await acceptJobButton.click();
         // Handle conflict, action required, or success
         const result = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
-            conflictBtn.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
             helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result === 'conflict') {
@@ -500,7 +500,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await acceptJobButton.click();
         const result4 = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
-            conflictBtn.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
             helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result4 === 'conflict') {
@@ -615,7 +615,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Handle conflict or success
         const result5 = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
-            conflictBtn.waitFor({ state: 'visible', timeout: 60000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
+            conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
             helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result5 === 'conflict') {

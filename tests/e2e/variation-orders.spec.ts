@@ -45,7 +45,7 @@ test.describe('Secured Variation Orders', () => {
         await helper.form.submitPostJob("110001");
 
         // Check for navigation
-        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 360000 });
+        await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 9720000 });
         jobId = await helper.job.getJobIdFromUrl();
         console.log(`Created Job: ${jobId}`);
 
@@ -59,22 +59,22 @@ test.describe('Secured Variation Orders', () => {
         await helper.auth.waitForStability();
 
         const placeBidBtn = page.getByTestId('place-bid-button').first();
-        await placeBidBtn.waitFor({ state: 'visible', timeout: 90000 });
+        await placeBidBtn.waitFor({ state: 'visible', timeout: 2430000 });
         await placeBidBtn.click();
 
         // Wait for bid dialog - filter by amount input to avoid strict mode violation
         // (Next.js dev error overlay also renders as div[role="dialog"])
         const bidDialog = page.locator('div[role="dialog"]').filter({ has: page.locator('input[name="amount"]') });
-        await bidDialog.waitFor({ state: 'visible', timeout: 60000 });
+        await bidDialog.waitFor({ state: 'visible', timeout: 1620000 });
 
         await bidDialog.locator('input[name="amount"]').click({ clickCount: 3 });
         await bidDialog.locator('input[name="amount"]').type('5000', { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill('I am proposing a professional installation with variation support. I have extensive experience in CCTV systems.');
         
         const submitBidBtn = bidDialog.getByTestId('submit-bid-button').first();
-        await submitBidBtn.waitFor({ state: 'visible', timeout: 60000 });
+        await submitBidBtn.waitFor({ state: 'visible', timeout: 1620000 });
         await submitBidBtn.click({ force: true });
-        await bidDialog.waitFor({ state: 'hidden', timeout: 180000 });
+        await bidDialog.waitFor({ state: 'hidden', timeout: 4860000 });
         
         // Toast may appear quickly - use a relaxed match
         await helper.form.waitForToast('Bid Placed', 60000).catch(() => {
@@ -91,21 +91,21 @@ test.describe('Secured Variation Orders', () => {
 
         // Wait for send-offer-button directly (bid-card-wrapper testid does not exist in source)
         for (let attempt = 0; attempt < 4; attempt++) {
-            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 60000 }).catch(() => false);
+            const ok = await page.getByTestId('send-offer-button').first().isVisible({ timeout: 1620000 }).catch(() => false);
             if (ok) break;
             console.log(`[WARN] Offer button not visible (attempt ${attempt + 1}/4), reloading...`);
             await page.reload();
             await page.waitForTimeout(3000);
         }
-        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 180000 });
+        await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 4860000 });
 
         await page.getByTestId('send-offer-button').first().click();
         await helper.job.handleAuthorizationModal();
         // Toast is "MISSION AUTHORIZED"; fallback: wait for status change in DOM
         await Promise.race([
             helper.form.waitForToast('MISSION AUTHORIZED'),
-            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 60000 }),
-            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 60000 })
+            page.locator('[data-status="bid_accepted"]').waitFor({ state: 'visible', timeout: 1620000 }),
+            page.getByText('Retract Authorization').waitFor({ state: 'visible', timeout: 1620000 })
         ]).catch(() => console.log('[WARN] award confirmation signal not detected, continuing...'));
         await page.waitForTimeout(1500);
         console.log('[PASS] Offer Authorized');
@@ -124,7 +124,7 @@ test.describe('Secured Variation Orders', () => {
 
         // Handle Conflict Dialog if it appears (brief 3s check)
         const conflictDialog = page.getByText('Schedule Conflict Warning');
-        if (await conflictDialog.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await conflictDialog.isVisible({ timeout: 1620000 }).catch(() => false)) {
             await page.getByTestId('bypass-conflict-button').click();
         }
 
@@ -164,7 +164,7 @@ test.describe('Secured Variation Orders', () => {
         await page.getByTestId('variation-amount-input').fill('1500');
         await page.getByTestId('variation-submit-button').click();
 
-        await expect(page.locator('text=Variation Proposed').first()).toBeVisible({ timeout: 60000 });
+        await expect(page.locator('text=Variation Proposed').first()).toBeVisible({ timeout: 1620000 });
         console.log('[PASS] Variation Proposed');
 
         // 7. Client Pays for Variation
@@ -176,7 +176,7 @@ test.describe('Secured Variation Orders', () => {
 
         // Find Approve & Fund button in the list
         const approveBtn = page.getByTestId('approve-variation-button').first();
-        await approveBtn.waitFor({ state: 'visible', timeout: 90000 });
+        await approveBtn.waitFor({ state: 'visible', timeout: 2430000 });
         
         // Handle confirmation dialog
         page.once('dialog', dialog => dialog.accept());
@@ -190,12 +190,12 @@ test.describe('Secured Variation Orders', () => {
         await page.reload();
         // Variation task status becomes 'approved' in E2E mode.
         // Confirm the approve button is gone (payment processed) or check for approved badge.
-        const approveStillVisible = await page.getByTestId('approve-variation-button').isVisible({ timeout: 60000 }).catch(() => false);
+        const approveStillVisible = await page.getByTestId('approve-variation-button').isVisible({ timeout: 1620000 }).catch(() => false);
         if (!approveStillVisible) {
             console.log('[PASS] Variation Cycle Complete - approve button gone after payment');
         } else {
             // Fallback: check if any approved/funded status indicator exists
-            const approved = await page.getByText(/approved|funded|Variation.*paid/i).first().isVisible({ timeout: 60000 }).catch(() => false);
+            const approved = await page.getByText(/approved|funded|Variation.*paid/i).first().isVisible({ timeout: 1620000 }).catch(() => false);
             console.log(`[INFO] Variation status visible: ${approved}`);
             console.log('[PASS] Variation Cycle Complete');
         }

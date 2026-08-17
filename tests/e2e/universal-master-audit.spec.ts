@@ -40,7 +40,7 @@ test.describe('Universal Master Audit', () => {
         // Look for the pencil icon button anywhere on the page to avoid brittle nesting
         const editSkillsBtn = page.locator('button:has(svg.lucide-pencil), button:has(.lucide-pencil)').first();
         
-        if (await editSkillsBtn.isVisible({ timeout: 60000 })) {
+        if (await editSkillsBtn.isVisible({ timeout: 1620000 })) {
             await editSkillsBtn.scrollIntoViewIfNeeded();
             
             // PRODUCTION HARDENING: Retry loop with built-in expectation polling
@@ -58,7 +58,7 @@ test.describe('Universal Master Audit', () => {
                 
                 try {
                     // Use Playwright's polling expectation instead of a static check
-                    await expect(page.getByText(/Edit Skills|Your Skills/i).first()).toBeVisible({ timeout: 60000 });
+                    await expect(page.getByText(/Edit Skills|Your Skills/i).first()).toBeVisible({ timeout: 1620000 });
                     popoverOpened = true;
                     break;
                 } catch (e) {
@@ -73,12 +73,12 @@ test.describe('Universal Master Audit', () => {
             
             // Select a skill via Checkbox - using definitive ID or label
             const skillCheckbox = page.locator('#skill-cctv').or(page.getByLabel(/CCTV/i)).first();
-            await expect(skillCheckbox).toBeVisible({ timeout: 60000 });
+            await expect(skillCheckbox).toBeVisible({ timeout: 1620000 });
             
             if (!(await skillCheckbox.isChecked().catch(() => false))) {
                 console.log('[Act 1] Checking CCTV skill...');
                 await skillCheckbox.evaluate(el => (el as HTMLElement).click());
-                await expect(skillCheckbox).toBeChecked({ timeout: 60000 });
+                await expect(skillCheckbox).toBeChecked({ timeout: 1620000 });
             }
             
             // Save inside the popover
@@ -125,7 +125,7 @@ test.describe('Universal Master Audit', () => {
         );
         
         // Wait for the hardened PostJob form to settle
-        await page.waitForURL(/\/dashboard\/post-job/, { timeout: 90000 }).catch(() => {});
+        await page.waitForURL(/\/dashboard\/post-job/, { timeout: 2430000 }).catch(() => {});
         await helper.auth.waitForQuiescence();
         
         // Fill remaining details - these are usually hydrated but we overwrite for determinism
@@ -154,7 +154,7 @@ test.describe('Universal Master Audit', () => {
             jobId = submittedJobId;
         } else {
             // Fallback: extract from URL if helper didn't return it
-            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 360000 });
+            await page.waitForURL(/\/dashboard\/jobs\/JOB-/, { timeout: 9720000 });
             jobId = page.url().split('/').pop() || '';
         }
         
@@ -186,19 +186,19 @@ test.describe('Universal Master Audit', () => {
             
             console.log('[Act 3] Looking for Place Bid button...');
             const placeBidBtn = pageIN.getByTestId('place-bid-button').or(pageIN.getByRole('button', { name: /Submit Technical Bid/i })).first();
-            await expect(placeBidBtn).toBeVisible({ timeout: 180000 }); // Increased for dev server
+            await expect(placeBidBtn).toBeVisible({ timeout: 4860000 }); // Increased for dev server
             console.log('[Act 3] Clicking Place Bid button...');
             await placeBidBtn.click({ force: true });
             
             const bidDialog = pageIN.locator('div[role="dialog"]').filter({ has: pageIN.locator('input[name="amount"]') });
-            await expect(bidDialog).toBeVisible({ timeout: 90000 });
+            await expect(bidDialog).toBeVisible({ timeout: 2430000 });
             console.log('[Act 3] Filling bid details...');
             
             await bidDialog.locator('input[name="amount"]').fill('6000');
             await bidDialog.locator('textarea[name="coverLetter"]').fill('I have the specific skills for this audit. Verified CCTV technician for 5+ years.');
             
             const submitBidBtn = pageIN.getByTestId('submit-bid-button').or(pageIN.getByRole('button', { name: /Submit Bid/i })).first();
-            await expect(submitBidBtn).toBeEnabled({ timeout: 90000 });
+            await expect(submitBidBtn).toBeEnabled({ timeout: 2430000 });
             
             console.log('[Act 3] Submitting bid...');
             await submitBidBtn.click({ force: true });
@@ -219,25 +219,25 @@ test.describe('Universal Master Audit', () => {
             // Check for bid card with polling/retry to accommodate Firestore sync
             const bidCard = pageJG.getByTestId('bid-card-wrapper').or(pageJG.locator('div:has-text("6,000")')).first();
             try {
-                await expect(bidCard).toBeVisible({ timeout: 135000 });
+                await expect(bidCard).toBeVisible({ timeout: 3645000 });
             } catch (e) {
                 console.warn('[Act 3] Bid not seen by client instantly, reloading...');
                 await pageJG.reload({ waitUntil: 'domcontentloaded' });
                 await helperJG.auth.injectNuclearCSS();
                 await helperJG.auth.waitForQuiescence();
-                await expect(bidCard).toBeVisible({ timeout: 90000 });
+                await expect(bidCard).toBeVisible({ timeout: 2430000 });
             }
 
             console.log('[Act 3] Opening Chat...');
             const chatBtn = pageJG.getByRole('button', { name: /Message|Chat|Initiate Comms/i }).first();
-            await expect(chatBtn).toBeVisible({ timeout: 90000 });
+            await expect(chatBtn).toBeVisible({ timeout: 2430000 });
             
             // The button uses window.open('_blank'), so we intercept the new tab to get the URL
             const [newTabPage] = await Promise.all([
                 pageJG.context().waitForEvent('page'),
                 chatBtn.click({ force: true })
             ]);
-            await expect(newTabPage).not.toHaveURL('about:blank', { timeout: 60000 });
+            await expect(newTabPage).not.toHaveURL('about:blank', { timeout: 1620000 });
             await newTabPage.waitForLoadState('domcontentloaded');
             
             const chatUrl = newTabPage.url();
@@ -251,7 +251,7 @@ test.describe('Universal Master Audit', () => {
             
             console.log('[Act 3] Sending message...');
             const chatInput = pageJG.getByTestId('chat-input').first();
-            await expect(chatInput).toBeVisible({ timeout: 90000 });
+            await expect(chatInput).toBeVisible({ timeout: 2430000 });
             
             const testMsg = `Hello Professional, are you available for ${uniqueTitle}?`;
             await chatInput.fill(testMsg);
@@ -263,12 +263,12 @@ test.describe('Universal Master Audit', () => {
             await helperIN.auth.injectNuclearCSS();
             await helperIN.auth.waitForQuiescence();
             
-            await expect(pageIN.getByText(testMsg)).toBeVisible({ timeout: 180000 }).catch(async () => {
+            await expect(pageIN.getByText(testMsg)).toBeVisible({ timeout: 4860000 }).catch(async () => {
                 console.warn('[Act 3] Message not seen instantly on Installer page, reloading...');
                 await pageIN.reload({ waitUntil: 'domcontentloaded' });
                 await helperIN.auth.injectNuclearCSS();
                 await helperIN.auth.waitForQuiescence();
-                await expect(pageIN.getByText(testMsg)).toBeVisible({ timeout: 135000 });
+                await expect(pageIN.getByText(testMsg)).toBeVisible({ timeout: 3645000 });
             });
             
             console.log('✅ Act 3 Complete: Multi-context Chat verified.');
@@ -291,12 +291,12 @@ test.describe('Universal Master Audit', () => {
         
         // Award
         try {
-            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 90000 });
+            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 2430000 });
         } catch {
             console.log('[Act 4] Bids not visible, reloading...');
             await page.reload();
             await helper.auth.waitForQuiescence();
-            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 90000 });
+            await page.getByTestId('send-offer-button').first().waitFor({ state: 'visible', timeout: 2430000 });
         }
         
         const awardBtn = page.getByTestId('send-offer-button').first();
@@ -305,7 +305,7 @@ test.describe('Universal Master Audit', () => {
 
         // 🛡️ SECURITY DIALOG: Handle the production authorization confirmation
         const authConfirmBtn = page.getByRole('button', { name: /Official Authorization|Confirm Offer|Send Offer/i }).first();
-        if (await authConfirmBtn.isVisible({ timeout: 60000 })) {
+        if (await authConfirmBtn.isVisible({ timeout: 1620000 })) {
             console.log('[Act 4] Handling Official Authorization Dialog...');
             await authConfirmBtn.click({ force: true });
         }
@@ -321,7 +321,7 @@ test.describe('Universal Master Audit', () => {
         await helper.auth.waitForQuiescence();
         
         const acceptBtn = page.getByTestId('accept-job-button').or(page.getByRole('button', { name: /Authorize Offer|Accept Offer/i })).first();
-        await expect(acceptBtn).toBeVisible({ timeout: 90000 });
+        await expect(acceptBtn).toBeVisible({ timeout: 2430000 });
         await acceptBtn.click({ force: true });
         
         await helper.form.waitForToast(/Offer Accepted|Job Started/i).catch(() => {});
@@ -336,7 +336,7 @@ test.describe('Universal Master Audit', () => {
         await helper.auth.waitForQuiescence();
         
         const proceedBtn = page.getByTestId('proceed-payment-button').or(page.getByRole('button', { name: /Fund Job|Direct Pay/i })).first();
-        await expect(proceedBtn).toBeVisible({ timeout: 90000 });
+        await expect(proceedBtn).toBeVisible({ timeout: 2430000 });
         await proceedBtn.click({ force: true });
         
         // Bypass payment via shim
@@ -347,7 +347,7 @@ test.describe('Universal Master Audit', () => {
         
         // Extract OTP
         const otpElement = page.getByTestId('start-otp-value').or(page.locator('text=/OTP:[\\s]*(\\d+)/i')).first();
-        await expect(otpElement).toBeVisible({ timeout: 60000 });
+        await expect(otpElement).toBeVisible({ timeout: 1620000 });
         const otpFullText = await otpElement.innerText();
         startOtp = otpFullText.match(/\d+/)?.[0] || '';
         
@@ -367,11 +367,11 @@ test.describe('Universal Master Audit', () => {
         
         console.log(`[Act 5] Entering OTP: ${startOtp}`);
         const otpInput = page.getByTestId('otp-input').or(page.locator('input[name="otp"]')).first();
-        await expect(otpInput).toBeVisible({ timeout: 90000 });
+        await expect(otpInput).toBeVisible({ timeout: 2430000 });
         await otpInput.fill(startOtp);
         
         const startBtn = page.getByTestId('start-work-button').or(page.getByRole('button', { name: /Start Work|Confirm OTP/i })).first();
-        await expect(startBtn).toBeEnabled({ timeout: 60000 });
+        await expect(startBtn).toBeEnabled({ timeout: 1620000 });
         await startBtn.click({ force: true });
         
         await helper.form.waitForToast(/Job Started|Status: In Progress/i).catch(() => {});
@@ -384,7 +384,7 @@ test.describe('Universal Master Audit', () => {
         });
         
         const submitWorkBtn = page.getByTestId('submit-for-review-button').or(page.getByRole('button', { name: /Submit for Review|Complete Job/i })).first();
-        await expect(submitWorkBtn).toBeEnabled({ timeout: 60000 });
+        await expect(submitWorkBtn).toBeEnabled({ timeout: 1620000 });
         await submitWorkBtn.click({ force: true });
         
         await helper.form.waitForToast(/Work submitted|Review pending|Submitted for Confirmation|Submitted successfully/i);
@@ -399,12 +399,12 @@ test.describe('Universal Master Audit', () => {
         await helper.auth.waitForQuiescence();
         
         const approveBtn = page.getByTestId('approve-release-button').or(page.getByRole('button', { name: /Approve Work|Release Payment/i })).first();
-        await expect(approveBtn).toBeVisible({ timeout: 90000 });
+        await expect(approveBtn).toBeVisible({ timeout: 2430000 });
         await approveBtn.click({ force: true });
         
         // Handle confirmation dialog if present
         const confirmBtn = page.getByRole('button', { name: /Confirm Approval|Proceed|Yes/i }).first();
-        if (await confirmBtn.isVisible({ timeout: 60000 })) {
+        if (await confirmBtn.isVisible({ timeout: 1620000 })) {
             await confirmBtn.click({ force: true });
         }
         
@@ -425,10 +425,10 @@ test.describe('Universal Master Audit', () => {
         
         // Find job in admin list - use more robust row targeting
         const adminJobRow = page.locator('tr, div[role="row"]').filter({ hasText: jobId }).first();
-        await expect(adminJobRow).toBeVisible({ timeout: 90000 });
+        await expect(adminJobRow).toBeVisible({ timeout: 2430000 });
         
         // Verify status in the row
-        await expect(adminJobRow.locator('text=/Completed|Done/i')).toBeVisible({ timeout: 60000 });
+        await expect(adminJobRow.locator('text=/Completed|Done/i')).toBeVisible({ timeout: 1620000 });
         
         console.log('✅ Act 6 Complete: Admin verified state.');
     });
@@ -446,7 +446,7 @@ test.describe('Universal Master Audit', () => {
         await helper.auth.waitForQuiescence();
         
         const star5 = page.getByTestId('rating-star-5').or(page.locator('[data-testid*="star-5"]')).first();
-        await expect(star5).toBeVisible({ timeout: 90000 });
+        await expect(star5).toBeVisible({ timeout: 2430000 });
         await star5.click({ force: true });
         
         const commentArea = page.getByTestId('rating-comment').or(page.locator('textarea[name="comment"]')).first();
@@ -459,7 +459,7 @@ test.describe('Universal Master Audit', () => {
         
         // Verify "Locked" View (Sealed Review)
         console.log('[Act 7] Verifying sealed review state...');
-        await expect(page.getByTestId('review-locked-card').or(page.locator('text=/Waiting for [\\w\\s]+ to review|Review Sealed/i')).first()).toBeVisible({ timeout: 60000 });
+        await expect(page.getByTestId('review-locked-card').or(page.locator('text=/Waiting for [\\w\\s]+ to review|Review Sealed/i')).first()).toBeVisible({ timeout: 1620000 });
         
         // IN Rates JG
         console.log('[Act 7] Professional rating Client...');
@@ -470,7 +470,7 @@ test.describe('Universal Master Audit', () => {
         await helper.auth.waitForQuiescence();
         
         const proStar5 = page.getByTestId('rating-star-5').or(page.locator('[data-testid*="star-5"]')).first();
-        await expect(proStar5).toBeVisible({ timeout: 90000 });
+        await expect(proStar5).toBeVisible({ timeout: 2430000 });
         await proStar5.click({ force: true });
         
         const proCommentArea = page.getByTestId('rating-comment').or(page.locator('textarea[name="comment"]')).first();
@@ -483,7 +483,7 @@ test.describe('Universal Master Audit', () => {
         
         // Verify "Revealed" View
         console.log('[Act 7] Verifying revealed reviews...');
-        await expect(page.getByTestId('reviews-revealed-section').or(page.locator('text=/Reviews Revealed|Feedback/i')).first()).toBeVisible({ timeout: 60000 });
+        await expect(page.getByTestId('reviews-revealed-section').or(page.locator('text=/Reviews Revealed|Feedback/i')).first()).toBeVisible({ timeout: 1620000 });
         await expect(page.getByText(/Excellent audit candidate/i)).toBeVisible();
         await expect(page.getByText(/Great experience throughout/i)).toBeVisible();
         

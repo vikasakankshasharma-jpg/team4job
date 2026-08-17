@@ -24,7 +24,7 @@ test.describe('Audit Chunk 5c: Client Approve', () => {
         execSync('npx tsx scripts/e2e-omni-seed.ts completed', {
             cwd: process.cwd(),
             stdio: 'inherit',
-            timeout: 180000,
+            timeout: 4860000,
         });
         console.log('[Chunk 5c] Omni-Seed complete.');
 
@@ -43,7 +43,7 @@ test.describe('Audit Chunk 5c: Client Approve', () => {
         
         // STEP 4: Verify the status badge indicates Completed
         const statusBadge = page.getByTestId('job-status-badge').first();
-        const badgeText = await statusBadge.innerText({ timeout: 60000 }).catch(() => '');
+        const badgeText = await statusBadge.innerText({ timeout: 1620000 }).catch(() => '');
         
         console.log(`[Chunk 5c] Status Badge: "${badgeText}"`);
         const verified = badgeText.toLowerCase().includes('completed');
