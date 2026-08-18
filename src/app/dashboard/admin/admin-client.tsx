@@ -50,6 +50,8 @@ export default function AdminClient() {
     const t = useTranslations('admin');
     const quickActions: QuickAction[] = [
         { label: t('viewUsers'), icon: Users, href: '/dashboard/users', description: t('manageUsers'), variant: 'outline' },
+        { label: 'Pending Payouts', icon: Activity, href: '/dashboard/admin/payouts', description: 'Process manual payouts', variant: 'outline' },
+        { label: 'KYC Approvals', icon: CheckCircle2, href: '/dashboard/admin/approvals', description: 'Review Aadhar / Police verification', variant: 'outline' },
         { label: t('allJobsLabel'), icon: Briefcase, href: '/dashboard/all-jobs', description: t('monitorJobs'), variant: 'outline' },
         { label: t('disputesLabel'), icon: ShieldAlert, href: '/dashboard/disputes', description: t('resolveDisputes'), variant: 'outline' },
         { label: t('reportsLabel'), icon: FileText, href: '/dashboard/reports', description: t('viewAnalytics'), variant: 'outline' },

@@ -97,43 +97,53 @@ export async function GET(req: NextRequest) {
             const transferId = `AUTO_SETTLE_${transaction.id}`;
 
             try {
-                // Trigger payout
-                await axios.post(
-                    `${CASHFREE_API_BASE}/payouts/standard`,
-                    {
-                        beneId: beneficiaryId,
-                        amount: transaction.payoutToProfessional.toFixed(2),
-                        transferId: transferId,
-                    },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
+                // Check if we are in manual payout mode
+                const isManualMode = process.env.NEXT_PUBLIC_PAYOUT_MODE === 'MANUAL';
 
-                // Update transaction & job
-                await txnDoc.ref.update({
-                    payoutTransferId: transferId,
-                    status: 'released',
-                    releasedAt: now,
-                });
+                if (!isManualMode) {
+                    // AUTOMATED MODE: Trigger Cashfree payout
+                    await axios.post(
+                        `${CASHFREE_API_BASE}/payouts/standard`,
+                        {
+                            beneId: beneficiaryId,
+                            amount: transaction.payoutToProfessional.toFixed(2),
+                            transferId: transferId,
+                        },
+                        {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+
+                    // Update transaction & job to fully released
+                    await txnDoc.ref.update({
+                        payoutTransferId: transferId,
+                        status: 'paid_out',
+                        releasedAt: now,
+                    });
+                } else {
+                    // MANUAL MODE: Just mark it as pending payout for the admin dashboard
+                    await txnDoc.ref.update({
+                        status: 'payout_pending',
+                        releasedAt: now,
+                    });
+                }
 
                 await jobDoc.ref.update({
                     status: 'Completed',
+                    financialStatus: isManualMode ? 'payout_pending' : 'paid_out',
                     completionTimestamp: now,
                     adminNotes:
                         (job.adminNotes || '') +
-                        '\n:System] Auto-settled after 5 days of inactivity.',
+                        `\n[System] Auto-settled after 5 days of inactivity. Mode: ${isManualMode ? 'MANUAL' : 'AUTOMATED'}`,
                 });
 
-                results.push({ jobId: jobDoc.id, status: 'Success', transferId });
-
+                results.push({ jobId: jobDoc.id, status: 'Success', transferId, mode: isManualMode ? 'MANUAL' : 'AUTOMATED' });
 
             } catch (err: any) {
                 results.push({ jobId: jobDoc.id, status: 'Failed', error: err.message });
-
             }
         }
 

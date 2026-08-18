@@ -119,17 +119,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid resolution type' }, { status: 400 });
     }
 
-    // Process Cashfree Transfers if amounts > 0
-    let refundTransferId = null;
-    let payoutTransferId = null;
-    const token = await getCashfreeBearerToken();
+    const isManualMode = process.env.NEXT_PUBLIC_PAYOUT_MODE === 'MANUAL';
+    let token = '';
+    if (!isManualMode) {
+      token = await getCashfreeBearerToken();
+    }
 
     // 5. Process Payout (if any)
     if (professionalPayoutAmount > 0 && transaction.payeeId) {
       const proUserSnap = await db.collection('users').doc(transaction.payeeId).get();
       const proUser = proUserSnap.data() as User;
       
-      if (!proUser?.payouts?.beneficiaryId) {
+      if (!proUser?.payouts?.beneficiaryId && !isManualMode) {
         return NextResponse.json({ error: 'Professional does not have a beneficiary account set up' }, { status: 400 });
       }
 
@@ -145,12 +146,15 @@ export async function POST(req: NextRequest) {
       const commission = transaction.commission || (professionalPayoutAmount * commissionRate);
       const finalTransfer = professionalPayoutAmount - commission;
 
-      payoutTransferId = `PAYOUT_${transaction.id}_${Date.now()}`;
-      await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-        beneId: proUser.payouts.beneficiaryId,
-        amount: finalTransfer.toFixed(2),
-        transferId: payoutTransferId,
-      }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+      payoutTransferId = isManualMode ? `MANUAL_PAYOUT_${transaction.id}_${Date.now()}` : `PAYOUT_${transaction.id}_${Date.now()}`;
+      
+      if (!isManualMode) {
+        await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
+          beneId: proUser.payouts.beneficiaryId,
+          amount: finalTransfer.toFixed(2),
+          transferId: payoutTransferId,
+        }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+      }
     }
 
     // 6. Process Refund (if any)
@@ -158,21 +162,28 @@ export async function POST(req: NextRequest) {
       const clientUserSnap = await db.collection('users').doc(transaction.payerId).get();
       const clientUser = clientUserSnap.data() as User;
       
-      if (clientUser?.payouts?.beneficiaryId) {
-        refundTransferId = `REFUND_${transaction.id}_${Date.now()}`;
-        await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-          beneId: clientUser.payouts.beneficiaryId,
-          amount: clientRefundAmount.toFixed(2),
-          transferId: refundTransferId,
-        }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+      if (clientUser?.payouts?.beneficiaryId || isManualMode) {
+        refundTransferId = isManualMode ? `MANUAL_REFUND_${transaction.id}_${Date.now()}` : `REFUND_${transaction.id}_${Date.now()}`;
+        if (!isManualMode) {
+          await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
+            beneId: clientUser.payouts.beneficiaryId,
+            amount: clientRefundAmount.toFixed(2),
+            transferId: refundTransferId,
+          }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+        }
       } else {
         console.warn(`Client ${transaction.payerId} lacks beneficiary for refund via payouts.`);
       }
     }
 
     // 7. Update Documents
+    let newStatus = resolution === 'SPLIT' ? 'split_resolved' : (resolution === 'REFUND' ? 'refunded' : 'released');
+    if (isManualMode && (professionalPayoutAmount > 0 || clientRefundAmount > 0)) {
+        newStatus = 'payout_pending';
+    }
+
     const txUpdateData: any = {
-      status: resolution === 'SPLIT' ? 'split_resolved' : (resolution === 'REFUND' ? 'refunded' : 'released'),
+      status: newStatus,
       resolvedAt: Timestamp.now(),
       resolvedBy: decodedToken.uid
     };

@@ -154,8 +154,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Request transfer from Cashfree
-    const token = await getCashfreeBearerToken();
-    const transferId = `${transferType === 'refund' ? 'REFUND' : 'PAYOUT'}_${transaction.id}_${Date.now()}`;
+    const isManualMode = process.env.NEXT_PUBLIC_PAYOUT_MODE === 'MANUAL';
+    let token = '';
+    if (!isManualMode) {
+      token = await getCashfreeBearerToken();
+    }
+    
+    const transferPrefix = transferType === 'refund' ? 'REFUND' : 'PAYOUT';
+    const transferId = isManualMode ? `MANUAL_${transferPrefix}_${transaction.id}_${Date.now()}` : `${transferPrefix}_${transaction.id}_${Date.now()}`;
 
     const transferPayload = {
       beneId: recipientUser.payouts.beneficiaryId,
@@ -163,23 +169,33 @@ export async function POST(req: NextRequest) {
       transferId: transferId,
     };
 
-    await axios.post(
-      `${CASHFREE_API_BASE}/payouts/standard`,
-      transferPayload,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    if (!isManualMode) {
+      await axios.post(
+        `${CASHFREE_API_BASE}/payouts/standard`,
+        transferPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    }
 
     // 8. Update transaction status
-    await transactionRef.update({
-      refundTransferId: transferId,
-      status: 'refunded',
-      refundedAt: Timestamp.now() as any,
-    });
+    const updateData: any = {
+      status: isManualMode ? 'payout_pending' : (transferType === 'refund' ? 'refunded' : 'released'),
+    };
+    
+    if (transferType === 'refund') {
+        updateData.refundTransferId = transferId;
+        updateData.refundedAt = Timestamp.now() as any;
+    } else {
+        updateData.payoutTransferId = transferId;
+        updateData.releasedAt = Timestamp.now() as any;
+    }
+
+    await transactionRef.update(updateData);
 
 
 
