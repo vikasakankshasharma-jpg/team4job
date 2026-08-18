@@ -36,13 +36,13 @@ test.describe('Partner Onboarding Flow', () => {
         await page.locator('#pincode').clear();
         await page.locator('#pincode').fill('560001');
 
-        await page.getByRole('button', { name: 'Next' }).click();
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
 
         // 4. Step 2: Experience & Skills
         await page.locator('label').filter({ hasText: /Security & Surveillance/i }).click();
         await page.getByRole('button', { name: 'CCTV Installation' }).click();
         await page.getByRole('button', { name: 'Alarm Systems' }).click();
-        await page.getByRole('button', { name: 'Next' }).click();
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
 
         // 5. Step 3: Documents (KYC)
         const mockFilePath = path.join(process.cwd(), 'tests/fixtures/dummy.png');
