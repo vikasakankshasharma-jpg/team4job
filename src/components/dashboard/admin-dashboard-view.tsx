@@ -46,6 +46,7 @@ import { TopPerformersCard } from "@/components/dashboard/cards/top-performers-c
 import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
 import { Badge } from "@/components/ui/badge";
 import { useFeatureFlag } from "@/lib/feature-flags-client";
+import { NotificationSettings } from "@/components/admin/settings/notification-settings";
 
 const AdminRevenueChart = dynamic(() => import("@/components/dashboard/charts/admin-charts").then(mod => mod.AdminRevenueChart), { ssr: false });
 const AdminSystemHealthChart = dynamic(() => import("@/components/dashboard/charts/admin-charts").then(mod => mod.AdminSystemHealthChart), { ssr: false });
@@ -870,6 +871,9 @@ export function AdminDashboardView() {
                             )}
                         </CardContent>
                     </Card>
+                    
+                    {/* Master Switches for Notifications */}
+                    <NotificationSettings />
                 </div>
             )}
         </div>
