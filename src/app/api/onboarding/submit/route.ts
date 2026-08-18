@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
             files: {}
         };
 
-        const fileKeys = ["aadharFront", "aadharBack", "panCard", "profilePhoto"] as const;
+        const fileKeys = ["aadharFront", "aadharBack", "panCard", "policeVerification", "profilePhoto"] as const;
         for (const key of fileKeys) {
             const file = formData.get(key) as File | null;
             if (file && file.size > 0) {

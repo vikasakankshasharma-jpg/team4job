@@ -37,6 +37,7 @@ interface PendingProfessional {
             aadharFront?: string;
             aadharBack?: string;
             panCard?: string;
+            policeVerification?: string;
             profilePhoto?: string;
         };
     };
@@ -217,6 +218,12 @@ export function ApprovalsClient() {
                                                                     <a href={Professional.professionalProfile.documents.panCard} target="_blank" rel="noopener noreferrer" className="block p-2 border rounded hover:bg-muted/50 text-center text-sm">
                                                                         <ExternalLink className="mx-auto h-8 w-8 text-blue-500 mb-2" />
                                                                         View PAN Card
+                                                                    </a>
+                                                                )}
+                                                                {Professional.professionalProfile.documents?.policeVerification && (
+                                                                    <a href={Professional.professionalProfile.documents.policeVerification} target="_blank" rel="noopener noreferrer" className="block p-2 border rounded hover:bg-muted/50 text-center text-sm">
+                                                                        <ExternalLink className="mx-auto h-8 w-8 text-blue-500 mb-2" />
+                                                                        View Police Verification
                                                                     </a>
                                                                 )}
                                                             </div>

@@ -60,6 +60,7 @@ export function OnboardingWizard() {
             if (data.aadharFront) formData.append('aadharFront', data.aadharFront);
             if (data.aadharBack) formData.append('aadharBack', data.aadharBack);
             if (data.panCard) formData.append('panCard', data.panCard);
+            if (data.policeVerification) formData.append('policeVerification', data.policeVerification);
             if (data.profilePhoto) formData.append('profilePhoto', data.profilePhoto);
 
             const token = await auth.currentUser?.getIdToken();

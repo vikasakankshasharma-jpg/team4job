@@ -165,6 +165,14 @@ export function Documents({ data, updateData }: DocumentsProps) {
                     onRemove={() => updateData({ ...data, panCard: undefined })}
                 />
                 <FileUploader
+                    label="Police Verification"
+                    description="Certificate of Police Verification"
+                    file={data.policeVerification}
+                    icon={FileText}
+                    onDrop={handleDrop('policeVerification')}
+                    onRemove={() => updateData({ ...data, policeVerification: undefined })}
+                />
+                <FileUploader
                     label="Profile Photo"
                     description="Recent selfie for profile identity check"
                     file={data.profilePhoto}

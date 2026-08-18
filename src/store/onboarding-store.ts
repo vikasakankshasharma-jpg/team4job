@@ -18,6 +18,7 @@ interface OnboardingState {
     aadharFront?: File;
     aadharBack?: File;
     panCard?: File;
+    policeVerification?: File;
     profilePhoto?: File;
 
     // Actions
@@ -50,6 +51,7 @@ export const useOnboardingStore = create<OnboardingState>()(
                 aadharFront: undefined,
                 aadharBack: undefined,
                 panCard: undefined,
+                policeVerification: undefined,
                 profilePhoto: undefined,
             }),
         }),

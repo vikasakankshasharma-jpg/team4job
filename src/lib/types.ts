@@ -651,15 +651,11 @@ export interface ProfessionalOnboardingInput {
     experience: string;
     skills: string[];
     files: {
-        aadharFront?: { buffer: Buffer; name: string; type: string } | null;
-        aadharBack?: { buffer: Buffer; name: string; type: string } | null;
-        panCard?: { buffer: Buffer; name: string; type: string } | null;
-        profilePhoto?: { buffer: Buffer; name: string; type: string } | null;
+        aadharFront?: { buffer: Buffer; name: string; type: string };
+        aadharBack?: { buffer: Buffer; name: string; type: string };
+        panCard?: { buffer: Buffer; name: string; type: string };
+        policeVerification?: { buffer: Buffer; name: string; type: string };
+        profilePhoto?: { buffer: Buffer; name: string; type: string };
     };
-}
-
-
-
-
 
 
