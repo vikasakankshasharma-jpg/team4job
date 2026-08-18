@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
             t.update(transactionRef, {
                 status: TRANSACTION_STATUS.PAID_OUT,
-                payoutTransferId: \MANUAL_\,
+                payoutTransferId: manualReference || `MANUAL_${now.getTime()}`,
                 payoutCompletedAt: now,
                 updatedAt: now
             });
