@@ -164,12 +164,7 @@ function SignUpController({ isMapLoaded, referredBy }: SignUpMasterProps) {
       return;
     }
 
-    if (values.role === 'Professional' && verificationSubStep !== 'verified') {
-      setCurrentStep("verification");
-      setError("aadhar", { type: "manual", message: "Please complete Aadhar verification." });
-      setIsLoading(false);
-      return;
-    }
+    // Optional: Automated KYC can now be skipped (Progressive Onboarding)
     
     if (!photo) {
       setCurrentStep("photo");
@@ -236,19 +231,21 @@ function SignUpController({ isMapLoaded, referredBy }: SignUpMasterProps) {
       };
 
       if (userRoleDef === 'Professional') {
+        const isKycComplete = verificationSubStep === 'verified';
         if (values.aadhar) {
           newUser.aadharLast4 = values.aadhar.slice(-4);
         }
         newUser.panNumber = values.pan;
         newUser.kycAddress = values.kycAddress;
-        newUser.isPanVerified = true; 
+        newUser.isPanVerified = isKycComplete; 
+        newUser.kycStatus = isKycComplete ? 'verified' : 'unverified';
         newUser.professionalProfile = {
           tier: 'Bronze',
           points: 0,
           skills: values.skills || [],
           rating: 0,
           reviews: 0,
-          verified: true, 
+          verified: isKycComplete, 
           reputationHistory: []
         };
       }

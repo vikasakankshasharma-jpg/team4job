@@ -275,8 +275,9 @@ export function StepIdentity() {
         </div>
       </div>
 
-      <div className="pt-12">
-        <Button variant="outline" onClick={() => setCurrentStep('contact')} className="h-16 w-full max-w-[200px] rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">{tAuth('back')}</Button>
+      <div className="pt-12 flex gap-4">
+        <Button variant="outline" onClick={() => setCurrentStep('contact')} className="h-16 flex-1 rounded-[1.5rem] border-white/10 font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-background/5 transition-colors">{tAuth('back')}</Button>
+        <Button variant="ghost" onClick={() => setCurrentStep('photo')} className="h-16 flex-1 rounded-[1.5rem] text-primary/70 hover:text-primary font-black text-[10px] uppercase tracking-[0.3em] italic hover:bg-primary/10 transition-colors">Skip for Now</Button>
       </div>
     </motion.div>
   );
