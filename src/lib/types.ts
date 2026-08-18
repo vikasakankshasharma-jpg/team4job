@@ -63,6 +63,7 @@ export type User = {
   aadharLast4?: string;
   panNumber?: string;
   isPanVerified?: boolean;
+  kycStatus?: 'pending' | 'verified' | 'rejected' | 'in_progress' | 'unverified';
   kycAddress?: string;
   gstin?: string;
   restrictedUntil?: Date | Timestamp; // 48-hour cooling period for sensitive changes
