@@ -113,7 +113,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     const bidBtn = bidDialog.getByTestId('submit-bid-button');
     await expect(bidBtn).toBeVisible();
     await bidBtn.scrollIntoViewIfNeeded();
-    const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
+    const bidToastPromise = helper.form.waitForToast('Bid Placed!');
     await bidBtn.click({ force: true });
     await bidToastPromise;
 
@@ -173,7 +173,7 @@ test.describe('Mobile User Flow (Client / Professional / Admin / Staff) @slow', 
     for (let attempt = 1; attempt <= 3; attempt++) {
       console.log(`E2E: Accept button click attempt ${attempt}/3`);
       // Start toast listener FIRST (toast fires ~2s after click)
-      const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+      const acceptToastPromise = helper.form.waitForToast('Job Accepted!');
       await acceptBtn.dispatchEvent('click');
 
       // Brief conflict dialog check (3s max to not miss the toast)

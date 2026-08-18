@@ -324,7 +324,7 @@ test.describe('Universal Master Audit', () => {
         await expect(acceptBtn).toBeVisible({ timeout: 2430000 });
         await acceptBtn.click({ force: true });
         
-        await helper.form.waitForToast(/Offer Accepted|Job Started/i).catch(() => {});
+        await helper.form.waitForToast(/Offer Accepted|Job Started/i);
         
         // JG Fund
         await helper.auth.logout();
@@ -374,7 +374,7 @@ test.describe('Universal Master Audit', () => {
         await expect(startBtn).toBeEnabled({ timeout: 1620000 });
         await startBtn.click({ force: true });
         
-        await helper.form.waitForToast(/Job Started|Status: In Progress/i).catch(() => {});
+        await helper.form.waitForToast(/Job Started|Status: In Progress/i);
         
         // Submit Work
         console.log('[Act 5] Submitting work proof...');

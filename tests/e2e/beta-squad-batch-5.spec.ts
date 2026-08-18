@@ -64,7 +64,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
                         if (await confirmBtn.isVisible().catch(() => false)) {
                             await confirmBtn.click();
                         }
-                        await helper.form.waitForToast('User', 8000).catch(() => { });
+                        await helper.form.waitForToast('User');
                         accountRestricted = true;
                     }
                 }
@@ -255,7 +255,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         if (await rejectBtn.isVisible().catch(() => false)) {
             await rejectBtn.click();
             await page.getByRole('button', { name: /Confirm|Reject/i }).first().click();
-            await helper.form.waitForToast('KYC Rejected', 10000).catch(() => { });
+            await helper.form.waitForToast('KYC Rejected');
             kycRejected = true;
         }
 

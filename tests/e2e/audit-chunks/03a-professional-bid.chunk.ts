@@ -64,7 +64,7 @@ test.describe('Audit Chunk 3a: Professional Bidding', () => {
             await page.getByTestId('submit-bid-button').click({ force: true });
             
             try {
-                await helper.form.waitForToast(/Bid placed successfully|Bid Placed!/i, 15000);
+                await helper.form.waitForToast(/Bid placed successfully|Bid Placed!/i);
             } catch (e) {
                 console.log('[Chunk 3a] Toast timeout, checking button state...');
                 await expect(viewBidBtn).toBeVisible({ timeout: 2430000 });

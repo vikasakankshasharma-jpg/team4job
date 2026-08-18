@@ -50,7 +50,7 @@ test.describe('Audit Chunk 4b: Professional Accept', () => {
             await acceptBtn.click({ force: true });
 
             try {
-                await helper.form.waitForToast(/Accepted|Success/i, 25000);
+                await helper.form.waitForToast(/Accepted|Success/i);
                 console.log('✅ Chunk 4b Complete: Job Accepted via UI.');
             } catch (e) {
                 // Toast may have been missed; check for state change

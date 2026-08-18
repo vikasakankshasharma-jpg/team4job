@@ -70,7 +70,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 10000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         // 3. IN Withdraw
         let withdrew = false;
@@ -107,7 +107,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             throw new Error("Withdraw button not found on My Bids page!");
         }
 
-        await helper.form.waitForToast('Bid Withdrawn', 10000).catch(() => { });
+        await helper.form.waitForToast('Bid Withdrawn');
 
         // Verify Bid Gone (Optional: Check JG view)
 
@@ -159,7 +159,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -197,7 +197,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -251,7 +251,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const confirmCancelBtn = page.getByRole('button', { name: /Confirm Cancellation/i }).first();
         await expect(confirmCancelBtn).toBeVisible({ timeout: TIMEOUTS.short });
         await confirmCancelBtn.click();
-        await helper.form.waitForToast('Job Cancelled', 10000).catch(() => { });
+        await helper.form.waitForToast('Job Cancelled');
         await helper.job.waitForJobStatus('Cancelled');
 
         await context.close();
@@ -302,7 +302,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -340,7 +340,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -375,7 +375,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const omwBtn = page.getByRole('button', { name: /On My Way/i });
         if (await omwBtn.isVisible()) {
             await omwBtn.click();
-            await helper.form.waitForToast('Status Updated', 10000).catch(() => { });
+            await helper.form.waitForToast('Status Updated');
             // Verify status text
             await expect(page.locator('body')).toContainText('On the way');
         } else {
@@ -429,7 +429,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -467,7 +467,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -521,7 +521,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
                 ]);
             }
 
-            await helper.form.waitForToast('Milestone Added', 10000).catch(() => { });
+            await helper.form.waitForToast('Milestone Added');
         } else {
             console.log("Add Extra button not found");
         }
@@ -573,7 +573,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -611,7 +611,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -653,7 +653,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             name: 'bad_work.png', mimeType: 'image/png', buffer: Buffer.from('bad_proof')
         });
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation', 10000).catch(() => { });
+        await helper.form.waitForToast('Submitted for Confirmation');
 
         // JG Reject
         await helper.auth.logout();
@@ -666,7 +666,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await requestChangesButton.click();
         await page.getByPlaceholder(/Reason|Describe/i).fill("Bad quality");
         await page.getByRole('button', { name: /Submit Revision Request/i }).click();
-        await helper.form.waitForToast('Revision Requested', 10000).catch(() => { });
+        await helper.form.waitForToast('Revision Requested');
 
 
         // Verify Status Revert

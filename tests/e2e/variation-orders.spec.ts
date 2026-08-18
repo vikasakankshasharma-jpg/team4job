@@ -77,7 +77,7 @@ test.describe('Secured Variation Orders', () => {
         await bidDialog.waitFor({ state: 'hidden', timeout: 4860000 });
         
         // Toast may appear quickly - use a relaxed match
-        await helper.form.waitForToast('Bid Placed', 60000).catch(() => {
+        await helper.form.waitForToast('Bid Placed').catch(() => {
             console.log('[WARN] Bid Placed toast not seen - continuing (dialog closed successfully)');
         });
         console.log('[PASS] Bid Placed');
@@ -119,7 +119,7 @@ test.describe('Secured Variation Orders', () => {
         await helper.auth.waitForStability();
 
         // Start toast listener FIRST (toast fires ~2s after click, conflict check must not block it)
-        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!');
         await page.getByTestId('accept-job-button').first().click();
 
         // Handle Conflict Dialog if it appears (brief 3s check)

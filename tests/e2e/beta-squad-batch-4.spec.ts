@@ -68,7 +68,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -108,7 +108,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -147,7 +147,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             name: 'work.png', mimeType: 'image/png', buffer: Buffer.from('proof')
         });
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation', 10000).catch(() => { });
+        await helper.form.waitForToast('Submitted for Confirmation');
 
         // JG Does NOT Approve (Simulate Refusal / Standoff)
         // IN Raises Dispute
@@ -161,7 +161,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await disputeBtn.click();
             await page.getByLabel(/Reason/i).fill("Client refusing to release payment for extra work").catch(() => { });
             await page.getByRole('button', { name: /Submit/i }).first().click();
-            await helper.form.waitForToast('Dispute Raised', 10000).catch(() => { });
+            await helper.form.waitForToast('Dispute Raised');
             await helper.job.waitForJobStatus('Dispute').catch(async () => {
                 await helper.job.waitForJobStatus('Disputed');
             });
@@ -218,7 +218,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -256,7 +256,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();
@@ -295,7 +295,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             name: 'work.png', mimeType: 'image/png', buffer: Buffer.from('proof')
         });
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation', 10000).catch(() => { });
+        await helper.form.waitForToast('Submitted for Confirmation');
 
         // JG Dispute
         await helper.auth.logout();
@@ -309,7 +309,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.getByLabel('Reason').selectOption({ label: 'Quality Issue' }).catch(() => { });
             await page.fill('textarea[name="description"]', "It looks ugly").catch(() => { });
             await page.getByRole('button', { name: /Submit/i }).first().click();
-            await helper.form.waitForToast('Dispute Submitted', 10000).catch(() => { });
+            await helper.form.waitForToast('Dispute Submitted');
             await helper.job.waitForJobStatus('Dispute').catch(async () => {
                 await helper.job.waitForJobStatus('Disputed');
             });
@@ -366,7 +366,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -434,7 +434,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await disputeButton.click();
             await page.fill('textarea[name="description"]', "Professional claims existing property damage was pre-existing").catch(() => { });
             await page.getByRole('button', { name: /Submit/i }).first().click();
-            await helper.form.waitForToast('Dispute Submitted', 10000).catch(() => { });
+            await helper.form.waitForToast('Dispute Submitted');
             await helper.job.waitForJobStatus('Dispute').catch(async () => {
                 await helper.job.waitForJobStatus('Disputed');
             });

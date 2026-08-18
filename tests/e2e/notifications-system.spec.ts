@@ -27,7 +27,7 @@ test.describe('Notification System', () => {
         // Click bell and wait for dropdown content to be fully visible
         // All assertions go inside toPass() because the Popover renders in a Radix portal
         // and can close between separate assertion blocks
-        const dropdownHeader = page.getByText(/Mission Intel/i).first();
+        const dropdownHeader = page.locator('h4').filter({ hasText: /Mission Intel/i }).first();
         const viewAllBtn = page.getByRole('button', { name: /ACCESS INTEL|HISTORY LOGS/i }).first();
         
         // Wait for page hydration to prevent swallowed clicks

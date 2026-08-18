@@ -122,7 +122,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill(data.budget.toString());
         await page.fill('textarea[name="coverLetter"]', 'I can do this');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 10000).catch(() => console.log('[Test] Missed Bid Placed toast, continuing...'));
+        await helper.form.waitForToast('Bid Placed!').catch(() => console.log('[Test] Missed Bid Placed toast, continuing...'));
 
         console.log('--- Step 3: JG Award ---');
         await helper.auth.logout();
@@ -143,7 +143,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
 
 
         
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => console.log('[Test] Missed Offer Sent toast, continuing...'));
+        await helper.form.waitForToast('Offer Sent').catch(() => console.log('[Test] Missed Offer Sent toast, continuing...'));
 
         console.log('--- Step 4: IN Accept ---');
         await helper.auth.logout();
@@ -164,7 +164,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         // Handle conflict dialog if present
         const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
         if (await conflictBtn.isVisible({ timeout: 1620000 }).catch(() => false)) await conflictBtn.click();
-        await helper.form.waitForToast('Job Accepted!', 10000).catch(() => console.log('[Test] Missed Job Accepted toast, continuing...'));
+        await helper.form.waitForToast('Job Accepted!').catch(() => console.log('[Test] Missed Job Accepted toast, continuing...'));
 
         console.log('--- Step 5: JG Fund ---');
         await helper.auth.logout();
@@ -185,7 +185,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         
         console.log('[Test] Clicking e2e-direct-fund...');
         await page.getByTestId('e2e-direct-fund').click({ force: true });
-        await helper.form.waitForToast('Test Mode: Payment Initiated', 10000).catch(() => console.log('[Test] Missed Payment Initiated toast, continuing...'));
+        await helper.form.waitForToast('Test Mode: Payment Initiated').catch(() => console.log('[Test] Missed Payment Initiated toast, continuing...'));
         await page.reload();
         await helper.job.waitForJobStatus('In Progress');
         const startOtp = await page.getByTestId('start-otp-value').innerText();
@@ -202,7 +202,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             name: 'work.png', mimeType: 'image/png', buffer: Buffer.from('proof')
         });
         await page.getByTestId('submit-for-review-button').click();
-        await helper.form.waitForToast('Submitted for Confirmation', 10000).catch(() => console.log('[Test] Missed Submitted toast, continuing...'));
+        await helper.form.waitForToast('Submitted for Confirmation').catch(() => console.log('[Test] Missed Submitted toast, continuing...'));
         await helper.job.waitForJobStatus('Pending Confirmation');
 
         console.log('--- Step 7: JG Release Payment ---');
@@ -220,7 +220,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await releaseBtn.waitFor({ state: 'visible', timeout: 4860000 });
         }
         await releaseBtn.click();
-        await helper.form.waitForToast('Job Approved & Payment Released!', 10000).catch(() => console.log('[Test] Missed Release toast, continuing...'));
+        await helper.form.waitForToast('Job Approved & Payment Released!').catch(() => console.log('[Test] Missed Release toast, continuing...'));
         await helper.job.waitForJobStatus('Completed');
 
         await context.close();
@@ -326,7 +326,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await acceptButton.click();
             const conflictBtn = page.getByRole('button', { name: "I Understand, Proceed & Accept" });
             if (await conflictBtn.isVisible()) await conflictBtn.click();
-            await helper.form.waitForToast('Job Accepted!', 10000).catch(() => { });
+            await helper.form.waitForToast('Job Accepted!');
             await helper.job.waitForJobStatus('Pending Funding', TIMEOUTS.medium);
         } else {
             await expect(placeBidButton).toBeVisible({ timeout: TIMEOUTS.medium });
@@ -390,17 +390,18 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await page.waitForTimeout(10000); // Wait for hydration before clicking action buttons
         await page.getByTestId('send-offer-button').first().click(); // Should pick the top bid
 
         // Expect Warning Dialog "Bid exceeds budget"
-        const confirmBtn = page.getByRole('button', { name: /Proceed|Confirm|Yes/i });
-        await confirmBtn.last().waitFor({ state: 'visible', timeout: 1620000 }).catch(() => {});
+        const confirmBtn = page.getByRole('dialog').getByRole('button', { name: /Proceed|Confirm|Yes/i });
+        await confirmBtn.last().waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
         if (await confirmBtn.count() > 0) {
             // Handle potential warning modal
             await confirmBtn.last().click();
         }
         await helper.job.handleAuthorizationModal();
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
+        await helper.form.waitForToast('Offer Sent');
 
         // 4. IN Verify
         await helper.auth.logout();
@@ -415,7 +416,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const result = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
             conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
-            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+            helper.form.waitForToast('Action Required').then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result === 'conflict') {
             await conflictBtn.click();
@@ -484,9 +485,10 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await helper.auth.logout();
         await helper.auth.loginAsClient();
         await page.goto(`/dashboard/jobs/${jobId}`);
+        await page.waitForTimeout(10000); // Wait for hydration
         await page.getByTestId('send-offer-button').first().click();
         await helper.job.handleAuthorizationModal();
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => {});
+        await helper.form.waitForToast('Offer Sent');
 
         // 4. IN Verify
         await helper.auth.logout();
@@ -501,7 +503,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const result4 = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
             conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
-            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+            helper.form.waitForToast('Action Required').then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result4 === 'conflict') {
             await conflictBtn.click();
@@ -576,7 +578,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill(budget.toString());
         await page.fill('textarea[name="coverLetter"]', 'Milestone work quote');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000);
+        await helper.form.waitForToast('Bid Placed!');
         await helper.wait.waitForSubcollectionSync(jobId, 'bids');
 
         // JG Award
@@ -599,7 +601,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(sendOfferButton).toBeVisible({ timeout: TIMEOUTS.medium });
         await sendOfferButton.click();
         await helper.job.handleAuthorizationModal();
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         // IN Accept
         await helper.auth.logout();
@@ -616,7 +618,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         const result5 = await Promise.race([
             helper.form.waitForToast('Job Accepted!').then(() => 'success' as const).catch(() => 'timeout' as const),
             conflictBtn.waitFor({ state: 'visible', timeout: 1620000 }).then(() => 'conflict' as const).catch(() => 'timeout' as const),
-            helper.form.waitForToast('Action Required', 10000).then(() => 'error' as const).catch(() => 'timeout' as const)
+            helper.form.waitForToast('Action Required').then(() => 'error' as const).catch(() => 'timeout' as const)
         ]);
         if (result5 === 'conflict') {
             await conflictBtn.click();

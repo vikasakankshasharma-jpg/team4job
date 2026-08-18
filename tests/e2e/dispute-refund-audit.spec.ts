@@ -88,7 +88,7 @@ test.describe('Dispute & Refund Master Audit', () => {
             await page.waitForTimeout(2000);
         }
         if (!offerClicked) throw new Error("Could not find/click send-offer button");
-        await helper.form.waitForToast('Offer Sent').catch(() => {});
+        await helper.form.waitForToast('Offer Sent');
         await page.waitForTimeout(2000); // Wait for background triggers
         
         // Professional Accept
@@ -186,7 +186,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         await expect(page.locator('textarea[placeholder="Type your message here..."]')).toBeVisible({ timeout: 1620000 });
         await page.locator('textarea[placeholder="Type your message here..."]').fill('Admin: I have reviewed the evidence. This looks like a clear breach of protocol.');
         await page.getByRole('button', { name: /Send/i }).click();
-        await helper.form.waitForToast('Message Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Message Sent');
 
         console.log('✅ Act 3 Complete: Admin Intervention Active.');
     });
@@ -223,7 +223,7 @@ test.describe('Dispute & Refund Master Audit', () => {
         page.once('dialog', dialog => dialog.accept()); // Just in case there is a window.confirm
         await page.getByRole('button', { name: /Option A: Cancel Job & Refund Giver/i }).click();
 
-        await helper.form.waitForToast('Dispute Resolved', 15000).catch(() => { });
+        await helper.form.waitForToast('Dispute Resolved');
         
         console.log('✅ Act 4 Complete: Admin Refunded Client.');
     });

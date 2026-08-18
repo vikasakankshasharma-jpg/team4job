@@ -93,7 +93,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const closeBiddingButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
             if (await closeBiddingButton.isVisible().catch(() => false)) {
                 await closeBiddingButton.click();
-                await helper.form.waitForToast('Bidding Closed', 10000).catch(() => { });
+                await helper.form.waitForToast('Bidding Closed');
             }
         }
 
@@ -115,7 +115,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await page.locator('input[name="amount"]').fill("5000");
             await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
             await page.getByRole('button', { name: "Place Bid" }).click();
-            await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+            await helper.form.waitForToast('Bid Placed!');
         } else {
             console.log('[Case 6] place-bid-button not visible â€” bidding may be closed or UI variant does not expose it. Skipping bid step.');
             await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
@@ -169,8 +169,8 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
-        await helper.form.waitForToast('Bid Placed!', 10000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
+        await helper.form.waitForToast('Bid Placed!');
 
         // JG Award
         await helper.auth.logout();
@@ -206,7 +206,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         }
         let proceededToPendingFunding = false;
         if (offerClicked) {
-            await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+            await helper.form.waitForToast('Offer Sent');
 
             // IN Accept
             await helper.auth.logout();
@@ -251,7 +251,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             const closeBiddingButton = page.getByRole('button', { name: /Close Bidding|Close Operations/i }).first();
             await expect(closeBiddingButton).toBeVisible({ timeout: TIMEOUTS.medium });
             await closeBiddingButton.click();
-            await helper.form.waitForToast('Bidding Closed', 10000).catch(() => { });
+            await helper.form.waitForToast('Bidding Closed');
 
             await context.close();
             return;
@@ -274,7 +274,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await expect(confirmCancelButton).toBeVisible({ timeout: TIMEOUTS.short });
         await confirmCancelButton.click();
 
-        await helper.form.waitForToast('Job Cancelled', 10000).catch(() => { });
+        await helper.form.waitForToast('Job Cancelled');
         await helper.job.waitForJobStatus('Cancelled');
 
         await context.close();
@@ -370,7 +370,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await forgotPasswordTrigger.click();
             await page.fill('input[type="email"]', 'giver_vip_v3@team4job.com');
             await page.click('button:has-text("Send Reset Link")');
-            await helper.form.waitForToast('Password reset link sent', 15000).catch(() => { });
+            await helper.form.waitForToast('Password reset link sent');
         } else {
             // Current UI variant: forgot-password flow is not exposed on login form.
             await expect(page.getByRole('heading', { name: /Log In/i })).toBeVisible();
@@ -426,7 +426,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
         await page.locator('input[name="amount"]').fill("5000");
         await page.fill('textarea[name="coverLetter"]', 'I can handle this perfectly.');
         await page.getByRole('button', { name: "Place Bid" }).click();
-        await helper.form.waitForToast('Bid Placed!', 15000).catch(() => { });
+        await helper.form.waitForToast('Bid Placed!');
 
         await helper.auth.logout();
         await helper.auth.loginAsClient();
@@ -465,7 +465,7 @@ test.describe('Beta Squad - Beta Launch Protocol', () => {
             await context.close();
             return;
         }
-        await helper.form.waitForToast('Offer Sent', 10000).catch(() => { });
+        await helper.form.waitForToast('Offer Sent');
 
         await helper.auth.logout();
         await helper.auth.loginAsProfessional();

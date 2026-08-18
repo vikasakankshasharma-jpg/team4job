@@ -108,7 +108,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await bidDialog.locator('input[name="amount"]').type(TEST_JOB_DATA.bidAmount.toString(), { delay: 30 });
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
         // Start toast listener BEFORE clicking submit (toast fires when dialog closes)
-        const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
+        const bidToastPromise = helper.form.waitForToast('Bid Placed!');
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         await bidDialog.waitFor({ state: 'hidden' }).catch(() => {});
         // Await the pre-started toast
@@ -144,7 +144,7 @@ test.describe('Desktop User Flow (Client / Professional / Admin / Staff)', () =>
         await helper.auth.loginAsProfessional();
         await page.goto(`/dashboard/jobs/${jobId}`);
         // Start toast listener FIRST (toast fires ~2s after click, conflict check can take longer)
-        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!');
         await page.getByTestId('accept-job-button').first().click();
 
         // Handle potential conflict dialog (brief check so we don't miss toast)

@@ -1,0 +1,230 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e/team-management.spec.ts >> Team Management >> Admin can invite a new team member
+- Location: tests/e2e/team-management.spec.ts:12:5
+
+# Error details
+
+```
+TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - button "Toggle Menu" [ref=e6] [cursor=pointer]:
+        - img [ref=e7]
+        - generic [ref=e9]: Toggle Menu
+      - generic [ref=e10]:
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - generic [ref=e15]: Notifications
+        - button "V" [ref=e16] [cursor=pointer]:
+          - generic [ref=e18]: V
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e24]:
+              - heading "Total Members" [level=3] [ref=e25]
+              - img [ref=e26]
+            - generic [ref=e31]:
+              - generic [ref=e32]: "1"
+              - paragraph [ref=e33]: All team members
+          - generic [ref=e34]:
+            - generic [ref=e36]:
+              - heading "Admins" [level=3] [ref=e37]
+              - img [ref=e38]
+            - generic [ref=e40]:
+              - generic [ref=e41]: "0"
+              - paragraph [ref=e42]: Full platform access
+          - generic [ref=e43]:
+            - generic [ref=e45]:
+              - heading "Support Team" [level=3] [ref=e46]
+              - img [ref=e47]
+            - generic [ref=e50]:
+              - generic [ref=e51]: "1"
+              - paragraph [ref=e52]: Customer support
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "Add Team Member" [level=3] [ref=e55]:
+              - img [ref=e56]
+              - text: Add Team Member
+            - paragraph [ref=e59]: Create a new administrative or support account for your platform.
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - text: Full Name
+                - textbox "Full Name" [ref=e64]:
+                  - /placeholder: e.g., Jane Doe
+                  - text: New Member
+              - generic [ref=e65]:
+                - text: Email Address
+                - textbox "Email Address" [ref=e66]:
+                  - /placeholder: jane.doe@example.com
+                  - text: new-member-1786868399293@example.com
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - text: Temporary Password
+                - textbox "Temporary Password" [ref=e69]:
+                  - /placeholder: ••••••••
+                  - text: password123
+              - generic [ref=e70]:
+                - text: Role
+                - combobox "Role" [ref=e71] [cursor=pointer]:
+                  - generic: Support Team
+                  - img [ref=e72]
+                - combobox [ref=e74]
+            - button "Create Team Member" [active] [ref=e76] [cursor=pointer]
+        - generic [ref=e77]:
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - heading "Current Team Members" [level=3] [ref=e81]:
+                - img [ref=e82]
+                - text: Current Team Members
+              - paragraph [ref=e94]: 1 members shown • Administrative and support staff
+            - button "Export" [ref=e95] [cursor=pointer]:
+              - img [ref=e96]
+              - text: Export
+          - generic [ref=e99]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]: Search...
+                - textbox "Search..." [ref=e105]:
+                  - /placeholder: Search by name or email...
+              - generic [ref=e106]:
+                - generic [ref=e107]: Role
+                - combobox "Role" [ref=e108] [cursor=pointer]:
+                  - generic: All Roles
+                  - img [ref=e109]
+            - table [ref=e112]:
+              - rowgroup [ref=e113]:
+                - row "Name Email Role Date Added Actions" [ref=e114]:
+                  - columnheader "Name" [ref=e115]
+                  - columnheader "Email" [ref=e116]
+                  - columnheader "Role" [ref=e117]
+                  - columnheader "Date Added" [ref=e118]
+                  - columnheader "Actions" [ref=e119]:
+                    - generic [ref=e120]: Actions
+              - rowgroup [ref=e121]:
+                - row "Kavita Joshi kavita.support@team4job.com Support Team Aug 16, 2026" [ref=e122]:
+                  - cell "Kavita Joshi" [ref=e123]:
+                    - link "Kavita Joshi" [ref=e124] [cursor=pointer]:
+                      - /url: /dashboard/users/E08iPzv9rTzUi61k8I2cVAoIbcIA
+                  - cell "kavita.support@team4job.com" [ref=e125]
+                  - cell "Support Team" [ref=e126]:
+                    - generic [ref=e128]: Support Team
+                  - cell "Aug 16, 2026" [ref=e129]
+                  - cell [ref=e130]:
+                    - link [ref=e131] [cursor=pointer]:
+                      - /url: /dashboard/users/E08iPzv9rTzUi61k8I2cVAoIbcIA
+                      - img [ref=e132]
+  - generic [ref=e136]:
+    - button [ref=e137] [cursor=pointer]:
+      - img [ref=e140]
+    - generic: Mission Intelligence available
+  - button [ref=e144] [cursor=pointer]:
+    - img [ref=e145]
+  - navigation [ref=e147]:
+    - generic [ref=e148]:
+      - link "Home" [ref=e149] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e151]
+        - generic [ref=e154]: Home
+      - link "Users" [ref=e155] [cursor=pointer]:
+        - /url: /dashboard/users
+        - img [ref=e157]
+        - generic [ref=e162]: Users
+      - link "All Jobs" [ref=e163] [cursor=pointer]:
+        - /url: /dashboard/all-jobs
+        - img [ref=e165]
+        - generic [ref=e168]: All Jobs
+      - link "Reports" [ref=e169] [cursor=pointer]:
+        - /url: /dashboard/reports
+        - img [ref=e171]
+        - generic [ref=e174]: Reports
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=e175]
+  - iframe [ref=e176]:
+    
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | import { TestHelper } from '../utils/helpers';
+  3  | import { TIMEOUTS } from '../fixtures/test-data';
+  4  | 
+  5  | test.describe('Team Management', () => {
+  6  |     let helper: TestHelper;
+  7  | 
+  8  |     test.beforeEach(async ({ page }) => {
+  9  |         helper = new TestHelper(page);
+  10 |     });
+  11 | 
+  12 |     test('Admin can invite a new team member', async ({ page }) => {
+  13 |         await helper.auth.loginAsAdmin();
+  14 | 
+  15 |         await page.goto('/dashboard/team');
+  16 |         await expect(page).toHaveURL(/.*\/dashboard\/team/);
+  17 | 
+  18 |         // Fill invitation form
+  19 |         const email = `new-member-${Date.now()}@example.com`;
+  20 |         await page.getByLabel(/Full Name/i).fill('New Member');
+  21 |         await page.getByLabel(/Email Address/i).fill(email);
+  22 |         await page.getByLabel(/Temporary Password/i).fill('password123');
+  23 |         
+  24 |         // Select role (specifically within the form to avoid clicking the filter bar)
+  25 |         await page.locator('form').getByRole('combobox').click();
+  26 |         await page.getByRole('option', { name: /Support Team/i }).first().click();
+  27 | 
+  28 |         // Give Firebase Auth enough time to restore the session from IndexedDB
+  29 |         // to prevent the API request failing with "Not authenticated".
+  30 |         await page.waitForTimeout(2000);
+  31 | 
+  32 |         // Send invitation and wait for the API call to finish
+> 33 |         const submitPromise = page.waitForResponse(
+     |                                    ^ TimeoutError: page.waitForResponse: Timeout 15000ms exceeded while waiting for event "response"
+  34 |             resp => resp.url().includes('/api/admin/create-user') && resp.status() === 200,
+  35 |             { timeout: 15000 }
+  36 |         );
+  37 |         await page.getByRole('button', { name: /Create Team Member/i }).click();
+  38 |         await submitPromise;
+  39 | 
+  40 |         // Verify member appears in the list (onSnapshot should update it automatically)
+  41 |         await expect(page.getByText(email)).toBeVisible({ timeout: 15000 });
+  42 |     });
+  43 | 
+  44 |     test('Admin can view team member profile', async ({ page }) => {
+  45 |         await helper.auth.loginAsAdmin();
+  46 | 
+  47 |         await page.goto('/dashboard/team');
+  48 | 
+  49 |         // Find a member in the list
+  50 |         const memberRow = page.locator('tr').filter({ hasText: /@/i }).first();
+  51 |         await expect(memberRow).toBeVisible({ timeout: TIMEOUTS.medium });
+  52 | 
+  53 |         // Click the view profile button (MoreHorizontal icon inside a link)
+  54 |         const viewProfileBtn = memberRow.locator('a[href*="/dashboard/users/"]').first();
+  55 |         if (await viewProfileBtn.isVisible()) {
+  56 |             await viewProfileBtn.click();
+  57 |             await expect(page).toHaveURL(/.*\/dashboard\/users\/.+/);
+  58 |         }
+  59 |     });
+  60 | });
+  61 | 
+  62 | 
+```

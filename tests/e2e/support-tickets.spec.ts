@@ -22,6 +22,7 @@ test.describe('Support Tickets', () => {
         // Locate and click the support button
         const supportBtn = page.getByTestId('support-trigger-button');
         await expect(supportBtn).toBeVisible({ timeout: 1620000 });
+        await page.waitForTimeout(15000); // Wait for React hydration before native click
         await supportBtn.evaluate(b => (b as HTMLElement).click());
 
         // Verify dialog opens

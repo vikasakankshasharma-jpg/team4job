@@ -90,7 +90,7 @@ test.describe('Dashboard Financials E2E', () => {
             await page.waitForTimeout(2000);
         }
         if (!offerClicked) throw new Error('Could not find send-offer-button');
-        await helper.form.waitForToast('Offer Sent').catch(() => {});
+        await helper.form.waitForToast('Offer Sent');
         console.log('[SETUP] Offer Sent');
 
         // 4. Professional Accepts

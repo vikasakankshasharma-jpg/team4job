@@ -190,7 +190,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await bidDialog.locator('input[name="amount"]').fill(TEST_JOB_DATA.bidAmount.toString());
         await bidDialog.locator('textarea[name="coverLetter"]').fill(TEST_JOB_DATA.coverLetter);
         // Start toast listener BEFORE clicking submit (toast fires when dialog closes)
-        const bidToastPromise = helper.form.waitForToast('Bid Placed!').catch(() => null);
+        const bidToastPromise = helper.form.waitForToast('Bid Placed!');
         await bidDialog.getByTestId('submit-bid-button').click({ force: true });
         // Wait for dialog to close before checking toast
         await bidDialog.waitFor({ state: 'hidden', timeout: 2430000 }).catch(() => {});
@@ -243,7 +243,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await page.goto(`/dashboard/jobs/${jobId}`);
 
         // Start toast listener BEFORE clicking (toast fires ~2s after click, must not miss it)
-        const acceptToastPromise = helper.form.waitForToast('Job Accepted!').catch(() => null);
+        const acceptToastPromise = helper.form.waitForToast('Job Accepted!');
 
         await page.getByTestId('accept-job-button').first().click();
 
@@ -315,7 +315,7 @@ test.describe('Complete Transaction Cycle E2E @slow', () => {
         await helper.job.waitForJobStatus('In Progress');
 
         try {
-            await helper.form.waitForToast('Work Started', 5000);
+            await helper.form.waitForToast('Work Started');
             console.log('[INFO] Work Started toast visible');
         } catch (e) {
             console.log('[INFO] Work Started toast not detected/missed, but status is In Progress. Proceeding.');

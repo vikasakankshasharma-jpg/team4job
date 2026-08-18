@@ -42,7 +42,7 @@ test.describe('Audit Chunk 1: Profile Setup', () => {
             const saveBtn = page.getByRole('button', { name: /Save|Update/i }).first();
             await saveBtn.click();
             
-            await helper.form.waitForToast(/Updated|Success/i).catch(() => {});
+            await helper.form.waitForToast(/Updated|Success/i);
         }
         
         console.log('✅ Chunk 1 Complete: Profile updated.');
