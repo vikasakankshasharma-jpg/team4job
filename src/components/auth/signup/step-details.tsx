@@ -186,17 +186,21 @@ export function StepDetails({ isMapLoaded }: { isMapLoaded: boolean }) {
               </FormControl>
               <div className="space-y-3 leading-none">
                 <FormLabel className="text-sm font-black italic tracking-tight cursor-pointer uppercase">
-                  {tAuth('agreeTo') || "I acknowledge the project protocols"}{" "}
-                  <Link href="/terms" className="text-primary hover:underline hover:tracking-wide transition-all" target="_blank">
-                    {tAuth('terms')}
+                  I have read and agree to the{" "}
+                  <Link href="/terms-of-service" className="text-primary hover:underline hover:tracking-wide transition-all" target="_blank">
+                    Terms of Service
                   </Link>
-                  {" "}{tAuth('and')}{" "}
-                  <Link href="/privacy" className="text-primary hover:underline hover:tracking-wide transition-all" target="_blank">
-                    {tAuth('privacy')}
+                  {", "}
+                  <Link href="/privacy-policy" className="text-primary hover:underline hover:tracking-wide transition-all" target="_blank">
+                    Privacy Policy
+                  </Link>
+                  {", and "}
+                  <Link href="/refund-policy" className="text-primary hover:underline hover:tracking-wide transition-all" target="_blank">
+                    Refund Policy
                   </Link>
                 </FormLabel>
                 <FormDescription className="text-[10px] font-medium uppercase tracking-[0.2em] opacity-40 leading-relaxed max-w-sm italic">
-                  {tAuth('agreeToDesc') || "Authorization acknowledges complete alignment with network rules and privacy mandates."}
+                  I understand this platform is a neutral marketplace and I accept full responsibility for my interactions and hiring decisions.
                 </FormDescription>
                 <FormMessage className="font-black italic uppercase text-[10px] tracking-widest" />
               </div>
