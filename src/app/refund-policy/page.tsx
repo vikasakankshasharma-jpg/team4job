@@ -26,7 +26,7 @@ export default function RefundPolicyPage() {
                     <CardContent className="p-6 sm:p-10 lg:p-12">
                         <div className="prose dark:prose-invert max-w-none space-y-8 prose-headings:font-bold prose-headings:tracking-tight prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground">
                             <p className="text-muted-foreground leading-relaxed">
-                                Team4Job operates as an escrow-based marketplace connecting Clients with Professionals.
+                                This platform operates as an escrow-based marketplace connecting Clients with independent Professionals.
                                 All payments are held securely in escrow until job completion. This policy governs refunds
                                 and cancellations for both parties.
                             </p>

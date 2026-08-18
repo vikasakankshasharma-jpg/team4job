@@ -21,12 +21,12 @@ export default function TermsPage() {
                         <div className="prose dark:prose-invert max-w-none space-y-8 prose-headings:font-bold prose-headings:tracking-tight prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground">
                             <section className="space-y-3">
                                 <h2 className="text-2xl text-foreground flex items-center gap-2"><span className="text-primary">1.</span> Acceptance of Terms</h2>
-                                <p className="text-base sm:text-lg">By accessing and using Team4Job (&quot;the Platform&quot;), you accept and agree to be bound by the terms and provision of this agreement.</p>
+                                <p className="text-base sm:text-lg">By accessing and using this platform (&quot;the Platform&quot;), you accept and agree to be bound by the terms and provision of this agreement.</p>
                             </section>
 
                             <section className="space-y-3">
                                 <h2 className="text-2xl text-foreground flex items-center gap-2"><span className="text-primary">2.</span> Description of Service</h2>
-                                <p className="text-base">The Platform provides a marketplace for Clients to post technical service requirements and for verified Professionals to bid on these jobs. We act as an intermediary and escrow agent but are not a party to the actual contract between Client and Professional.</p>
+                                <p className="text-base">The Platform provides a neutral marketplace for Clients to post technical service requirements and for independent Professionals to bid on these jobs. We act solely as an intermediary technology provider and escrow agent. We are not a party to the actual contract between Client and Professional, nor do we employ, endorse, or guarantee the work of any Professional.</p>
                             </section>
 
                             <section className="space-y-3">
@@ -36,6 +36,7 @@ export default function TermsPage() {
                                     <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
                                     <li>Clients agree to fund the escrow account before work begins.</li>
                                     <li>Professionals agree to perform work to the standards described in their bids.</li>
+                                    <li>Clients are solely responsible for conducting their own due diligence, including reviewing verification badges, before hiring a Professional.</li>
                                 </ul>
                             </section>
 
@@ -51,7 +52,7 @@ export default function TermsPage() {
 
                             <section className="space-y-3">
                                 <h2 className="text-2xl text-foreground flex items-center gap-2"><span className="text-primary">6.</span> Limitation of Liability</h2>
-                                <p className="text-base">Team4Job is not liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use the service, or for the conduct of any user on the platform.</p>
+                                <p className="text-base">This platform operates exclusively as a neutral marketplace. We take no liability for any direct, indirect, incidental, physical, or consequential damages resulting from the use or inability to use the service. The platform is not responsible for the conduct, safety, or work quality of any user, including unverified individuals entering your premises.</p>
                             </section>
                         </div>
                     </CardContent>
