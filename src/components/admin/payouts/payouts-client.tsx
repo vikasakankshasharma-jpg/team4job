@@ -36,7 +36,7 @@ export function PayoutsClient() {
                         beneficiary = userSnap.data().payouts;
                     }
                 }
-                return { id: d.id, ...data, payeeName, beneficiary };
+                return { id: d.id, ...data, payeeName, beneficiary } as any;
             }));
             
             // Sort client side
