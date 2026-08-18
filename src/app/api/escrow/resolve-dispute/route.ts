@@ -121,6 +121,8 @@ export async function POST(req: NextRequest) {
 
     const isManualMode = process.env.NEXT_PUBLIC_PAYOUT_MODE === 'MANUAL';
     let token = '';
+    let payoutTransferId: string | undefined;
+    let refundTransferId: string | undefined;
     if (!isManualMode) {
       token = await getCashfreeBearerToken();
     }
