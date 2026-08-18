@@ -5,14 +5,7 @@ import { sendServerEmail } from '@/lib/server-email';
 import { NextRequest, NextResponse } from 'next/server';
 
 const isE2eAllowed = () => {
-    const emulatorEnabled =
-        process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
-        process.env.NEXT_PUBLIC_USE_EMULATOR === 'true';
-
-    if (emulatorEnabled) return true;
-    if (process.env.NODE_ENV !== 'production') return true;
-
-    return false;
+    return process.env.NEXT_PUBLIC_E2E === 'true' && process.env.ALLOW_E2E_SEED === 'true';
 };
 
 /**

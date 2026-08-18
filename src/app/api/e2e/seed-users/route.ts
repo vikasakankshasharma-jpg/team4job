@@ -7,7 +7,7 @@ import { UserRecord } from 'firebase-admin/auth';
 export const dynamic = 'force-dynamic';
 
 const isE2eAllowed = () => {
-    return true;
+    return process.env.NEXT_PUBLIC_E2E === 'true' && process.env.ALLOW_E2E_SEED === 'true';
 };
 
 const getTestPassword = () => process.env.E2E_TEST_PASSWORD || 'TestUser_2026!';

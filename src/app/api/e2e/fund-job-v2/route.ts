@@ -3,7 +3,7 @@ import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 const isE2eAllowed = () => {
-    return true;
+    return process.env.NEXT_PUBLIC_E2E === 'true' && process.env.ALLOW_E2E_SEED === 'true';
 };
 
 export async function POST(req: NextRequest) {
