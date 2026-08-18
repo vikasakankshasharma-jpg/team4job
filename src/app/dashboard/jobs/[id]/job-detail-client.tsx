@@ -368,6 +368,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // State for Payment Dialog
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = React.useState(false);
+    const [showOnlyVerifiedBids, setShowOnlyVerifiedBids] = React.useState(false);
 
     // State for Bid Dialog
     const [isBidDialogOpen, setIsBidDialogOpen] = React.useState(false);
