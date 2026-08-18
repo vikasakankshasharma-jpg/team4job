@@ -140,7 +140,7 @@ service cloud.firestore {
     
     // Transactions - Production Rules
     match /transactions/{transactionId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && (resource.data.payerId == request.auth.uid || resource.data.payeeId == request.auth.uid || isAdmin() || isSupport());
       
       // Allow creation only if user is the payer
       allow create: if request.auth != null && 
@@ -294,10 +294,12 @@ service cloud.firestore {
       allow read, write: if isAdmin() || isSupport();
     }
     match /saved_searches/{searchId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     match /userTemplates/{templateId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }

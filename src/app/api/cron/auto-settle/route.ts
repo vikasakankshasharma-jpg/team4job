@@ -8,7 +8,7 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
-const CASHFREE_API_BASE = 'https://payout-gamma.cashfree.com/payouts';
+const CASHFREE_API_BASE = process.env.NEXT_PUBLIC_CASHFREE_ENVIRONMENT === 'PRODUCTION' ? 'https://payout-api.cashfree.com/payouts' : 'https://payout-gamma.cashfree.com/payouts';
 
 async function getCashfreeBearerToken(): Promise<string> {
     const response = await axios.post(
