@@ -1761,7 +1761,7 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                         {prof?.name} has <strong>NOT</strong> completed their Aadhar or Police Verification.
                                                     </p>
                                                     <p className="text-sm text-red-700/80 dark:text-red-300/80 mt-2">
-                                                        If you proceed to award this job to an unverified professional, you assume all risks and liabilities. Team4Job takes no responsibility for unverified individuals entering your premises.
+                                                        Team4Job is a neutral marketplace. For maximum safety and peace of mind, we highly recommend selecting a Verified Installer. If you choose to proceed with an unverified professional, please exercise your own judgment and take necessary precautions.
                                                     </p>
                                                 </div>
                                             );
