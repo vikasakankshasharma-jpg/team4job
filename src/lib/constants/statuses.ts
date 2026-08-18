@@ -26,7 +26,9 @@ export const TRANSACTION_STATUS = {
     RELEASED: 'released',
     REFUNDED: 'refunded',
     FAILED: 'failed',
-    DISPUTED: 'disputed'
+    DISPUTED: 'disputed',
+    PAYOUT_PENDING: 'payout_pending',
+    PAID_OUT: 'paid_out'
 } as const;
 
 export const DISPUTE_STATUS = {
