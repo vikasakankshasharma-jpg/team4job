@@ -108,6 +108,7 @@ import {
     RefreshCcw,
     Phone,
     PlusCircle,
+    AlertTriangle
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import React from "react";
@@ -1079,10 +1080,26 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase bg-gradient-to-br from-foreground to-foreground/40 bg-clip-text text-transparent leading-none flex items-center gap-6 flex-1">
                                             Logistics Queue ({bids.length})
-                                            <div className="h-1.5 flex-1 bg-gradient-to-r from-primary/20 to-transparent rounded-full shadow-inner" />
+                                            <div className="h-1.5 flex-1 bg-gradient-to-r from-primary/20 to-transparent rounded-full shadow-inner hidden md:block" />
                                         </CardTitle>
-                                        <div className="bg-primary/10 p-5 rounded-[2rem] shadow-2xl ring-1 ring-primary/20 text-primary animate-pulse ml-8">
-                                            <Users className="h-10 w-10" />
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox 
+                                                    id="verified-only" 
+                                                    checked={showOnlyVerifiedBids} 
+                                                    onCheckedChange={(c) => setShowOnlyVerifiedBids(!!c)} 
+                                                />
+                                                <label
+                                                    htmlFor="verified-only"
+                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-1"
+                                                >
+                                                    <ShieldCheck className="h-4 w-4 text-success" />
+                                                    Verified Only
+                                                </label>
+                                            </div>
+                                            <div className="bg-primary/10 p-5 rounded-[2rem] shadow-2xl ring-1 ring-primary/20 text-primary animate-pulse ml-4 hidden sm:block">
+                                                <Users className="h-10 w-10" />
+                                            </div>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -1120,17 +1137,42 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                             </div>
                                         </div>
                                     )}
-                                    {bids.length === 0 ? (
-                                        <div className="py-32 text-center flex flex-col items-center justify-center gap-6">
-                                            <div className="p-10 bg-muted/20 backdrop-blur-md rounded-[3rem] shadow-inner">
-                                                <Hourglass className="h-16 w-16 opacity-10 animate-pulse" />
-                                            </div>
-                                            <p className="text-[12px] font-black uppercase tracking-[0.5em] opacity-30 italic">Awaiting technical proposals...</p>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-10">
-                                            <AnimatePresence mode="popLayout">
-                                                {bids.map((bid, index) => {
+                                    
+                                    {(() => {
+                                        const displayedBids = showOnlyVerifiedBids 
+                                            ? bids.filter(bid => {
+                                                const prof = bid.professional as User;
+                                                return prof?.kycStatus === 'verified' || prof?.professionalProfile?.verified === true;
+                                            }) 
+                                            : bids;
+                                            
+                                        if (bids.length === 0) {
+                                            return (
+                                                <div className="py-32 text-center flex flex-col items-center justify-center gap-6">
+                                                    <div className="p-10 bg-muted/20 backdrop-blur-md rounded-[3rem] shadow-inner">
+                                                        <Hourglass className="h-16 w-16 opacity-10 animate-pulse" />
+                                                    </div>
+                                                    <p className="text-[12px] font-black uppercase tracking-[0.5em] opacity-30 italic">Awaiting technical proposals...</p>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        if (displayedBids.length === 0) {
+                                            return (
+                                                <div className="py-32 text-center flex flex-col items-center justify-center gap-6">
+                                                    <div className="p-10 bg-muted/20 backdrop-blur-md rounded-[3rem] shadow-inner">
+                                                        <ShieldCheck className="h-16 w-16 opacity-10" />
+                                                    </div>
+                                                    <p className="text-[12px] font-black uppercase tracking-[0.5em] opacity-30 italic">No verified bids yet.</p>
+                                                    <Button variant="link" onClick={() => setShowOnlyVerifiedBids(false)}>Show unverified bids</Button>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        return (
+                                            <div className="space-y-10">
+                                                <AnimatePresence mode="popLayout">
+                                                    {displayedBids.map((bid, index) => {
                                                     const professional = typeof bid.professional === 'object' ? bid.professional as User : null;
                                                     const profTier = professional?.professionalProfile?.tierPriority || 1;
                                                     const profName = professional?.name || "Professional";
@@ -1174,10 +1216,17 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                                                     {profTier === 4 ? "PLATINUM OPS" : profTier === 3 ? "GOLD GRADE" : profTier === 2 ? "SILVER TIER" : "INITIATE"}
                                                                                 </Badge>
                                                                             </div>
-                                                                            <div className="flex items-center justify-center sm:justify-start gap-2 text-[11px] font-black uppercase text-success tracking-[0.2em] italic">
-                                                                                <ShieldCheck className="h-4 w-4" />
-                                                                                TERMINAL-VERIFIED LOGISTICIAN
-                                                                            </div>
+                                                                            {professional?.kycStatus === 'verified' || professional?.professionalProfile?.verified === true ? (
+                                                                                <div className="flex items-center justify-center sm:justify-start gap-2 text-[11px] font-black uppercase text-success tracking-[0.2em] italic">
+                                                                                    <ShieldCheck className="h-4 w-4" />
+                                                                                    TERMINAL-VERIFIED LOGISTICIAN
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex items-center justify-center sm:justify-start gap-2 text-[11px] font-black uppercase text-destructive tracking-[0.2em] italic">
+                                                                                    <AlertTriangle className="h-4 w-4" />
+                                                                                    PENDING KYC (UNVERIFIED)
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                         
                                                                         <div className="flex flex-col bg-surface-container-high/40 p-6 rounded-[2rem] border border-white/5 shadow-inner">
@@ -1231,7 +1280,8 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                                 })}
                                             </AnimatePresence>
                                         </div>
-                                    )}
+                                        );
+                                    })()}
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -1693,47 +1743,73 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 </header>
 
                                 {selectedBidForAward && (
-                                    <div className="bg-surface-container-low p-8 rounded-[2.5rem] border border-muted/20 shadow-xl shadow-black/5 space-y-6 relative overflow-hidden group">
-                                        <div className="absolute -top-12 -right-12 p-4 opacity-5 group-hover:scale-110 transition-transform rotate-12">
-                                            <ShieldCheck className="h-40 w-40 text-primary" />
-                                        </div>
+                                    (() => {
+                                        const prof = selectedBidForAward.professional as User;
+                                        const isVerified = prof?.kycStatus === 'verified' || prof?.professionalProfile?.verified === true;
                                         
-                                        <div className="flex items-center gap-6 relative z-10">
-                                            <Avatar className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-primary/20">
-                                                <AvatarImage src={(selectedBidForAward.professional as User)?.avatarUrl} />
-                                                <AvatarFallback className="bg-primary/5 text-primary text-2xl font-black">
-                                                    {(selectedBidForAward.professional as User)?.name?.substring(0, 2).toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <h4 className="text-2xl font-black italic">{(selectedBidForAward.professional as User)?.name}</h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-success/10 text-success border-success/20">
-                                                        Top Candidate
-                                                    </Badge>
-                                                    <span className="text-xs text-muted-foreground font-black uppercase tracking-widest flex items-center gap-1">
-                                                        <IndianRupee className="h-3 w-3" />
-                                                        {selectedBidForAward.amount}
-                                                    </span>
+                                        if (!isVerified) {
+                                            return (
+                                                <div className="bg-red-50 dark:bg-red-950/20 p-8 rounded-[2.5rem] border border-red-200 shadow-xl space-y-6 relative overflow-hidden group text-center">
+                                                    <div className="flex justify-center mb-4">
+                                                        <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                                                            <AlertTriangle className="h-8 w-8" />
+                                                        </div>
+                                                    </div>
+                                                    <h3 className="text-xl font-bold text-red-600 uppercase">Warning: Unverified Installer</h3>
+                                                    <p className="text-red-800 dark:text-red-200 font-medium">
+                                                        {prof?.name} has <strong>NOT</strong> completed their Aadhar or Police Verification.
+                                                    </p>
+                                                    <p className="text-sm text-red-700/80 dark:text-red-300/80 mt-2">
+                                                        If you proceed to award this job to an unverified professional, you assume all risks and liabilities. Team4Job takes no responsibility for unverified individuals entering your premises.
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div className="bg-surface-container-low p-8 rounded-[2.5rem] border border-muted/20 shadow-xl shadow-black/5 space-y-6 relative overflow-hidden group">
+                                                <div className="absolute -top-12 -right-12 p-4 opacity-5 group-hover:scale-110 transition-transform rotate-12">
+                                                    <ShieldCheck className="h-40 w-40 text-primary" />
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-6 relative z-10">
+                                                    <Avatar className="h-20 w-20 border-4 border-background shadow-lg ring-2 ring-primary/20">
+                                                        <AvatarImage src={prof?.avatarUrl} />
+                                                        <AvatarFallback className="bg-primary/5 text-primary text-2xl font-black">
+                                                            {prof?.name?.substring(0, 2).toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <h4 className="text-2xl font-black italic">{prof?.name}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-success/10 text-success border-success/20">
+                                                                Top Candidate
+                                                            </Badge>
+                                                            <span className="text-xs text-muted-foreground font-black uppercase tracking-widest flex items-center gap-1">
+                                                                <IndianRupee className="h-3 w-3" />
+                                                                {selectedBidForAward.amount}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Separator className="bg-muted/10" />
+
+                                                <div className="grid grid-cols-2 gap-4 relative z-10">
+                                                    <div className="p-5 rounded-3xl bg-background/50 border border-muted/10 group-hover:border-success/20 transition-colors">
+                                                        <ShieldCheck className="h-5 w-5 text-success mb-2" />
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Escrow Security</p>
+                                                        <p className="text-sm font-semibold italic">Funds held safely</p>
+                                                    </div>
+                                                    <div className="p-5 rounded-3xl bg-background/50 border border-muted/10 group-hover:border-amber-500/20 transition-colors">
+                                                        <Zap className="h-5 w-5 text-amber-500 mb-2" />
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Satisfaction</p>
+                                                        <p className="text-sm font-semibold italic">Pay only if happy</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <Separator className="bg-muted/10" />
-
-                                        <div className="grid grid-cols-2 gap-4 relative z-10">
-                                            <div className="p-5 rounded-3xl bg-background/50 border border-muted/10 group-hover:border-success/20 transition-colors">
-                                                <ShieldCheck className="h-5 w-5 text-success mb-2" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Escrow Security</p>
-                                                <p className="text-sm font-semibold italic">Funds held safely</p>
-                                            </div>
-                                            <div className="p-5 rounded-3xl bg-background/50 border border-muted/10 group-hover:border-amber-500/20 transition-colors">
-                                                <Zap className="h-5 w-5 text-amber-500 mb-2" />
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Satisfaction</p>
-                                                <p className="text-sm font-semibold italic">Pay only if happy</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                        );
+                                    })()
                                 )}
 
                                 <footer className="pt-2">

@@ -25,7 +25,8 @@ import {
     Shield,
     Star,
     MessageSquare,
-    Trophy
+    Trophy,
+    AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -45,6 +46,7 @@ export function BidComparisonModal({
     job
 }: BidComparisonModalProps) {
     const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+    const [showKycWarning, setShowKycWarning] = useState(false);
 
     if (!bids || bids.length === 0) return null;
 
@@ -54,15 +56,55 @@ export function BidComparisonModal({
     const handleAward = () => {
         const bid = bids.find(b => b.id === selectedBidId);
         if (bid) {
+            const Professional = bid.professional as User;
+            const isVerified = Professional.kycStatus === 'verified' || Professional.professionalProfile?.verified === true;
+            if (!isVerified) {
+                setShowKycWarning(true);
+                return;
+            }
             onAward(bid);
             onClose();
+        }
+    };
+
+    const confirmAward = () => {
+        const bid = bids.find(b => b.id === selectedBidId);
+        if (bid) {
+            onAward(bid);
+            onClose();
+            setShowKycWarning(false);
         }
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col p-0 gap-0">
-                {/* Header */}
+                {showKycWarning ? (
+                    <div className="p-8 flex flex-col items-center justify-center text-center space-y-6">
+                        <div className="h-20 w-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                            <AlertTriangle className="h-10 w-10" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-red-600">WARNING: Unverified Installer</h2>
+                            <p className="text-muted-foreground max-w-md mx-auto">
+                                The installer you have selected has <strong>NOT</strong> completed their Aadhar or Police Verification KYC.
+                            </p>
+                            <p className="text-muted-foreground max-w-md mx-auto mt-4 text-sm">
+                                If you choose to give this job to an unverified installer to save money on the bid amount, you must use your own judgment. The platform takes no liability for unverified individuals entering your premises.
+                            </p>
+                        </div>
+                        <div className="flex gap-4 w-full max-w-md pt-4">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowKycWarning(false)}>
+                                Go Back
+                            </Button>
+                            <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={confirmAward}>
+                                Accept Risk & Hire
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Header */}
                 <DialogHeader className="p-6 pb-4 border-b">
                     <DialogTitle className="text-2xl flex items-center gap-2">
                         <Trophy className="h-6 w-6 text-amber-500" />
@@ -130,6 +172,33 @@ export function BidComparisonModal({
                                                         }`}
                                                 >
                                                     ₹{bid.amount.toLocaleString()}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+
+                                    {/* KYC Status Row */}
+                                    <tr className="border-b border-border hover:bg-muted/50">
+                                        <td className="p-3 font-medium sticky left-0 bg-background z-10">
+                                            <div className="flex items-center gap-2">
+                                                <Shield className="h-4 w-4 text-emerald-500" />
+                                                Verified Status
+                                            </div>
+                                        </td>
+                                        {bids.map((bid) => {
+                                            const Professional = bid.professional as User;
+                                            const isVerified = Professional.kycStatus === 'verified' || Professional.professionalProfile?.verified === true;
+                                            return (
+                                                <td key={bid.id} className="text-center p-3">
+                                                    {isVerified ? (
+                                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                            <CheckCircle2 className="h-3 w-3 mr-1" /> Verified
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                                            <AlertTriangle className="h-3 w-3 mr-1" /> Pending KYC
+                                                        </Badge>
+                                                    )}
                                                 </td>
                                             );
                                         })}
@@ -303,6 +372,8 @@ export function BidComparisonModal({
                         </Button>
                     </div>
                 </DialogFooter>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     );
