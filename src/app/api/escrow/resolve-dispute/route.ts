@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
       
       if (!isManualMode) {
         await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-          beneId: proUser.payouts.beneficiaryId,
+          beneId: proUser.payouts?.beneficiaryId,
           amount: finalTransfer.toFixed(2),
           transferId: payoutTransferId,
         }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
         refundTransferId = isManualMode ? `MANUAL_REFUND_${transaction.id}_${Date.now()}` : `REFUND_${transaction.id}_${Date.now()}`;
         if (!isManualMode) {
           await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-            beneId: clientUser.payouts.beneficiaryId,
+            beneId: clientUser.payouts?.beneficiaryId,
             amount: clientRefundAmount.toFixed(2),
             transferId: refundTransferId,
           }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
