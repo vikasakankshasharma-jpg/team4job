@@ -90,7 +90,7 @@ export function BidComparisonModal({
                                 The installer you have selected has <strong>NOT</strong> completed their Aadhar or Police Verification KYC.
                             </p>
                             <p className="text-muted-foreground max-w-md mx-auto mt-4 text-sm">
-                                Team4Job is a neutral marketplace. For maximum safety and peace of mind, we highly recommend selecting a Verified Installer. If you choose to proceed with an unverified professional, please exercise your own judgment and take necessary precautions.
+                                This platform is a neutral marketplace. For maximum safety and peace of mind, we highly recommend selecting a Verified Installer. If you choose to proceed with an unverified professional, please exercise your own judgment and take necessary precautions.
                             </p>
                         </div>
                         <div className="flex gap-4 w-full max-w-md pt-4">
