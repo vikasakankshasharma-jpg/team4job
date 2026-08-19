@@ -35,6 +35,7 @@ export type User = {
   mobile: string;
   avatarUrl: string;
   realAvatarUrl?: string;
+  createdAt?: Date | Timestamp;
   isMobileVerified?: boolean;
   isEmailVerified?: boolean;
   pincodes: {

@@ -119,8 +119,8 @@ export class ReputationService {
             } else {
                 history.push({ month: monthYear, points: points });
             }
-            // Keep last 12 months
-            if (history.length > 12) history.shift();
+            // Keep history indefinitely as requested by user
+            // Removed: if (history.length > 12) history.shift();
 
             transaction.update(userRef, {
                 'professionalProfile.points': newPoints,

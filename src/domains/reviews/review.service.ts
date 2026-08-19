@@ -55,11 +55,28 @@ export class ReviewService {
                 if (!userDoc.exists) return;
                 
                 const userData = userDoc.data();
-                const currentRating = userData?.professionalProfile?.rating || 0;
-                const currentCount = userData?.professionalProfile?.reviews || 0;
                 
+                // 1. Fetch up to the last 99 reviews for this user to calculate the rolling 100-job average
+                const recentReviewsSnap = await transaction.get(
+                    db.collection('reviews')
+                        .where('targetUserId', '==', input.targetUserId)
+                        .orderBy('createdAt', 'desc')
+                        .limit(99)
+                );
+                
+                let rollingTotalRating = input.rating;
+                let rollingCount = 1;
+                
+                recentReviewsSnap.forEach(doc => {
+                    rollingTotalRating += doc.data().rating || 0;
+                    rollingCount++;
+                });
+                
+                const newRating = Number((rollingTotalRating / rollingCount).toFixed(1));
+                
+                // 2. Keep the lifetime count tracking for display and badge purposes
+                const currentCount = userData?.professionalProfile?.reviews || 0;
                 const newCount = currentCount + 1;
-                const newRating = Number((((currentRating * currentCount) + input.rating) / newCount).toFixed(1));
 
                 const badges: string[] = [];
                 if (userData?.isFoundingProfessional) badges.push("Founding Member");

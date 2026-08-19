@@ -29,7 +29,8 @@ import {
     Star,
     MessageSquare,
     Trophy,
-    AlertTriangle
+    AlertTriangle,
+    Calendar
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -220,6 +221,25 @@ export function BidComparisonModal({
                                                             <AlertTriangle className="h-3 w-3 mr-1" /> Pending KYC
                                                         </Badge>
                                                     )}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+
+                                    {/* Member Since Row */}
+                                    <tr className="border-b border-border hover:bg-muted/50">
+                                        <td className="p-3 font-medium sticky left-0 bg-background z-10">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="h-4 w-4 text-emerald-500" />
+                                                Member Since
+                                            </div>
+                                        </td>
+                                        {bids.map((bid) => {
+                                            const Professional = bid.professional as User;
+                                            const joinedDate = Professional.createdAt ? toDate(Professional.createdAt) : null;
+                                            return (
+                                                <td key={bid.id} className="text-center p-3 text-sm text-muted-foreground">
+                                                    {joinedDate ? format(joinedDate, "MMM yyyy") : "Recently"}
                                                 </td>
                                             );
                                         })}
