@@ -142,6 +142,14 @@ export class DisputeService {
     async listMyDisputes(userId: string): Promise<Dispute[]> {
         return await disputeRepository.fetchByRequester(userId);
     }
+
+    async listAllDisputes(adminId: string): Promise<Dispute[]> {
+        const user = await userRepository.fetchById(adminId);
+        if (!user?.roles?.includes('Admin') && !user?.roles?.includes('Support Team')) {
+            throw new Error('Unauthorized access');
+        }
+        return await disputeRepository.fetchAll();
+    }
 }
 
 export const disputeService = new DisputeService();

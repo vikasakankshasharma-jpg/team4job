@@ -12,7 +12,9 @@ export type PlatformEventName =
   | 'case.approval_requested'
   | 'case.approved'
   | 'case.rejected'
-  | 'refund.requested';
+  | 'refund.requested'
+  | 'job.started'
+  | 'job.completed';
 
 export interface PlatformEvent<TPayload = Record<string, unknown>> {
   name: PlatformEventName;

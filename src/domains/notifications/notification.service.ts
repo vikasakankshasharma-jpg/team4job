@@ -10,7 +10,7 @@ export interface SendNotificationPayload {
     html?: string;
     phoneNumber?: string;
     templateName?: string;
-    templateVariables?: string[];
+    templateVariables?: any[];
     fcmTokens?: string[];
     userId?: string;
     useEscalation?: boolean;

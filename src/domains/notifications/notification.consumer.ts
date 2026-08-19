@@ -56,7 +56,7 @@ export async function notificationConsumer(event: PlatformEvent): Promise<void> 
                     .get();
                 
                 const localPros = prosSnapshot.docs
-                  .map(doc => ({ id: doc.id, ...doc.data() }))
+                  .map(doc => ({ id: doc.id, ...doc.data() } as any))
                   .filter((pro: any) => pro.pincodes?.residential === pincode || pro.pincodes?.business === pincode || pro.address?.cityPincode?.includes(pincode));
 
                 // Send notification to each professional in the area
@@ -118,6 +118,76 @@ export async function notificationConsumer(event: PlatformEvent): Promise<void> 
                     });
                 }
             }
+        }
+    }
+    
+    else if (event.name === 'job.started') {
+        const payload = event.payload as { jobId: string; clientId: string; professionalId: string };
+        const clientDoc = await db.collection('users').doc(payload.clientId).get();
+        const proDoc = await db.collection('users').doc(payload.professionalId).get();
+        const jobDoc = await db.collection('jobs').doc(payload.jobId).get();
+        
+        if (clientDoc.exists && proDoc.exists && jobDoc.exists) {
+            const client = clientDoc.data()!;
+            const pro = proDoc.data()!;
+            const jobData = jobDoc.data()!;
+            
+            // Notify Client
+            await notificationService.sendNotificationEscalated({
+                to: client.email,
+                phoneNumber: client.mobile,
+                subject: 'Job Started!',
+                text: `${pro.name} has officially started working on your job: ${jobData.title}.`,
+                userId: clientDoc.id,
+                fcmTokens: client.fcmTokens || [],
+                useEscalation: true
+            });
+            
+            // Notify Professional
+            await notificationService.sendNotificationEscalated({
+                to: pro.email,
+                phoneNumber: pro.mobile,
+                subject: 'Work Started!',
+                text: `You have officially started work on: ${jobData.title}. Good luck!`,
+                userId: proDoc.id,
+                fcmTokens: pro.fcmTokens || [],
+                useEscalation: true
+            });
+        }
+    }
+    
+    else if (event.name === 'job.completed') {
+        const payload = event.payload as { jobId: string; clientId: string; professionalId: string };
+        const clientDoc = await db.collection('users').doc(payload.clientId).get();
+        const proDoc = await db.collection('users').doc(payload.professionalId).get();
+        const jobDoc = await db.collection('jobs').doc(payload.jobId).get();
+        
+        if (clientDoc.exists && proDoc.exists && jobDoc.exists) {
+            const client = clientDoc.data()!;
+            const pro = proDoc.data()!;
+            const jobData = jobDoc.data()!;
+            
+            // Notify Client
+            await notificationService.sendNotificationEscalated({
+                to: client.email,
+                phoneNumber: client.mobile,
+                subject: 'Job Completed!',
+                text: `Your job: ${jobData.title} has been successfully completed by ${pro.name}.`,
+                userId: clientDoc.id,
+                fcmTokens: client.fcmTokens || [],
+                useEscalation: true
+            });
+            
+            // Notify Professional
+            await notificationService.sendNotificationEscalated({
+                to: pro.email,
+                phoneNumber: pro.mobile,
+                subject: 'Job Completed!',
+                text: `You have successfully completed the job: ${jobData.title}. The funds have been released to your account.`,
+                userId: proDoc.id,
+                fcmTokens: pro.fcmTokens || [],
+                useEscalation: true
+            });
         }
     }
 

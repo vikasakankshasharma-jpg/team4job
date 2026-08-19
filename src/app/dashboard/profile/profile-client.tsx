@@ -27,6 +27,7 @@ import React, { useEffect, useCallback } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { AnimatedAvatar } from "@/components/ui/animated-avatar";
+import { PortfolioSection } from "@/components/profile/portfolio-section";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1295,6 +1296,7 @@ export default function ProfileClient() {
                             </CardContent>
                         </Card>
                         <PayoutsCard user={user} onUpdate={fetchUser} />
+                        <PortfolioSection user={user} onUpdate={fetchUser} />
                     </div>
 
                     {/* Phase 21: Emergency Contacts */}

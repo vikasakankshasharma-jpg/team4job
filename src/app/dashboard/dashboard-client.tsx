@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Role } from "@/lib/types";
 import dynamic from "next/dynamic";
 import { getDashboardStatsAction } from "@/app/actions/dashboard.actions";
+import { useHelpStore } from "@/store/help-store";
 
 const AdminDashboardView = dynamic(() => import("@/components/dashboard/admin-dashboard-view").then(mod => mod.AdminDashboardView), {
   loading: () => <div className="h-96 w-full animate-pulse bg-muted/20 rounded-lg" />,
@@ -63,7 +64,22 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
   const [fetching, setFetching] = useState(false);
   const fetchingRef = useRef(false);
 
-  // Client-side fallback: fetch stats when server-side data is unavailable
+    // Client-side fallback: fetch stats when server-side data is unavailable
+  
+  const { startTour, completedTourIds } = useHelpStore();
+  
+  useEffect(() => {
+    if (user && !fetching) {
+      const tourId = role === 'Professional' ? 'pro-full-cycle' : 'client-full-cycle';
+      if (!completedTourIds.includes(tourId)) {
+        const timer = setTimeout(() => {
+          startTour(tourId);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, role, fetching, completedTourIds, startTour]);
+
   useEffect(() => {
     // Admin and Support roles handle their own data fetching
     if (data || !user || fetchingRef.current || fetchError || role === "Admin" || role === "Support Team") return;
@@ -190,3 +206,6 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
     </>
   );
 }
+
+
+

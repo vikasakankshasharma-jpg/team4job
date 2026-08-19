@@ -397,6 +397,22 @@ export class JobRepository {
             throw error;
         }
     }
+
+    /**
+     * Add a comment to the job
+     */
+    async addComment(jobId: string, comment: any): Promise<void> {
+        try {
+            const db = getAdminDb();
+            const { FieldValue } = await import('firebase-admin/firestore');
+            await db.collection(COLLECTIONS.JOBS).doc(jobId).update({
+                comments: FieldValue.arrayUnion(comment),
+                updatedAt: Timestamp.now(),
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 export const jobRepository = new JobRepository();

@@ -326,7 +326,9 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                                                                 try {
                                                                     const newComment: Comment = {
                                                                         id: `COMMENT-${Date.now()}`,
-                                                                        author: user,
+                                                                        authorId: user.id,
+                                                                        authorName: user.name,
+                                                                        authorAvatar: user.avatarUrl,
                                                                         timestamp: new Date(),
                                                                         content: `🔴 REVISION REQUESTED: ${disputeReason}`
                                                                     };

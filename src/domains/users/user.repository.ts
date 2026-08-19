@@ -163,6 +163,41 @@ export class UserRepository {
             throw error;
         }
     }
-}
+    async evaluateBadges(userId: string): Promise<void> {
+        try {
+            const db = getAdminDb();
+            const userDoc = await db.collection(COLLECTIONS.USERS).doc(userId).get();
+            if (!userDoc.exists) return;
+            const user = userDoc.data() as User;
+            
+            const badges: string[] = user.professionalProfile?.badges || [];
+            let updated = false;
 
+            const completedJobs = (user as any).completedJobs || 0;
+            const rating = user.professionalProfile?.rating || 0;
+
+            if (completedJobs >= 10 && !badges.includes("EXPERIENCED")) {
+                badges.push("EXPERIENCED");
+                updated = true;
+            }
+            if (completedJobs >= 50 && !badges.includes("VETERAN")) {
+                badges.push("VETERAN");
+                updated = true;
+            }
+            if (completedJobs >= 5 && rating >= 4.8 && !badges.includes("TOP_RATED")) {
+                badges.push("TOP_RATED");
+                updated = true;
+            }
+
+            if (updated) {
+                await db.collection(COLLECTIONS.USERS).doc(userId).update({
+                    'professionalProfile.badges': badges
+                });
+            }
+        } catch (error) {
+            console.error("Failed to evaluate badges", error);
+        }
+    }
+}
 export const userRepository = new UserRepository();
+

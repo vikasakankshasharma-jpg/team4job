@@ -536,7 +536,9 @@ export class JobService {
         const clientId = job.clientId;
         userRepository.incrementStats(clientId, { activeJobs: -1, completedJobs: 1 });
 
-        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 });
+                userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 }).then(() => {
+            userRepository.evaluateBadges(professionalId);
+        });
 
 
 
@@ -584,7 +586,9 @@ export class JobService {
 
         // Data Aggregation: Update Stats
         userRepository.incrementStats(userId, { activeJobs: -1, completedJobs: 1 });
-        userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 });
+                userRepository.incrementStats(professionalId, { activeJobs: -1, completedJobs: 1 }).then(() => {
+            userRepository.evaluateBadges(professionalId);
+        });
 
 
 
@@ -924,11 +928,12 @@ export class JobService {
     /**
      * Send a communication message for a job
      */
-    async sendCommunication(
+        async sendCommunication(
         jobId: string,
         senderId: string,
         content: string,
-        attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+        attachments: { fileName: string; fileUrl: string; fileType: string; }[] = [],
+        targetRecipientId?: string
     ): Promise<void> {
         const job = await jobRepository.fetchById(jobId);
         if (!job) throw new Error("Job not found");
@@ -944,11 +949,12 @@ export class JobService {
             author: senderId,
             authorName: isClient ? 'Client' : 'Professional',
             read: false,
-            attachments
-        });
+            attachments,
+            targetRecipientId: targetRecipientId // Added for pre-award negotiation
+        } as any); // using any because PrivateMessage might not have targetRecipientId yet
 
         // 2. Notify recipient
-        const recipientId = isClient ? job.awardedProfessionalId : job.clientId;
+        const recipientId = targetRecipientId || (isClient ? job.awardedProfessionalId : job.clientId);
         if (recipientId) {
             const [recipient, sender] = await Promise.all([
                 userRepository.fetchById(recipientId),
@@ -968,9 +974,38 @@ export class JobService {
             }
         }
     }
+
+    /**
+     * Add a public Q&A comment to a job
+     */
+    async addJobComment(jobId: string, authorId: string, content: string): Promise<void> {
+        const job = await jobRepository.fetchById(jobId);
+        if (!job) throw new Error('Job not found');
+
+        const author = await userRepository.fetchById(authorId);
+        if (!author) throw new Error('Author not found');
+
+        let maskedAuthorName = author.name;
+        if (author.roles.includes('Professional')) {
+            maskedAuthorName = "Verified Installer";
+        } else if (authorId === job.clientId) {
+            maskedAuthorName = "Job Poster";
+        }
+
+        const { Timestamp } = await import('firebase-admin/firestore');
+        const comment = {
+            id: `cmt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            authorId: authorId,
+            authorName: maskedAuthorName,
+            authorAvatar: authorId === job.clientId ? author.avatarUrl : '/placeholder-avatar.jpg',
+            content: content.trim(),
+            timestamp: Timestamp.now(),
+        };
+
+        await jobRepository.addComment(jobId, comment);
+    }
 }
 
 export const jobService = new JobService();
-
 
 

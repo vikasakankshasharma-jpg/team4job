@@ -146,6 +146,7 @@ import { StartWorkInput } from "@/components/job/start-work-input";
 import { CancelJobDialog } from "@/components/job/cancel-job-dialog";
 import { ProfessionalCompletionSection } from "@/components/job/professional-completion-section";
 import { ClientConfirmationSection } from "@/components/job/client-confirmation-section";
+import { LiveTrackingSection } from "@/components/job/live-tracking-section";
 import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { JobTimeline } from "@/components/job/job-timeline";
@@ -397,9 +398,10 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
     const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = React.useState(false);
     const [revealLoading, setRevealLoading] = React.useState(false);
 
-    // Phase 3: Award Confirmation Ceremony
+        // Phase 3: Award Confirmation Ceremony
     const [selectedBidForAward, setSelectedBidForAward] = React.useState<Bid | null>(null);
     const [isAwardConfirmOpen, setIsAwardConfirmOpen] = React.useState(false);
+    const [contractAgreed, setContractAgreed] = React.useState(false);
 
     // AI Market Insights State
     const [marketAnalysis, setMarketAnalysis] = React.useState<any>(null);
@@ -1473,49 +1475,31 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                         }
 
                                         {/* Completion Sections */}
-                                        {
-                                            !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'bid_accepted' || job.status?.toLowerCase() === 'pending funding') && !job.workStartedAt && (
-                                                <StartWorkInput job={job} user={user!} onJobUpdate={handleJobUpdate} />
-                                            )
-                                        }
-
-                                        {/* Professional Cannot Complete (No-Show / Unable to Proceed) */}
-                                        {
-                                            !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && !job.workStartedAt && (
-                                                <Button
-                                                    variant="ghost"
-                                                    className="w-full h-14 rounded-[1.5rem] bg-destructive/5 text-destructive hover:bg-destructive/10 font-black text-xs uppercase tracking-[0.2em] border border-destructive/10"
-                                                    data-testid="cancel-job-button"
-                                                    onClick={() => setIsCancelDialogOpen(true)}
-                                                >
-                                                    Cannot Complete Job
-                                                </Button>
-                                            )
-                                        }
-
-                                        {
+                                                                                {
                                             !isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress') && job.workStartedAt && (
-                                                <ProfessionalCompletionSection 
-                                                    job={job} 
-                                                    user={user!} 
-                                                    onJobUpdate={handleJobUpdate} 
-                                                    onSubmitWork={async (attachments) => {
-                                                        const res = await submitWorkAction(job.id, user!.id, attachments);
-                                                        if (!res.success) throw new Error(res.error);
-                                                    }}
-                                                />
+                                                <>
+                                                    <ProfessionalCompletionSection 
+                                                        job={job} 
+                                                        user={user!} 
+                                                        onJobUpdate={handleJobUpdate} 
+                                                    />
+                                                    <LiveTrackingSection job={job} user={user!} isClient={isClient} />
+                                                </>
                                             )
                                         }
 
                                         {
                                             isClient && (job.status?.toLowerCase() === 'in_progress' || job.status?.toLowerCase() === 'in progress' || job.status?.toLowerCase() === 'work_submitted' || job.status?.toLowerCase() === 'work submitted' || job.status?.toLowerCase() === 'pending confirmation') && (
-                                                <ClientConfirmationSection
-                                                    job={job}
-                                                    user={user!}
-                                                    onJobUpdate={handleJobUpdate}
-                                                    onCancel={() => setIsCancelDialogOpen(true)}
-                                                    onAddFunds={() => setIsAddFundsDialogOpen(true)}
-                                                />
+                                                <>
+                                                                                                        <ClientConfirmationSection
+                                                        job={job}
+                                                        user={user!}
+                                                        onJobUpdate={handleJobUpdate}
+                                                        onCancel={() => {}}
+                                                        onAddFunds={() => {}}
+                                                    />
+                                                    <LiveTrackingSection job={job} user={user!} isClient={isClient} />
+                                                                                                </>
                                             )
                                         }
 
@@ -1870,3 +1854,9 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         </motion.div>
     );
 }
+
+
+
+
+
+

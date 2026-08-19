@@ -1,4 +1,5 @@
 'use server';
+import { jobRepository } from "@/domains/jobs/job.repository";
 
 import { jobService } from '@/domains/jobs/job.service';
 import { userService } from '@/domains/users/user.service';
@@ -302,10 +303,11 @@ export async function sendMessageAction(
     jobId: string,
     senderId: string,
     content: string,
-    attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
+    attachments: { fileName: string; fileUrl: string; fileType: string; }[] = [],
+    targetRecipientId?: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
-        await jobService.sendCommunication(jobId, senderId, content, attachments);
+        await jobService.sendCommunication(jobId, senderId, content, attachments, targetRecipientId);
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -343,5 +345,31 @@ export async function updateDisputeStatusAction(
     }
 }
 
+
+
+export async function addJobCommentAction(jobId: string, authorId: string, content: string) {
+    try {
+        await jobService.addJobComment(jobId, authorId, content);
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+
+export async function updateJobLocationAction(jobId: string, lat: number, lng: number) {
+    try {
+        await jobRepository.update(jobId, {
+            installerLocation: {
+                lat,
+                lng,
+                updatedAt: new Date().toISOString()
+            }
+        } as any);
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
 
 

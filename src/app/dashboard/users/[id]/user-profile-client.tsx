@@ -46,6 +46,7 @@ import {
     FileText,
     ArrowRight
 } from "lucide-react";
+import { PortfolioViewer } from "@/components/profile/portfolio-viewer";
 import { Progress } from "@/components/ui/progress";
 import React, { useCallback, useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, RadialBar, RadialBarChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -604,6 +605,7 @@ export default function UserProfileClient() {
                                             ))}
                                         </div>
                                     </div>
+                                    <PortfolioViewer portfolio={professionalProfile.portfolio || []} />
 
                                     {professionalProfile.reputationHistory && professionalProfile.reputationHistory.length > 0 && (
                                         <div className="bg-surface-container-high/20 p-10 rounded-[3rem] border border-white/5 space-y-8">

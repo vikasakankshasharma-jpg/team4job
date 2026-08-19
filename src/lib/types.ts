@@ -17,7 +17,10 @@ export type AdminRole = 'support_agent' | 'risk_analyst' | 'finance_ops' | 'comp
 
 export type PortfolioItem = {
   id: string;
-  imageUrl: string;
+  type?: 'single' | 'before_after';
+  imageUrl?: string;
+  beforeImageUrl?: string;
+  afterImageUrl?: string;
   title: string;
   description: string;
   minTierPriority?: number;
@@ -82,6 +85,7 @@ export type User = {
   blockedProfessionalIds?: string[];
   professionalTags?: { [professionalId: string]: string[] }; // Custom tags for organizing Professionals
   isFoundingProfessional?: boolean;
+  kycDocuments?: string[];
   professionalProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
     points: number;
@@ -97,6 +101,7 @@ export type User = {
     reputationHistory?: { month: string; points: number }[];
     bio?: string;
     specialties?: string[];
+    badges?: string[];
     portfolio?: PortfolioItem[];
     availability?: {
       status: 'available' | 'busy' | 'on-vacation';
@@ -131,7 +136,9 @@ export type SavedSearch = {
 
 export type Comment = {
   id?: string;
-  author: User | DocumentReference;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
   timestamp: Date | Timestamp;
   content: string;
 };
@@ -659,5 +666,26 @@ export interface ProfessionalOnboardingInput {
     };
 
 
+}
+
+
+export interface ChatRoom {
+    id: string;
+    jobId: string;
+    jobTitle: string;
+    participants: string[];
+    lastMessage?: string;
+    updatedAt: string;
+    createdAt: string;
+}
+
+export interface ChatMessage {
+    id: string;
+    roomId: string;
+    senderId: string;
+    text: string;
+    attachmentUrl?: string;
+    createdAt: string;
+    readBy: string[];
 }
 

@@ -121,13 +121,17 @@ export const jobs: Job[] = [
     comments: [
       {
         id: "comment-job1-user3",
-        author: users[2],
+        authorId: users[2].id,
+        authorName: users[2].name,
+        authorAvatar: users[2].avatarUrl,
         timestamp: new Date(new Date().setDate(new Date().getDate() - 2)),
         content: "Is there an existing cabling infrastructure, or will new conduits need to be run?"
       },
       {
         id: "comment-job1-user1",
-        author: users[1],
+        authorId: users[1].id,
+        authorName: users[1].name,
+        authorAvatar: users[1].avatarUrl,
         timestamp: new Date(new Date().setDate(new Date().getDate() - 1)),
         content: "Good question. There are existing conduits, but some may need to be replaced. Please factor a small amount of new conduit work into your bid."
       }

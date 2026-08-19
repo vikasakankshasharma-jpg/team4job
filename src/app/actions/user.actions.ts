@@ -1,6 +1,7 @@
 'use server';
 
 import { userService } from '@/domains/users/user.service';
+import { userRepository } from '@/domains/users/user.repository';
 import { revalidatePath } from 'next/cache';
 import { User, UpdateProfileInput } from '@/lib/types';
 
@@ -98,3 +99,99 @@ export async function listProfessionalsAction(limit = 50, lastMemberSince?: stri
 
 
 
+
+
+
+export async function addPortfolioItemAction(userId: string, item: any) {
+    try {
+        const user = await userRepository.fetchById(userId);
+        if (!user) throw new Error("User not found");
+
+        const currentProfile = user.professionalProfile || {} as any;
+        const currentPortfolio = currentProfile.portfolio || [];
+        
+        const newItem = {
+            ...item,
+            id: Math.random().toString(36).substring(7),
+            completedAt: new Date().toISOString(),
+        };
+
+        const updatedProfile = {
+            ...currentProfile,
+            portfolio: [newItem, ...currentPortfolio],
+        };
+
+        await userRepository.update(userId, {
+            professionalProfile: updatedProfile as any,
+        });
+
+        return { success: true, id: newItem.id };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deletePortfolioItemAction(userId: string, itemId: string) {
+    try {
+        const user = await userRepository.fetchById(userId);
+        if (!user || !user.professionalProfile || !user.professionalProfile.portfolio) {
+            return { success: true };
+        }
+
+        const updatedPortfolio = user.professionalProfile.portfolio.filter((item: any) => item.id !== itemId);
+        
+        const updatedProfile = {
+            ...user.professionalProfile,
+            portfolio: updatedPortfolio,
+        };
+
+        await userRepository.update(userId, {
+            professionalProfile: updatedProfile as any,
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function adminApproveKYCAction(userId: string) {
+    try {
+        const user = await userRepository.fetchById(userId);
+        if (!user) throw new Error("User not found");
+
+        const updatedProfile = {
+            ...(user.professionalProfile || {}),
+            verified: true,
+        };
+
+        await userRepository.update(userId, {
+            kycStatus: 'verified',
+            professionalProfile: updatedProfile as any,
+        });
+
+        revalidatePath('/dashboard/admin/kyc');
+        revalidatePath(`/dashboard/users/${userId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to approve KYC' };
+    }
+}
+
+export async function adminRejectKYCAction(userId: string, reason?: string) {
+    try {
+        const user = await userRepository.fetchById(userId);
+        if (!user) throw new Error("User not found");
+
+        await userRepository.update(userId, {
+            kycStatus: 'rejected',
+            // optionally we could store the reason, but we'll just set the status for now
+        });
+
+        revalidatePath('/dashboard/admin/kyc');
+        revalidatePath(`/dashboard/users/${userId}`);
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to reject KYC' };
+    }
+}

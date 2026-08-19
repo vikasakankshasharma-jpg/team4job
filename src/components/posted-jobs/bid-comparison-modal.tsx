@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/use-user";
+import { getOrCreateChatRoomAction } from "@/app/actions/chat.actions";
 import {
     Dialog,
     DialogContent,
@@ -46,6 +49,19 @@ export function BidComparisonModal({
     job
 }: BidComparisonModalProps) {
     const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+    const router = useRouter();
+    const { user } = useUser();
+    const [messagingId, setMessagingId] = useState<string | null>(null);
+
+    const handleMessage = async (professionalId: string) => {
+        if (!job || !user) return;
+        setMessagingId(professionalId);
+        const res = await getOrCreateChatRoomAction(job.id!, job.title, professionalId, user.id);
+        if (res.success) {
+            router.push(`/dashboard/messages?roomId=${res.roomId}`);
+        }
+        setMessagingId(null);
+    };
     const [showKycWarning, setShowKycWarning] = useState(false);
 
     if (!bids || bids.length === 0) return null;
@@ -147,6 +163,11 @@ export function BidComparisonModal({
                                                                     Lowest Bid
                                                                 </Badge>
                                                             )}
+                                                            <div className="mt-2 flex justify-center">
+                                                                <Button variant="outline" size="sm" className="h-8 rounded-full" onClick={() => handleMessage(Professional.id)} disabled={messagingId === Professional.id}>
+                                                                    <MessageSquare className="h-3 w-3 mr-1" /> Message
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </th>
@@ -248,6 +269,36 @@ export function BidComparisonModal({
                                                     <Badge variant="outline" className={`${tierColor} border`}>
                                                         {Professional.professionalProfile?.tier}
                                                     </Badge>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+
+                                    {/* Badges Row */}
+                                    <tr className="border-b border-border hover:bg-muted/50">
+                                        <td className="p-3 font-medium sticky left-0 bg-background z-10">
+                                            <div className="flex items-center gap-2">
+                                                <Award className="h-4 w-4 text-purple-500" />
+                                                Badges
+                                            </div>
+                                        </td>
+                                        {bids.map((bid) => {
+                                            const Professional = bid.professional as User;
+                                            const badges = Professional.professionalProfile?.badges || [];
+
+                                            return (
+                                                <td key={bid.id} className="text-center p-3">
+                                                    <div className="flex flex-wrap justify-center gap-1">
+                                                        {badges.length > 0 ? (
+                                                            badges.map((badge, idx) => (
+                                                                <Badge key={idx} variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                                                    {badge}
+                                                                </Badge>
+                                                            ))
+                                                        ) : (
+                                                            <span className="text-xs text-muted-foreground">-</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             );
                                         })}
@@ -378,3 +429,5 @@ export function BidComparisonModal({
         </Dialog>
     );
 }
+
+

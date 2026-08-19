@@ -127,7 +127,7 @@ export class PaymentService {
             // Find transaction
             const transactionResult = await paymentRepository.findByOrderId(orderId);
 
-            if (!transactionResult) {
+                        if (!transactionResult) {
                 throw new Error('Transaction not found');
             }
 
@@ -135,6 +135,31 @@ export class PaymentService {
                 status: 'funded',
                 fundedAt: Timestamp.now() as any,
             });
+
+                        if (transactionResult.data.transactionType === 'SUBSCRIPTION') {
+                // Subscription Logic
+                const planId = transactionResult.data.jobId.split('-')[2];
+                if (!planId) return;
+                
+                const { userRepository } = await import('../../domains/users/user.repository');
+                                const userDoc = await userRepository.fetchById((transactionResult.data as any).userId);
+                
+                if (userDoc) {
+                    const now = new Date();
+                    const newExpiryDate = new Date(now);
+                    newExpiryDate.setMonth(newExpiryDate.getMonth() + 1); // 1 month subscription
+                    
+                    await userRepository.update(userDoc.id, {
+                        subscription: {
+                            planId: planId,
+                            planName: (transactionResult.data.description || '').replace('Subscription: ', ''),
+                            expiresAt: newExpiryDate.toISOString() as any,
+                            status: 'active'
+                        }
+                    } as any);
+                }
+                return;
+            }
 
             platformEventEmitter.emit({
                 name: 'escrow.funded',
@@ -356,4 +381,8 @@ export class PaymentService {
 }
 
 export const paymentService = new PaymentService();
+
+
+
+
 

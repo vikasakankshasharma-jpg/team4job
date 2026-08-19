@@ -72,7 +72,7 @@ const adminNavItems: NavItem[] = [
     { href: "/dashboard/team", icon: UserCog, labelKey: "teamManagement" },
     { href: "/dashboard/all-jobs", icon: Briefcase, labelKey: "allJobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, labelKey: "transactions" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
+    { href: "/dashboard/admin/disputes", icon: AlertOctagon, labelKey: "disputes" },
     { href: "/dashboard/audit-logs", icon: FileText, labelKey: "auditLog" },
     { href: "/dashboard/pending-signups", icon: UserPlus, labelKey: "pendingSignups" },
     { href: "/dashboard/signup-analytics", icon: TrendingUp, labelKey: "signupAnalytics" },
@@ -82,7 +82,7 @@ const adminNavItems: NavItem[] = [
 
 const supportTeamNavItems: NavItem[] = [
     { href: "/dashboard", icon: Home, labelKey: "dashboard" },
-    { href: "/dashboard/disputes", icon: AlertOctagon, labelKey: "disputes" },
+    { href: "/dashboard/admin/disputes", icon: AlertOctagon, labelKey: "disputes" },
     { href: "/dashboard/users", icon: UsersIcon, labelKey: "users" },
     { href: "/dashboard/all-jobs", icon: Briefcase, labelKey: "allJobs" },
     { href: "/dashboard/transactions", icon: IndianRupee, labelKey: "transactions" },

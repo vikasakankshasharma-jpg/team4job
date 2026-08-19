@@ -42,6 +42,11 @@ export class DisputeRepository {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispute));
     }
 
+    async fetchAll(): Promise<Dispute[]> {
+        const snapshot = await this.collection.orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispute));
+    }
+
     async addMessage(disputeId: string, message: DisputeMessage): Promise<void> {
         const { FieldValue } = await import('firebase-admin/firestore');
         await this.collection.doc(disputeId).update({

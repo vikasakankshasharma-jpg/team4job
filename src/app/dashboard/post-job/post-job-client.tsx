@@ -72,6 +72,7 @@ import { Save, Check, Loader2 as Loader, Bookmark, Sparkles } from "lucide-react
 import { createJobAction, updateJobAction, getJobForEditAction } from "@/app/actions/job.actions";
 import { CreateJobInput } from "@/domains/jobs/job.types";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIFeedbackControl } from "@/components/ai/AIFeedbackControl";
 import { compressImage } from "@/lib/image-compression";
 
@@ -238,6 +239,87 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
     />
   );
 }
+
+const CATEGORIZED_TEMPLATES: Record<string, any[]> = {
+  "Security & Surveillance": [
+    {
+      id: "cctv-new",
+      title: "New CCTV Camera Installation",
+      category: "Security & Surveillance",
+      skills: "CCTV Installation, Wiring, DVR Setup",
+      desc: "Need to install [X] new CCTV cameras at my location. I already have the cameras and DVR, but need professional installation, wiring, and configuration to my mobile phone.",
+      min: 1500, max: 3000
+    },
+    {
+      id: "cctv-relocate",
+      title: "Relocate Existing CCTV Cameras",
+      category: "Security & Surveillance",
+      skills: "CCTV Maintenance, Wiring",
+      desc: "Need to safely unmount and relocate [X] existing CCTV cameras to new positions. Wiring will need to be re-routed. DVR remains in the same place.",
+      min: 1000, max: 2000
+    },
+    {
+      id: "cctv-repair",
+      title: "CCTV/DVR Not Recording",
+      category: "Security & Surveillance",
+      skills: "Troubleshooting, DVR Maintenance",
+      desc: "My CCTV system has stopped recording. The cameras are on but the DVR shows a hard drive error or no signal. Need an expert to diagnose and fix.",
+      min: 500, max: 1500
+    }
+  ],
+  "Electrical & Power": [
+    {
+      id: "ac-install",
+      title: "Install New Split AC",
+      category: "Electrical & Power",
+      skills: "AC Installation, Drilling, Wiring",
+      desc: "Need a professional to install a new Split AC. I have the unit and the stand, but need copper piping installed and the outdoor unit mounted. Please bring a ladder and drill.",
+      min: 1500, max: 2500
+    },
+    {
+      id: "ac-relocate",
+      title: "Relocate Split AC",
+      category: "Electrical & Power",
+      skills: "AC Dismantling, Gas Refill",
+      desc: "Need to safely dismantle a Split AC from one room and install it in another room. Gas checking and top-up might be required.",
+      min: 2000, max: 3500
+    },
+    {
+      id: "wiring-fault",
+      title: "New Electrical Wiring Setup",
+      category: "Electrical & Power",
+      skills: "Wiring, Concealed Wiring, MCB",
+      desc: "Need new concealed wiring done for a room renovation. Includes setting up 4 new switchboards, fan point, and AC point with a dedicated MCB connection.",
+      min: 3000, max: 8000
+    }
+  ],
+  "Plumbing & Water Services": [
+    {
+      id: "plumbing-tap",
+      title: "Fix Non-Working / Leaking Taps",
+      category: "Plumbing & Water Services",
+      skills: "Tap Repair, Spindle Replacement",
+      desc: "I have [1 or multiple] taps that are leaking continuously or not dispensing water properly. Need the spindles checked or replaced.",
+      min: 300, max: 800
+    },
+    {
+      id: "plumbing-sink",
+      title: "Unchoke Kitchen Sink",
+      category: "Plumbing & Water Services",
+      skills: "Drain Cleaning, Pipe Clearing",
+      desc: "The kitchen sink is completely choked and water is not draining. Tried basic cleaning but it needs professional tools to clear the deep blockage.",
+      min: 400, max: 1000
+    },
+    {
+      id: "plumbing-geyser",
+      title: "Install Water Heater (Geyser)",
+      category: "Plumbing & Water Services",
+      skills: "Geyser Installation, Wall mounting",
+      desc: "Need a new 15L/25L geyser mounted on the bathroom wall and connected to the existing inlet/outlet water pipes.",
+      min: 500, max: 1200
+    }
+  ]
+};
 
 export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean }) {
   const { toast } = useToast();
@@ -943,9 +1025,63 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
           </h1>
           {isProcessing && <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />}
         </div>
-        <p className="text-lg font-medium italic opacity-40 tracking-tight underline underline-offset-8 decoration-primary/20">Architect your requirement for global deployment.</p>
-      </header>
-      <Form {...form}>
+        <p className="text-lg font-medium italic opacity-40 tracking-tight underline underline-offset-8 decoration-primary/20">Architect your requirement for global deployment.</p>        </header>
+
+                {/* Quick Job Templates */}
+        {!isEditMode && !repostJobId && (
+          <div className="mb-8 space-y-4 bg-surface-container-low/20 p-6 rounded-[2.5rem] border border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              Quick Templates
+            </h3>
+            
+            <Tabs defaultValue="CCTV" className="w-full">
+              <TabsList className="bg-background/50 border border-white/10 rounded-2xl p-1 mb-4">
+                {Object.keys(CATEGORIZED_TEMPLATES).map(category => (
+                  <TabsTrigger key={category} value={category} className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                    {category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {Object.entries(CATEGORIZED_TEMPLATES).map(([category, templates]) => (
+                <TabsContent key={category} value={category} className="mt-0">
+                  <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                    {templates.map(template => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("jobTitle", template.title, { shouldValidate: true });
+                          form.setValue("jobCategory", template.category, { shouldValidate: true });
+                          form.setValue("skills", template.skills, { shouldValidate: true });
+                          form.setValue("jobDescription", template.desc, { shouldValidate: true });
+                          form.setValue("priceEstimate.min", template.min, { shouldValidate: true });
+                          form.setValue("priceEstimate.max", template.max, { shouldValidate: true });
+                          toast({
+                            title: "Template Applied!",
+                            description: `Filled form for: ${template.title}`
+                          });
+                          // Scroll to description
+                          document.getElementById('jobDescription')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        className="min-w-[280px] max-w-[300px] p-5 text-left border border-white/10 bg-background/50 backdrop-blur-md rounded-[2rem] hover:ring-2 hover:ring-primary/50 hover:bg-primary/5 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex-shrink-0 group"
+                      >
+                        <h4 className="font-bold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-1">{template.title}</h4>
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{template.desc}</p>
+                        <div className="mt-3 flex items-center gap-2">
+                          <Badge variant="outline" className="text-[9px] uppercase font-black bg-background border-none">{template.category}</Badge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        )}
+
+        <Form {...form}>
         <form onSubmit={e => e.preventDefault()} className="grid gap-4">
           <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3.5rem] overflow-hidden ring-1 ring-white/5">
             <CardHeader className="p-12 bg-background/5 border-b border-white/5">
@@ -1016,14 +1152,48 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                     </Select>
                     <FormDescription>
                       {tJob('categoryDesc')}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                    </FormDescription>                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Quick Job Templates Contextual Rendering */}
+                {!isEditMode && !repostJobId && jobCategory && CATEGORIZED_TEMPLATES[jobCategory] && (
+                  <div className="space-y-4 bg-surface-container-low/20 p-6 rounded-[2.5rem] border border-white/5 shadow-inner">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-amber-500" />
+                      Quick Templates for {jobCategory}
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                      {CATEGORIZED_TEMPLATES[jobCategory].map(template => (
+                        <button
+                          key={template.id}
+                          type="button"
+                          onClick={() => {
+                            form.setValue("jobTitle", template.title, { shouldValidate: true });
+                            form.setValue("skills", template.skills, { shouldValidate: true });
+                            form.setValue("jobDescription", template.desc, { shouldValidate: true });
+                            form.setValue("priceEstimate.min", template.min, { shouldValidate: true });
+                            form.setValue("priceEstimate.max", template.max, { shouldValidate: true });
+                            toast({
+                              title: "Template Applied!",
+                              description: `Filled form for: ${template.title}`
+                            });
+                            // Scroll to description
+                            document.getElementById('jobDescription')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                          className="min-w-[280px] max-w-[300px] p-5 text-left border border-white/10 bg-background/50 backdrop-blur-md rounded-[2rem] hover:ring-2 hover:ring-primary/50 hover:bg-primary/5 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.05)] flex-shrink-0 group"
+                        >
+                          <h4 className="font-bold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-1">{template.title}</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{template.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="jobTitle"
+                <FormField
+                  control={form.control}
+                  name="jobTitle"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.5em] italic">{tJob('title')}</FormLabel>
@@ -1517,4 +1687,13 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     </div >
   );
 }
+
+
+
+
+
+
+
+
+
 

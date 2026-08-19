@@ -23,3 +23,11 @@ export async function listMyDisputesAction(userId: string) {
         return { success: false, error: error.message || 'Failed to list disputes' };
     }
 }
+export async function listAllDisputesAction(adminId: string) {
+    try {
+        const disputes = await disputeService.listAllDisputes(adminId);
+        return { success: true, disputes };
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to list all disputes' };
+    }
+}

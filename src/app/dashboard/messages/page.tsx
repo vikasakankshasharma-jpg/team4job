@@ -1,20 +1,20 @@
+import { Metadata } from 'next';
 
-import React, { Suspense } from 'react';
-import { Loader2 } from "lucide-react";
-import ChatClient from './chat-client';
+import MessagesClient from './messages-client';
 
-export const dynamic = 'force-dynamic';
 
-export default function MessagesPage() {
+export const metadata: Metadata = {
+    title: 'Messages | DoDo',
+    description: 'Direct messaging',
+};
+
+export default async function MessagesPage({ searchParams }: { searchParams: { roomId?: string } }) {
+    
+
     return (
-        <div className="h-[calc(100vh-6rem)] w-full"> {/* Adjust height for header */}
-            <Suspense fallback={
-                <div className="flex items-center justify-center h-full">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            }>
-                <ChatClient />
-            </Suspense>
-        </div>
+        
+            <MessagesClient initialRoomId={searchParams.roomId} />
+        
     );
 }
+

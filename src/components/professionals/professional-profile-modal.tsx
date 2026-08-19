@@ -46,7 +46,7 @@ function PortfolioThumbnail({ item }: { item: PortfolioItem }) {
             </div>
             {!isError && (
                 <Image
-                    src={item.imageUrl}
+                    src={item.imageUrl || item.afterImageUrl || ''}
                     alt={item.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 33vw"

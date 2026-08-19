@@ -16,7 +16,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, RefreshCw, Star, MoreHorizontal } from "lucide-react";
+import { PlusCircle, Loader2, RefreshCw, Star, MoreHorizontal, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import {
   Table,
@@ -65,6 +65,7 @@ import { AdvancedFilters, type JobFilters } from "@/components/posted-jobs/advan
 import { MobileJobCard } from "@/components/posted-jobs/mobile-job-card";
 import { useMyJobs } from "@/hooks/use-my-jobs";
 import { useTranslations } from 'next-intl';
+import { getOrCreateChatRoomAction } from "@/app/actions/chat.actions";
 
 function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () => void }) {
   const { user } = useUser();
@@ -175,9 +176,23 @@ function PromoteJobDialog({ job, onJobPromoted }: { job: Job, onJobPromoted: () 
   )
 }
 
-function PostedJobsTable({ jobs, title, description, footerText, loading, onUpdate }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean, onUpdate: () => void }) {
+function PostedJobsTable({ jobs, title, description, footerText, loading, onUpdate, filters }: { jobs: Job[], title: string, description: string, footerText: string, loading: boolean, onUpdate: () => void, filters?: JobFilters }) {
   const tJob = useTranslations('job');
   const tCommon = useTranslations('common');
+  const { user } = useUser();
+  const router = useRouter();
+  const [messagingId, setMessagingId] = useState<string | null>(null);
+
+  const handleMessage = async (job: Job) => {
+    if (!job.awardedProfessional || !user) return;
+    setMessagingId(job.id!);
+    const professionalId = typeof job.awardedProfessional === "string" ? job.awardedProfessional : job.awardedProfessional.id;
+    const res = await getOrCreateChatRoomAction(job.id!, job.title, professionalId, user.id);
+    if (res.success) {
+        router.push(`/dashboard/messages?roomId=${res.roomId}`);
+    }
+    setMessagingId(null);
+  };
 
   const getJobType = (job: Job) => {
     if (!job.awardedProfessional) return 'N/A';
@@ -205,6 +220,14 @@ function PostedJobsTable({ jobs, title, description, footerText, loading, onUpda
 
     if (job.status === 'Unbid') {
       actions.push(<PromoteJobDialog key="promote" job={job} onJobPromoted={onUpdate} />);
+    }
+
+    if (job.awardedProfessional) {
+      actions.push(
+        <DropdownMenuItem key="message" onClick={() => handleMessage(job)} disabled={messagingId === job.id}>
+          <MessageSquare className="mr-2 h-4 w-4" /> Message Pro
+        </DropdownMenuItem>
+      );
     }
 
     return actions;

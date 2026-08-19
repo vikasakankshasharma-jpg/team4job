@@ -6,10 +6,11 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
-import { toast } from "react-toastify";
+import { useToast } from "@/hooks/use-toast";
 
 export function NotificationSettings() {
     const { db } = useFirebase();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [settings, setSettings] = useState({
         isEmailEnabled: true,
@@ -44,10 +45,10 @@ export function NotificationSettings() {
         try {
             const docRef = doc(db, 'platform_settings', 'notifications');
             await setDoc(docRef, newSettings, { merge: true });
-            toast.success("Settings updated globally.");
+            toast({ title: "Settings updated", description: "Settings updated globally." });
         } catch (err) {
             console.error("Failed to update settings:", err);
-            toast.error("Failed to update settings.");
+            toast({ title: "Error", description: "Failed to update settings.", variant: "destructive" });
             // Revert
             setSettings(settings);
         }

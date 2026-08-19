@@ -59,11 +59,23 @@ export class ReviewService {
                 const currentCount = userData?.professionalProfile?.reviews || 0;
                 
                 const newCount = currentCount + 1;
-                const newRating = ((currentRating * currentCount) + input.rating) / newCount;
+                const newRating = Number((((currentRating * currentCount) + input.rating) / newCount).toFixed(1));
+
+                const badges: string[] = [];
+                if (userData?.isFoundingProfessional) badges.push("Founding Member");
+                if (userData?.professionalProfile?.verified) badges.push("Verified Identity");
+                if (newCount >= 10) badges.push("Experienced");
+                
+                if (newRating >= 4.8 && newCount >= 5) {
+                    badges.push("Top Rated");
+                } else if (newRating >= 4.5 && newCount >= 1) {
+                    badges.push("Rising Star");
+                }
 
                 transaction.update(userRef, {
                     'professionalProfile.reviews': newCount,
-                    'professionalProfile.rating': Number(newRating.toFixed(1))
+                    'professionalProfile.rating': newRating,
+                    'professionalProfile.badges': badges
                 });
             });
 

@@ -192,75 +192,33 @@ export default function BillingClient() {
     if (!user || !db) return;
     setIsPurchasing(plan.id);
 
-    try {
-      const auth = getAuth();
-      const token = await auth.currentUser?.getIdToken();
+        try {
+      const { createSubscriptionOrderAction } = await import('@/app/actions/subscription.actions');
+      const res = await createSubscriptionOrderAction(user.id, plan.id, plan.name, plan.price);
 
-      if (!token) {
-        throw new Error(t('loginRequired'));
-      }
-
-      const response = await fetch('/api/escrow/initiate-payment', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          jobId: `SUB-${user.id}-${plan.id}-${Date.now()}`,
-          jobTitle: `Subscription: ${plan.name}`,
-          clientId: user.id, // Payer is the user
-          planId: plan.id, // Explicitly pass plan ID
-          professionalId: 'PLATFORM', // Payee is the platform
-          amount: plan.price,
-          travelTip: 0,
-          clientFee: 0,
-        })
-      });
-
-      const responseData = await response.json();
-
-      if (!responseData.payment_session_id) {
-        throw new Error(t('sessionError'));
+      if (!res.success || !res.data) {
+        throw new Error(res.error || t('sessionError'));
       }
 
       const redirectUrl = searchParams.get('redirectUrl');
 
-      const cashfree = new (window as any).Cashfree(responseData.payment_session_id);
-      cashfree.checkout({
-        payment_method: "upi",
-        onComplete: async (data: any) => {
-          if (data.order && data.order.status === 'PAID') {
-            toast({
-              title: t('paymentSuccess'),
-              description: t('paymentSuccessDesc'),
-              variant: "default",
-            });
-            // We do NOT update the DB here. We wait for the webhook.
-            // But we can trigger a re-fetch or show a pending state.
-
-
-            // Wait a moment for webhook to process
-            setTimeout(() => {
-              fetchUser();
-              if (redirectUrl) {
-                router.push(redirectUrl);
-              }
-            }, 3000);
-
-          } else {
-            throw new Error(t('paymentFailedDesc'));
+      // @ts-ignore
+      const cashfree = new window.Cashfree({ mode: "sandbox" });
+      const checkoutOptions = {
+          paymentSessionId: res.data.orderToken,
+          redirectTarget: "_self", // Redirect flow
+      };
+      
+      cashfree.checkout(checkoutOptions).then((result: any) => {
+          if (result.error) {
+              toast({
+                  title: t('paymentFailed'),
+                  description: result.error.message || t('paymentFailedDesc'),
+                  variant: "destructive",
+              });
           }
-        },
-        onError: (errorData: any) => {
-          toast({
-            title: t('paymentFailed'),
-            description: errorData.error.message || t('paymentFailedDesc'),
-            variant: "destructive",
-          });
-        },
       });
-
+      
     } catch (error: any) {
       toast({
         title: t('initiateFailed'),
@@ -332,3 +290,4 @@ export default function BillingClient() {
     </div>
   );
 }
+
