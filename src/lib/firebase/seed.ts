@@ -26,7 +26,12 @@ import type { User, Job, Dispute, BlacklistEntry, Transaction, SubscriptionPlan 
 import { PlaceHolderImages } from '../placeholder-images';
 import { config } from 'dotenv';
 
-config({ path: '.env.production', override: true }); // Load production env vars
+config({ path: '.env.production' }); // Load production env vars as base
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envLocalPath)) {
+    config({ path: envLocalPath, override: true }); // Override with .env.local
+    console.log('✅ Loaded .env.local overrides for local seeding');
+}
 
 // --- Firebase Admin SDK Initialization ---
 

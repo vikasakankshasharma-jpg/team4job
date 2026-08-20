@@ -176,11 +176,15 @@ export class AuthHelper {
             await this.page.waitForTimeout(1000);
 
             // Check primary or secondary indicators first (they might already be there)
-            const isProfessional = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false) ||
-                await this.page.getByText('Open Jobs').filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false);
-            const isClient = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible({ timeout: 60000 }).catch(() => false) ||
-                await this.page.getByText(/Post (New )?Job/i).filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false) ||
-                await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible({ timeout: 60000 }).catch(() => false);
+            const profLocator = this.page.getByText('Browse Jobs').or(this.page.getByText('Open Jobs')).filter({ visible: true }).first();
+            const clientLocator = this.page.getByTestId('dashboard-post-job-btn').or(this.page.getByText(/Post (New )?Job/i)).or(this.page.getByText(/(My )?Active Jobs/i)).filter({ visible: true }).first();
+
+            try {
+                await profLocator.or(clientLocator).waitFor({ state: 'visible', timeout: 60000 });
+            } catch (e) {}
+
+            const isProfessional = await profLocator.isVisible();
+            const isClient = await clientLocator.isVisible();
 
             const currentRoleMatched = (targetRole === 'Professional' && isProfessional) ||
                 (targetRole === 'Client' && isClient);
@@ -212,7 +216,7 @@ export class AuthHelper {
                     await userMenu.click({ force: true });
                     console.log(`[AuthHelper] Clicked user menu (attempt ${i + 1})`);
                     
-                    if (await roleOption.isVisible({ timeout: 60000 })) {
+                    if (await roleOption.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                         menuOpened = true;
                         break;
                     }
@@ -231,10 +235,12 @@ export class AuthHelper {
                 await this.page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
                 await this.page.waitForTimeout(2000);
 
-                const profNow = await this.page.getByText('Browse Jobs').filter({ visible: true }).first().isVisible().catch(() => false);
-                const clientNow = await this.page.getByTestId('dashboard-post-job-btn').filter({ visible: true }).isVisible().catch(() => false) ||
-                    await this.page.getByText('Post Job').filter({ visible: true }).first().isVisible().catch(() => false) ||
-                    await this.page.getByText(/(My )?Active Jobs/i).filter({ visible: true }).first().isVisible().catch(() => false);
+                const profNowLocator = this.page.getByText('Browse Jobs').or(this.page.getByText('Open Jobs')).filter({ visible: true }).first();
+                const clientNowLocator = this.page.getByTestId('dashboard-post-job-btn').or(this.page.getByText(/Post (New )?Job/i)).or(this.page.getByText(/(My )?Active Jobs/i)).filter({ visible: true }).first();
+                try { await profNowLocator.or(clientNowLocator).waitFor({ state: 'visible', timeout: 15000 }); } catch (e) {}
+                
+                const profNow = await profNowLocator.isVisible();
+                const clientNow = await clientNowLocator.isVisible();
 
                 if ((targetRole === 'Professional' && profNow) || (targetRole === 'Client' && clientNow)) {
                     console.log(`[AuthHelper] ${targetRole} indicators found after direct dashboard navigation.`);
@@ -631,7 +637,7 @@ export class AuthHelper {
                 .or(this.page.locator('[data-testid="user-menu-button"]'))
                 .or(this.page.locator('button:has-text("D")'));
 
-            if (await userMenu.isVisible({ timeout: 60000 }).catch(() => false)) {
+            if (await userMenu.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                 await userMenu.click({ force: true });
                 const logoutBtn = this.page.getByTestId('logout-button').first()
                     .or(this.page.getByRole('menuitem', { name: /Log out|Sign out|Logout/i }).first())
@@ -703,7 +709,7 @@ export class FormHelper {
         console.log('[FormHelper] Checking for stale drafts to discard...');
         const dialog = this.page.getByRole('dialog', { name: 'Resume your draft?' });
         try {
-            if (await dialog.isVisible({ timeout: 60000 }).catch(() => false)) {
+            if (await dialog.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                 console.log('[FormHelper] Stale draft detected, clicking Discard...');
                 const discardBtn = this.page.getByRole('button', { name: /Discard Draft/i });
                 await discardBtn.click();
@@ -1651,7 +1657,7 @@ export class NavigationHelper {
 
         // Dismiss persistent draft recovery dialog
         const resumeModal = this.page.locator('div[role="dialog"]:has-text("Resume your draft?"), h2:has-text("Resume your draft?"), .alert-dialog:has-text("Resume")').first();
-        if (await resumeModal.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await resumeModal.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
             console.log('[NavigationHelper] Found Resume Draft modal, discarding it');
             const discardBtn = this.page.locator('button:has-text("Discard")').first();
             if (await discardBtn.isVisible()) {
@@ -1757,7 +1763,7 @@ export class JobHelper {
         // Button text is "Official Authorization" or "Authorize Offer"
         // Toast on success is "Offer Sent" or "MISSION AUTHORIZED".
         const authBtn = this.page.getByRole('button', { name: /Official Authorization|Authorize Offer/i }).first();
-        if (await authBtn.isVisible({ timeout: 60000 }).catch(() => false)) {
+        if (await authBtn.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
             await authBtn.click({ force: true });
         }
     }

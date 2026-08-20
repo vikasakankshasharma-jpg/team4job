@@ -2,8 +2,14 @@
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envLocalPath)) {
+    dotenv.config({ path: envLocalPath });
+}
 
 // Force use of Emulators
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';

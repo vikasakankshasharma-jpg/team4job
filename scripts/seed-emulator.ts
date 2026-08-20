@@ -2,6 +2,14 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envLocalPath)) {
+    dotenv.config({ path: envLocalPath });
+}
 
 // Explicitly set Emulator Hosts for Admin SDK
 process.env.FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099";

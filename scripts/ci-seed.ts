@@ -2,6 +2,15 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import * as fs from 'fs';
+
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envLocalPath)) {
+    dotenv.config({ path: envLocalPath });
+    console.log('✅ Loaded .env.local for local CI seeding');
+}
 
 // Force use of Emulators for local seeding
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
