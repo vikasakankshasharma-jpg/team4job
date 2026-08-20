@@ -1,4 +1,5 @@
 // infrastructure/logger/index.ts
+import * as Sentry from '@sentry/nextjs';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
@@ -24,26 +25,36 @@ class Logger {
     }
 
     info(message: string, context?: LogContext) {
-        if (this.isDevelopment) {
-            console.log(this.formatMessage('info', message, context));
-        }
+        console.log(this.formatMessage('info', message, context));
     }
 
     warn(message: string, context?: LogContext) {
-        if (this.isDevelopment) {
-            console.warn(this.formatMessage('warn', message, context));
-        }
+        console.warn(this.formatMessage('warn', message, context));
     }
 
     error(message: string, error?: Error | any, context?: LogContext) {
-        if (this.isDevelopment) {
-            const errorContext = {
-                ...context,
-                error: error?.message || String(error),
-                stack: error?.stack,
-            };
-            console.error(this.formatMessage('error', message, errorContext));
-        }
+        const errorContext = {
+            ...context,
+            error: error?.message || String(error),
+            stack: error?.stack,
+        };
+        console.error(this.formatMessage('error', message, errorContext));
+        
+        // Route to Sentry
+        Sentry.withScope((scope) => {
+            if (context) {
+                scope.setExtras(context);
+            }
+            if (context?.userId) {
+                scope.setUser({ id: context.userId });
+            }
+            
+            if (error instanceof Error) {
+                Sentry.captureException(error);
+            } else {
+                Sentry.captureMessage(message, 'error');
+            }
+        });
     }
 
     debug(message: string, context?: LogContext) {
