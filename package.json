@@ -125,7 +125,7 @@
     "next": "^16.2.4",
     "next-intl": "^4.9.1",
     "next-themes": "^0.3.0",
-    "nodemailer": "^8.0.1",
+    "nodemailer": "^9.0.5",
     "patch-package": "^8.0.0",
     "pdf-parse": "^2.4.5",
     "react": "^19.2.3",
@@ -181,5 +181,12 @@
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
     "typescript-eslint": "^8.59.0"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0",
+    "extract-zip": "^2.0.1",
+    "js-yaml": "^4.1.0",
+    "tmp": "^0.2.3",
+    "uuid": "^11.1.1"
   }
 }
