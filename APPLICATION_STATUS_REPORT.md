@@ -188,11 +188,11 @@ Created comprehensive guides:
 - [ ] Verify edge case tests pass consistently
 - [ ] Check navigation visibility flake (if persists)
 
-### Short-term (Next Sprint)
-- [ ] Fix navigation element visibility in helpers
-- [ ] Implement `.env.local` handling for CI seeding
-- [ ] Create optional nightly `@slow` test job
-- [ ] Add performance budget tracking
+### Short-term (Next Sprint) - COMPLETED
+- [x] Fix navigation element visibility in E2E test helpers
+- [x] Implement `.env.local` handling for CI database seeding
+- [x] Create optional nightly `@slow` test job
+- [x] Add performance budget tracking
 
 ### Long-term (Q2 2026)
 - [ ] Implement feature flags for gradual rollouts
