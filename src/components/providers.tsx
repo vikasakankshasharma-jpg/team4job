@@ -4,6 +4,7 @@
 import { HelpProvider } from "@/hooks/use-help";
 import { useFcm } from "@/hooks/use-fcm";
 import { QueryProvider } from "@/providers/query-provider";
+import { FeatureFlagProvider } from "@/lib/feature-flags";
 
 import { useEffect } from "react";
 
@@ -24,9 +25,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <QueryProvider>
             <HelpProvider>
-                <FcmInitializer />
-                <HydrationMarker />
-                {children}
+                <FeatureFlagProvider>
+                    <FcmInitializer />
+                    <HydrationMarker />
+                    {children}
+                </FeatureFlagProvider>
             </HelpProvider>
         </QueryProvider>
     )

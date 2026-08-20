@@ -8,15 +8,17 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldAlert, TrendingUp, Users, AlertTriangle, CheckCircle, Clock, UserPlus, Briefcase, FileText, Activity, Zap, CheckCircle2, Filter } from "lucide-react";
+import { Loader2, ShieldAlert, TrendingUp, Users, AlertTriangle, CheckCircle, Clock, UserPlus, Briefcase, FileText, Activity, Zap, CheckCircle2, Filter, Settings } from "lucide-react";
 import { collection, query, where, orderBy, onSnapshot, limit, doc, updateDoc } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
 import { useTranslations } from 'next-intl';
 import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
 import { useAdminMetrics } from "@/hooks/use-admin-metrics";
+import { useAllFeatureFlags, toggleFeatureFlag } from "@/lib/feature-flags";
 
 interface AdminAlert {
     id: string;
@@ -64,6 +66,7 @@ export default function AdminClient() {
     const [alerts, setAlerts] = React.useState<AdminAlert[]>([]);
     const [alertFilter, setAlertFilter] = React.useState<'ALL' | 'INFO' | 'WARNING' | 'CRITICAL' | 'UNREAD'>('ALL');
     const { metrics, statsLoading, platformHealth } = useAdminMetrics();
+    const featureFlags = useAllFeatureFlags();
 
     // Authorization Guard
     React.useEffect(() => {
@@ -285,6 +288,42 @@ export default function AdminClient() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Feature Flags Management */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Feature Flags
+                    </CardTitle>
+                    <CardDescription>Manage gradual rollouts and beta features</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {Object.entries(featureFlags).map(([key, value]) => (
+                            <div key={key} className="flex items-center justify-between p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+                                <div className="space-y-0.5">
+                                    <div className="text-sm font-medium">{key}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {value ? "Enabled" : "Disabled"}
+                                    </div>
+                                </div>
+                                <Switch
+                                    checked={value}
+                                    onCheckedChange={async (checked) => {
+                                        try {
+                                            await toggleFeatureFlag(key, checked);
+                                            toast({ title: "Feature flag updated", description: `${key} is now ${checked ? "enabled" : "disabled"}.` });
+                                        } catch {
+                                            toast({ title: "Error", description: "Failed to update feature flag.", variant: "destructive" });
+                                        }
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Alerts Feed */}
             <Card className="col-span-3">
