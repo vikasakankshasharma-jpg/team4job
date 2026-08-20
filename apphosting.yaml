@@ -1,4 +1,4 @@
-# Settings to manage and configure a Firebase App Hosting backend.
+﻿# Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
@@ -11,21 +11,21 @@ runConfig:
 env:
   # Firebase Configuration
   - variable: FIREBASE_PROJECT_ID
-    value: team4job-live
+    value: team-cctv-live-8294
   - variable: FIREBASE_CLIENT_EMAIL
-    value: firebase-adminsdk-fbsvc@team4job-live.iam.gserviceaccount.com
+    value: firebase-adminsdk-fbsvc@team-cctv-live-8294.iam.gserviceaccount.com
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: AIzaSyA788RVwnOv9P-TD3ID3IMWnlxDFaYHRgk
+    value: AIzaSyDAvp81yMXAI1kuz5XXzbG_us-Owcncuzc
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: team4job-live.firebaseapp.com
+    value: team-cctv-live-8294.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: team4job-live
+    value: team-cctv-live-8294
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: team4job-live.firebasestorage.app
+    value: team-cctv-live-8294.firebasestorage.app
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "1027204295362"
+    value: "361687878258"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: 1:1027204295362:web:196d8eb01a5d87a9b8e95b
+    value: 1:361687878258:web:196d8eb01a5d87a9b8e95b
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: G-FGSDGE9BFR
   
@@ -69,3 +69,4 @@ env:
     secret: gemini-api-key
   - variable: GOOGLE_API_KEY
     secret: gemini-api-key
+
