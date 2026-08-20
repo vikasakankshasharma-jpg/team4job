@@ -81,9 +81,11 @@ service cloud.firestore {
       
       allow update: if request.auth != null && 
         (resource.data.clientId == request.auth.uid || 
-         resource.data.awardedProfessionalId == request.auth.uid ||
-         (resource.data.awardedProfessional != null && resource.data.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid)) ||
-         (resource.data.awardedProfessionalId != null && resource.data.awardedProfessionalId == request.auth.uid) ||
+         (
+           (resource.data.awardedProfessionalId == request.auth.uid ||
+            (resource.data.awardedProfessional != null && resource.data.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid))) &&
+           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['budget', 'clientId', 'awardedProfessionalId', 'awardedProfessional', 'paymentStatus'])
+         ) ||
          isAdmin() || 
          isSupport());
       
@@ -146,9 +148,8 @@ service cloud.firestore {
       allow create: if request.auth != null && 
         request.resource.data.payerId == request.auth.uid;
         
-      // Allow updates only by payer or admin (and restricted fields if needed)
-      allow update: if request.auth != null && 
-        (resource.data.payerId == request.auth.uid || isAdmin());
+      // Allow updates only by admin (financial records shouldn't be mutable by clients)
+      allow update: if request.auth != null && isAdmin();
         
       allow delete: if isAdmin();
     }
@@ -211,7 +212,7 @@ service cloud.firestore {
       allow read: if isAdmin() || isSupport();
       // Basic validation to mitigate spam: Document ID must be 10-15 digits
       allow create: if request.auth == null && mobile.matches('^\\\\+?[0-9]{10,15}$'); 
-      allow update: if request.auth == null || isAdmin() || isSupport(); 
+      allow update: if isAdmin() || isSupport(); 
       allow delete: if isAdmin();
     }
     
