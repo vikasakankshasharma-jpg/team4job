@@ -56,7 +56,7 @@ export default function AdminClient() {
         { label: 'KYC Approvals', icon: CheckCircle2, href: '/dashboard/admin/approvals', description: 'Review Aadhar / Police verification', variant: 'outline' },
         { label: t('allJobsLabel'), icon: Briefcase, href: '/dashboard/all-jobs', description: t('monitorJobs'), variant: 'outline' },
         { label: t('disputesLabel'), icon: ShieldAlert, href: '/dashboard/disputes', description: t('resolveDisputes'), variant: 'outline' },
-        { label: t('reportsLabel'), icon: FileText, href: '/dashboard/reports', description: t('viewAnalytics'), variant: 'outline' },
+        { label: 'Analytics (Beta)', icon: TrendingUp, href: '/dashboard/admin/analytics', description: 'Advanced platform analytics', variant: 'outline' },
     ];
     const { user, role, loading } = useUser();
     const { db } = useFirebase();
