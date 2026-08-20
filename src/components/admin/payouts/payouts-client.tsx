@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -16,7 +16,7 @@ export function PayoutsClient() {
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    const loadPendingPayouts = async () => {
+    const loadPendingPayouts = useCallback(async () => {
         if (!db) return;
         setLoading(true);
         try {
@@ -47,11 +47,13 @@ export function PayoutsClient() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [db]);
 
     useEffect(() => {
-        loadPendingPayouts();
-    }, [db]);
+        queueMicrotask(() => {
+            loadPendingPayouts();
+        });
+    }, [loadPendingPayouts]);
 
     const handleMarkPaid = async (tx: any) => {
         if (!confirm('Have you manually transferred this money? This cannot be undone.')) return;

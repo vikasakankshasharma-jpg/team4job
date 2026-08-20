@@ -654,7 +654,7 @@ const SidebarMenuSkeleton = React.forwardRef<
   // Use stable initial width to avoid hydration mismatch (server vs client Math.random() differ)
   const [width, setWidth] = React.useState("50%")
   React.useEffect(() => {
-    setWidth(`${Math.floor(Math.random() * 40) + 50}%`)
+    queueMicrotask(() => setWidth(`${Math.floor(Math.random() * 40) + 50}%`))
   }, [])
 
   return (

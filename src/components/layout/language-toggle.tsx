@@ -30,7 +30,9 @@ export function LanguageToggle() {
         // Get current locale from cookie
         const savedLocale = Cookies.get('NEXT_LOCALE') as Locale;
         if (savedLocale && ['en', 'hi', 'mr', 'ta', 'te', 'kn'].includes(savedLocale)) {
-            setLocale(savedLocale);
+            queueMicrotask(() => {
+                setLocale(savedLocale);
+            });
         }
     }, []);
 

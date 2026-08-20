@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useUser } from "@/hooks/use-user";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,18 +29,20 @@ export function SupportClient() {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
 
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     if (!user) return;
     const res = await getUserTicketsAction(user.id);
     if (res.success && res.tickets) {
       setTickets(res.tickets as SupportTicket[]);
     }
     setIsLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
-    loadTickets();
-  }, [user]);
+    queueMicrotask(() => {
+      loadTickets();
+    });
+  }, [loadTickets]);
 
   const handleCreate = async () => {
     if (!subject || !message) {

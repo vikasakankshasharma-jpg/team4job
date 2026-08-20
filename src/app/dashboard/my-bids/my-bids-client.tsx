@@ -319,11 +319,13 @@ export default function MyBidsClient() {
         setLoading(false);
       }
     }
-  }, [user, role, toast, t, tCommon]);
+  }, [user, role, toast]);
 
   React.useEffect(() => {
     if (!userLoading) {
-      fetchMyBids();
+      queueMicrotask(() => {
+        fetchMyBids();
+      });
     }
   }, [fetchMyBids, userLoading]);
 

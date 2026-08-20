@@ -93,7 +93,7 @@ export function AdminDashboardView() {
     const currentUser = useUser();
     const isAdmin = currentUser.isAdmin;
 
-    const fetchAllData = async () => {
+    const fetchAllData = React.useCallback(async () => {
         if (!db) return;
         setLoading(true);
         try {
@@ -156,12 +156,14 @@ export function AdminDashboardView() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [db]);
 
     React.useEffect(() => {
         if (!db || !isAdmin) return;
-        fetchAllData();
-    }, [db, isAdmin]);
+        queueMicrotask(() => {
+            fetchAllData();
+        });
+    }, [db, isAdmin, fetchAllData]);
 
     React.useEffect(() => {
         setHelp({

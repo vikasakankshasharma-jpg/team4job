@@ -22,7 +22,9 @@ export default function BlacklistClient() {
     }, [db]);
 
     useEffect(() => {
-        fetchData();
+        queueMicrotask(() => {
+            fetchData();
+        });
     }, [fetchData]);
 
     if (loading) {

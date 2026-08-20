@@ -15,34 +15,38 @@ export function MissionTourAnchor() {
     const activeTour = MISSION_TOURS.find(t => t.id === activeTourId);
     const step = activeTour?.steps[currentStep];
 
-    const updateAnchor = () => {
-        if (step?.targetId) {
-            let element = document.getElementById(step.targetId);
-            
-            // Fallback to data-tour attribute if ID not found
-            if (!element) {
-                element = document.querySelector(`[data-tour="${step.targetId}"]`);
-            }
+    useEffect(() => {
+        if (!activeTourId) {
+            queueMicrotask(() => {
+                setAnchorRect(null);
+            });
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+            return;
+        }
 
-            if (element) {
-                const rect = element.getBoundingClientRect();
-                setAnchorRect(rect);
+        const updateAnchor = () => {
+            if (step?.targetId) {
+                let element = document.getElementById(step.targetId);
+                
+                // Fallback to data-tour attribute if ID not found
+                if (!element) {
+                    element = document.querySelector(`[data-tour="${step.targetId}"]`);
+                }
+
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    setAnchorRect(rect);
+                } else {
+                    setAnchorRect(null);
+                }
             } else {
                 setAnchorRect(null);
             }
-        } else {
-            setAnchorRect(null);
-        }
-        requestRef.current = requestAnimationFrame(updateAnchor);
-    };
-
-    useEffect(() => {
-        if (activeTourId) {
             requestRef.current = requestAnimationFrame(updateAnchor);
-        } else {
-            setAnchorRect(null);
-            if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        }
+        };
+
+        requestRef.current = requestAnimationFrame(updateAnchor);
+
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };

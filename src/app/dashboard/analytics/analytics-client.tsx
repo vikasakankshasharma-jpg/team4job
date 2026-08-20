@@ -49,6 +49,7 @@ export default function AnalyticsClient() {
         if (!user?.id) return;
 
         try {
+            setLoading(true);
             setRefreshing(true);
             const data = await AnalyticsService.getAnalytics(user.id);
 
@@ -67,37 +68,35 @@ export default function AnalyticsClient() {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user?.id]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
     useEffect(() => {
-        setLoading(true);
         loadData();
     }, [loadData]);
 
-    // Generate AI insights from data — t is accessed via ref so no dep needed
+    // Generate AI insights from data
     const insights = useMemo(() => {
         if (!summary) return [];
         const result = [];
-        const tr = tRef.current;
 
         // 1. Spending Trend
         if (spendingTrends.length >= 2) {
             const current = spendingTrends[spendingTrends.length - 1].amount;
             const previous = spendingTrends[spendingTrends.length - 2].amount;
             if (current > previous * 1.1) {
-                result.push({ title: tr('insights.spendingIncreasing'), insight: tr('insights.spendingIncreasingDesc'), type: 'warning' } as const);
+                result.push({ title: t('insights.spendingIncreasing'), insight: t('insights.spendingIncreasingDesc'), type: 'warning' } as const);
             } else if (current < previous * 0.9) {
-                result.push({ title: tr('insights.budgetOptimized'), insight: tr('insights.budgetOptimizedDesc'), type: 'success' } as const);
+                result.push({ title: t('insights.budgetOptimized'), insight: t('insights.budgetOptimizedDesc'), type: 'success' } as const);
             }
         }
 
         // 2. Hiring Velocity
         if (summary.activeJobs > 3) {
-            result.push({ title: tr('insights.highHiringVolume'), insight: tr('insights.highHiringVolumeDesc'), type: 'info' } as const);
+            result.push({ title: t('insights.highHiringVolume'), insight: t('insights.highHiringVolumeDesc'), type: 'info' } as const);
         }
 
         return result;
-    }, [summary, spendingTrends]);
+    }, [summary, spendingTrends, t]);
 
 
     const handleExport = () => {

@@ -209,12 +209,16 @@ function AllTimeLeaderboardCard({ Professionals }: { Professionals: User[] }) {
     }, [Professionals]);
 
     useEffect(() => {
-        setSelectedCity('all');
-        setSelectedPincode('all');
+        queueMicrotask(() => {
+            setSelectedCity('all');
+            setSelectedPincode('all');
+        });
     }, [selectedState]);
 
     useEffect(() => {
-        setSelectedPincode('all');
+        queueMicrotask(() => {
+            setSelectedPincode('all');
+        });
     }, [selectedCity]);
 
     const filteredProfessionals = useMemo(() => {
@@ -382,13 +386,6 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
         }
     };
 
-    const ExportButton = ({ type }: { type: 'users' | 'jobs' | 'transactions' | 'disputes' }) => (
-        <Button onClick={() => handleExport(type)} disabled={!!exporting}>
-            {exporting === type ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            {t(`export.${type}`)}
-        </Button>
-    );
-
     return (
         <Card className="border-0 shadow-md shadow-primary/5">
             <CardHeader className="pb-4">
@@ -396,10 +393,12 @@ function DataExportCard({ users, jobs, transactions, disputes }: { users: User[]
                 <CardDescription>{t('export.description')}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <ExportButton type="users" />
-                <ExportButton type="jobs" />
-                <ExportButton type="transactions" />
-                <ExportButton type="disputes" />
+                {(['users', 'jobs', 'transactions', 'disputes'] as const).map((type) => (
+                    <Button key={type} onClick={() => handleExport(type)} disabled={!!exporting}>
+                        {exporting === type ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        {t(`export.${type}`)}
+                    </Button>
+                ))}
             </CardContent>
         </Card>
     );

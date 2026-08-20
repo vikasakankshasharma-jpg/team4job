@@ -93,12 +93,15 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
     }, [user, role]);
 
     useEffect(() => {
-        if (user && !initialData) {
-            fetchJobs(false);
-        } else if (initialData) {
-            // Using initial data, just check if it was full page to set hasMore
-            if (initialData.length < 50) setHasMore(false);
-        }
+        const timer = setTimeout(() => {
+            if (user && !initialData) {
+                fetchJobs(false);
+            } else if (initialData) {
+                // Using initial data, just check if it was full page to set hasMore
+                if (initialData.length < 50) setHasMore(false);
+            }
+        }, 0);
+        return () => clearTimeout(timer);
     }, [user, initialData, fetchJobs]);
 
     return { jobs, loading, error, refetch: () => fetchJobs(false), loadMore: () => fetchJobs(true), hasMore, loadMoreLoading };

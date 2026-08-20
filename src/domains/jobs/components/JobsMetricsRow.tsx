@@ -23,6 +23,86 @@ interface QuickMetrics {
     favoriteProfessionals: number;
 }
 
+function calculateMetrics(jobs: Job[], currentUser: User): QuickMetrics {
+    // 1. Average Bids Per Job
+    const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
+    const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
+    const avgBidsPerJob = jobsWithBids.length > 0 ? totalBids / jobsWithBids.length : 0;
+
+    // 2. Average Time to First Bid
+    let avgTimeToFirstBid = "No data";
+    try {
+        if (jobsWithBids.length > 0) {
+            const timeDifferences: number[] = [];
+
+            jobsWithBids.forEach(job => {
+                if (!job.postedAt || !job.bids) return;
+
+                try {
+                    let postedAt: Date;
+                    if (job.postedAt instanceof Timestamp) {
+                        postedAt = job.postedAt.toDate();
+                    } else {
+                        postedAt = new Date(job.postedAt);
+                    }
+
+                    if (isNaN(postedAt.getTime())) {
+                        return;
+                    }
+
+                    // Find earliest bid time
+                    let earliestBidTime: number | null = null;
+
+                    job.bids.forEach(bid => {
+                        if (!bid.timestamp) return;
+
+                        let bidDate: Date;
+                        if (bid.timestamp instanceof Timestamp) {
+                            bidDate = bid.timestamp.toDate();
+                        } else {
+                            bidDate = new Date(bid.timestamp);
+                        }
+
+                        if (!isNaN(bidDate.getTime())) {
+                            if (earliestBidTime === null || bidDate.getTime() < earliestBidTime) {
+                                earliestBidTime = bidDate.getTime();
+                            }
+                        }
+                    });
+
+                    if (earliestBidTime !== null) {
+                        const diff = earliestBidTime - postedAt.getTime();
+                        if (diff >= 0 && isFinite(diff)) {
+                            timeDifferences.push(diff);
+                        }
+                    }
+                } catch (innerErr) {
+                    // Skip invalid job calculations
+                }
+            });
+
+            avgTimeToFirstBid = "~";
+        }
+    } catch (e) {
+        avgTimeToFirstBid = "Error";
+    }
+
+    // 3. Pending Reviews (Completed jobs without ratings)
+    const pendingReviews = jobs.filter(
+        job => job.status === "Completed" && !job.professionalReview
+    ).length;
+
+    // 4. Favorite Professionals Count
+    const favoriteProfessionals = currentUser.favoriteProfessionalIds?.length || 0;
+
+    return {
+        avgBidsPerJob: Math.round(avgBidsPerJob * 10) / 10,
+        avgTimeToFirstBid,
+        pendingReviews,
+        favoriteProfessionals,
+    };
+}
+
 export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
     const { db } = useFirebase();
     const router = useRouter();
@@ -73,87 +153,6 @@ export function JobsMetricsRow({ userId, user }: QuickMetricsRowProps) {
 
         fetchMetrics();
     }, [db, userId, user]);
-
-    const calculateMetrics = (jobs: Job[], currentUser: User): QuickMetrics => {
-
-        // 1. Average Bids Per Job
-        const jobsWithBids = jobs.filter(job => job.bids && job.bids.length > 0);
-        const totalBids = jobsWithBids.reduce((sum, job) => sum + (job.bids?.length || 0), 0);
-        const avgBidsPerJob = jobsWithBids.length > 0 ? totalBids / jobsWithBids.length : 0;
-
-        // 2. Average Time to First Bid
-        let avgTimeToFirstBid = "No data";
-        try {
-            if (jobsWithBids.length > 0) {
-                const timeDifferences: number[] = [];
-
-                jobsWithBids.forEach(job => {
-                    if (!job.postedAt || !job.bids) return;
-
-                    try {
-                        let postedAt: Date;
-                        if (job.postedAt instanceof Timestamp) {
-                            postedAt = job.postedAt.toDate();
-                        } else {
-                            postedAt = new Date(job.postedAt);
-                        }
-
-                        if (isNaN(postedAt.getTime())) {
-                            return;
-                        }
-
-                        // Find earliest bid time
-                        let earliestBidTime: number | null = null;
-
-                        job.bids.forEach(bid => {
-                            if (!bid.timestamp) return;
-
-                            let bidDate: Date;
-                            if (bid.timestamp instanceof Timestamp) {
-                                bidDate = bid.timestamp.toDate();
-                            } else {
-                                bidDate = new Date(bid.timestamp);
-                            }
-
-                            if (!isNaN(bidDate.getTime())) {
-                                if (earliestBidTime === null || bidDate.getTime() < earliestBidTime) {
-                                    earliestBidTime = bidDate.getTime();
-                                }
-                            }
-                        });
-
-                        if (earliestBidTime !== null) {
-                            const diff = earliestBidTime - postedAt.getTime();
-                            if (diff >= 0 && isFinite(diff)) {
-                                timeDifferences.push(diff);
-                            }
-                        }
-                    } catch (innerErr) {
-                        // Skip invalid job calculations
-                    }
-                });
-
-                avgTimeToFirstBid = "~";
-            }
-        } catch (e) {
-            avgTimeToFirstBid = "Error";
-        }
-
-        // 3. Pending Reviews (Completed jobs without ratings)
-        const pendingReviews = jobs.filter(
-            job => job.status === "Completed" && !job.professionalReview
-        ).length;
-
-        // 4. Favorite Professionals Count
-        const favoriteProfessionals = currentUser.favoriteProfessionalIds?.length || 0;
-
-        return {
-            avgBidsPerJob: Math.round(avgBidsPerJob * 10) / 10,
-            avgTimeToFirstBid,
-            pendingReviews,
-            favoriteProfessionals,
-        };
-    };
 
     if (loading) {
         return (

@@ -14,12 +14,12 @@ export function useNotifications() {
 
     useEffect(() => {
         if (!user || !user.id || isE2EMode) {
-            setNotifications([]);
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => {
+                setNotifications([]);
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
-
-        setLoading(true);
 
         // 1. Subscribe to real-time notifications try-catch
         let unsubscribe = () => {};

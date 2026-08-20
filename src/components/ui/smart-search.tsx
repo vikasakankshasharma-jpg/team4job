@@ -52,7 +52,7 @@ export function SmartSearch({
     // Load search history on mount
     useEffect(() => {
         if (enableHistory) {
-            setHistory(getSearchHistory(storageKey));
+            queueMicrotask(() => setHistory(getSearchHistory(storageKey)));
         }
     }, [enableHistory, storageKey]);
 

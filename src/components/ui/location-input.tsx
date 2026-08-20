@@ -115,14 +115,16 @@ export function LocationInput({ name, label, placeholder, description, control, 
     useEffect(() => {
         if (field.value && typeof field.value === 'string') {
             const [currentPincode, currentPO] = field.value.split(', ');
-            if (currentPincode && currentPincode.length === 6) {
-                setPincode(currentPincode);
-                if (!postOffices.length) {
-                    fetchPostOffices(currentPincode, currentPO);
+            queueMicrotask(() => {
+                if (currentPincode && currentPincode.length === 6) {
+                    setPincode(currentPincode);
+                    if (!postOffices.length) {
+                        fetchPostOffices(currentPincode, currentPO);
+                    }
+                } else {
+                    setPincode(field.value);
                 }
-            } else {
-                setPincode(field.value);
-            }
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [field.value]);

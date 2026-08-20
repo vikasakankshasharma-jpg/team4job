@@ -235,7 +235,9 @@ export default function ProfessionalsClient() {
 
   useEffect(() => {
     if (!userLoading) {
-      fetchProfessionals(false);
+      queueMicrotask(() => {
+        fetchProfessionals(false);
+      });
     }
   }, [userLoading, fetchProfessionals]);
 

@@ -160,10 +160,16 @@ export default function BrowseJobsClient({ initialJobs }: { initialJobs?: Job[] 
   React.useEffect(() => {
     // Only fetch initial if distinct from server-provided initialJobs or if valid to refetch
     if (!initialJobs || initialJobs.length === 0) {
-      fetchJobs(false);
+      queueMicrotask(() => {
+        fetchJobs(false);
+      });
     } else {
       // If initialJobs provided, set hasMore based on count
-      if (initialJobs.length < 50) setHasMore(false);
+      if (initialJobs.length < 50) {
+        queueMicrotask(() => {
+          setHasMore(false);
+        });
+      }
     }
   }, [initialJobs, fetchJobs]);
 

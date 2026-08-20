@@ -29,9 +29,9 @@ export default function KycAdminClient() {
         }
     }, [user, userLoading, router]);
 
-    const fetchPendingKYC = async () => {
+    const fetchPendingKYC = React.useCallback(async (showLoading = true) => {
         if (!db) return;
-        setLoading(true);
+        if (showLoading) setLoading(true);
         try {
             const usersRef = collection(db, 'users');
             const q = query(usersRef, where('kycStatus', '==', 'pending'));
@@ -46,15 +46,15 @@ export default function KycAdminClient() {
                 variant: "destructive"
             });
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
-    };
+    }, [db, toast]);
 
     useEffect(() => {
         if (db && user?.roles?.includes(USER_ROLES.admin)) {
-            fetchPendingKYC();
+            fetchPendingKYC(false);
         }
-    }, [db, user]);
+    }, [db, user, fetchPendingKYC]);
 
     const handleApprove = async (userId: string) => {
         setActionLoading(userId);

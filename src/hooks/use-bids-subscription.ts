@@ -11,8 +11,8 @@ export function useBidsSubscription(jobId: string, initialData?: Bid[]) {
 
     useEffect(() => {
         if (!jobId) {
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => setLoading(false), 0);
+            return () => clearTimeout(timer);
         }
 
         const unsubscribe = jobClientService.subscribeToBids(

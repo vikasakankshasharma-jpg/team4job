@@ -53,19 +53,25 @@ function InvoiceContent() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        queueMicrotask(() => {
+            setMounted(true);
+        });
     }, []);
 
     useEffect(() => {
         if (userLoading) return;
         if (!user) {
-            setError("Authentication required to view invoices");
-            setLoading(false);
+            queueMicrotask(() => {
+                setError("Authentication required to view invoices");
+                setLoading(false);
+            });
             return;
         }
         if (!id) {
-            setError("No job ID provided");
-            setLoading(false);
+            queueMicrotask(() => {
+                setError("No job ID provided");
+                setLoading(false);
+            });
             return;
         }
 

@@ -15,13 +15,13 @@ export function useChatStream(roomId: string | null) {
 
     useEffect(() => {
         if (!roomId || !db || !user) {
-            setMessages([]);
-            setRoom(null);
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => {
+                setMessages([]);
+                setRoom(null);
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
-
-        setLoading(true);
 
         // Listen to room metadata
         const roomRef = doc(db, 'chats', roomId);
@@ -53,7 +53,7 @@ export function useChatStream(roomId: string | null) {
             unsubscribeRoom();
             unsubscribeMessages();
         };
-    }, [roomId, db, user?.id]);
+    }, [roomId, db, user]);
 
     const sendMessage = async (text: string, file?: File) => {
         if (!roomId || !db || !user) return;
@@ -95,12 +95,13 @@ export function useChatRooms() {
 
     useEffect(() => {
         if (!db || !user?.id) {
-            setRooms([]);
-            setLoading(false);
-            return;
+            const timer = setTimeout(() => {
+                setRooms([]);
+                setLoading(false);
+            }, 0);
+            return () => clearTimeout(timer);
         }
 
-        setLoading(true);
         const roomsRef = collection(db, 'chats');
         const q = query(roomsRef, where('participants', 'array-contains', user.id));
 

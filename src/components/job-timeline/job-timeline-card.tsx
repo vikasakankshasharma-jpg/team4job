@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Card,
     CardContent,
@@ -32,7 +32,6 @@ export function JobTimelineCard({
 }: JobTimelineCardProps) {
     const { db } = useFirebase();
     const [communications, setCommunications] = useState<CommunicationItem[]>([]);
-    const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -69,9 +68,8 @@ export function JobTimelineCard({
     }, [db, job.id, currentUser.id]);
 
     // Build timeline when job or communications change
-    useEffect(() => {
-        const events = buildJobTimeline(job, communications);
-        setTimeline(events);
+    const timeline = useMemo(() => {
+        return buildJobTimeline(job, communications);
     }, [job, communications]);
 
     if (loading) {

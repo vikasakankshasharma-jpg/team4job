@@ -58,7 +58,9 @@ function ThemeSelector() {
     const [mounted, setMounted] = React.useState(false)
 
     React.useEffect(() => {
-        setMounted(true)
+        queueMicrotask(() => {
+            setMounted(true)
+        })
     }, [])
 
     if (!mounted) {
@@ -645,7 +647,9 @@ export default function SettingsClient() {
     }, [db, isAdmin]);
 
     React.useEffect(() => {
-        fetchData();
+        queueMicrotask(() => {
+            fetchData();
+        });
     }, [fetchData]);
 
 

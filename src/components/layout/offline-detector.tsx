@@ -11,7 +11,12 @@ export function OfflineDetector() {
     const { toast } = useToast();
 
     useEffect(() => {
-        setMounted(true);
+        queueMicrotask(() => {
+            setMounted(true);
+            if (!navigator.onLine) {
+                setIsOffline(true);
+            }
+        });
         const handleOnline = () => {
             setIsOffline(false);
             toast({
@@ -32,11 +37,6 @@ export function OfflineDetector() {
 
         window.addEventListener("online", handleOnline);
         window.addEventListener("offline", handleOffline);
-
-        // Initial check
-        if (!navigator.onLine) {
-            setIsOffline(true);
-        }
 
         return () => {
             window.removeEventListener("online", handleOnline);

@@ -20,25 +20,27 @@ export function IntlProvider({ children }: IntlProviderProps) {
     const [locale, setLocale] = useState<Locale>('en');
 
     useEffect(() => {
-        // Read locale from cookie (set by LanguageToggle)
-        const cookieLocale = Cookies.get('NEXT_LOCALE') as Locale | undefined;
-        const validLocale = cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
-            ? cookieLocale
-            : 'en';
+        const loadLocale = async () => {
+            // Read locale from cookie (set by LanguageToggle)
+            const cookieLocale = Cookies.get('NEXT_LOCALE') as Locale | undefined;
+            const validLocale = cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale)
+                ? cookieLocale
+                : 'en';
 
-        setLocale(validLocale);
-
-        // Dynamically import the translation file
-        import(`@/i18n/locales/${validLocale}.json`)
-            .then((module) => {
+            try {
+                // Dynamically import the translation file
+                const module = await import(`@/i18n/locales/${validLocale}.json`);
+                setLocale(validLocale);
                 setMessages(module.default);
-            })
-            .catch((error) => {
+            } catch (error) {
                 // Fallback to English if locale load fails
-                import('@/i18n/locales/en.json').then((module) => {
-                    setMessages(module.default);
-                });
-            });
+                const module = await import('@/i18n/locales/en.json');
+                setLocale('en');
+                setMessages(module.default);
+            }
+        };
+        
+        loadLocale();
     }, []); // Only run once on mount
 
     // messages are now initialized with enMessages, so we don't need to block rendering

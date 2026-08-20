@@ -121,7 +121,7 @@ export default function AllJobsClient() {
   const { db } = useFirebase();
   const queryClient = useQueryClient();
   const [filters, setFilters] = React.useState(initialFilters);
-  const [allStatuses, setAllStatuses] = React.useState<string[]>([]);
+
   const [sortConfig, setSortConfig] = React.useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>({ key: 'postedAt', direction: 'descending' });
   const { setHelp } = useHelp();
   const [view, setView] = React.useState<'list' | 'grid'>('list');
@@ -220,12 +220,12 @@ export default function AllJobsClient() {
   const loadingMore = isFetchingNextPage;
   const hasMore = hasNextPage;
 
-  React.useEffect(() => {
-    // Populate filter options based on loaded jobs
+  const allStatuses = React.useMemo(() => {
     if (jobs.length > 0) {
       const uniqueStatuses = Array.from(new Set(jobs.map(j => j.status)));
-      setAllStatuses(['all', ...uniqueStatuses.sort()]);
+      return ['all', ...uniqueStatuses.sort()];
     }
+    return ['all'];
   }, [jobs]);
 
   React.useEffect(() => {

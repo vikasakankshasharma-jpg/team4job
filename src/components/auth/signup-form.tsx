@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
@@ -87,8 +87,8 @@ function SignUpController({ isMapLoaded, referredBy }: SignUpMasterProps) {
     },
   });
 
-  const { handleSubmit, watch, setError } = methods;
-  const role = watch("role");
+  const { handleSubmit, setError, control } = methods;
+  const role = useWatch({ control, name: "role" });
 
   // Step Progress Indicator
   const renderStepIndicator = () => {

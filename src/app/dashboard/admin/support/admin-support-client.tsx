@@ -20,23 +20,24 @@ export function AdminSupportClient() {
   const [replyMessage, setReplyMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadTickets = async () => {
+  const loadTickets = React.useCallback(async () => {
     const res = await getAllTicketsAction();
     if (res.success && res.tickets) {
       setTickets(res.tickets as SupportTicket[]);
-      if (selectedTicket) {
-        const updated = (res.tickets as SupportTicket[]).find(t => t.id === selectedTicket.id);
-        if (updated) setSelectedTicket(updated);
-      }
+      setSelectedTicket(prev => {
+        if (!prev) return prev;
+        const updated = (res.tickets as SupportTicket[]).find(t => t.id === prev.id);
+        return updated || prev;
+      });
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (user?.roles?.includes('Admin')) {
       loadTickets();
     }
-  }, [user]);
+  }, [user, loadTickets]);
 
   const handleReply = async () => {
     if (!replyMessage || !selectedTicket) return;

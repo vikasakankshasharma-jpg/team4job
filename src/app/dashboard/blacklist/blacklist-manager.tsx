@@ -36,7 +36,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Trash2, List, Grid } from "lucide-react";
@@ -76,6 +76,8 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
       reason: "",
     },
   });
+
+  const watchedType = useWatch({ control: form.control, name: "type" });
 
   async function onSubmit(values: z.infer<typeof blacklistSchema>) {
     setIsSubmitting(true);
@@ -150,7 +152,7 @@ function AddBlacklistForm({ onSave }: { onSave: () => void }) {
                     <FormControl>
                       <Input
                         placeholder={
-                          form.watch("type") === "user"
+                          watchedType === "user"
                             ? t('form.enterUserId')
                             : t('form.enterPincode')
                         }

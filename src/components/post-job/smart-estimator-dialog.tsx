@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -45,14 +45,7 @@ export function SmartEstimatorDialog({
     const [result, setResult] = useState<GeneratePriceEstimateOutput | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Auto-generate on open if not already generated
-    React.useEffect(() => {
-        if (open && !result && !loading && !error) {
-            handleGenerate();
-        }
-    }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const handleGenerate = async () => {
+    const handleGenerate = useCallback(async () => {
         if (!jobDetails.title || !jobDetails.category || jobDetails.description.length < 20) {
             setError(tError('moreDetailsRequiredDesc'));
             return;
@@ -61,22 +54,31 @@ export function SmartEstimatorDialog({
         setLoading(true);
         setError(null);
         try {
-            const result = await generatePriceEstimateAction({
+            const res = await generatePriceEstimateAction({
                 jobTitle: jobDetails.title,
                 jobDescription: jobDetails.description,
                 jobCategory: jobDetails.category
             });
-            if (result.success && result.data) {
-                setResult(result.data);
+            if (res.success && res.data) {
+                setResult(res.data);
             } else {
-                throw new Error(result.error);
+                throw new Error(res.error);
             }
         } catch (err: any) {
             setError(tError(err.message) || tError('estimationFailedDesc'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [jobDetails, tError]);
+
+    // Auto-generate on open if not already generated
+    React.useEffect(() => {
+        if (open && !result && !loading && !error) {
+            queueMicrotask(() => {
+                handleGenerate();
+            });
+        }
+    }, [open, result, loading, error, handleGenerate]);
 
     const handleApply = () => {
         if (result) {

@@ -39,20 +39,15 @@ export function RecentActivity({ initialActivities = EMPTY_ACTIVITIES }: { initi
         const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true';
         if (isE2EMode) {
             if (loading) {
-                 setActivities(prev => initialActivities.length > 0 ? initialActivities : prev);
-                 setLoading(false);
+                 setTimeout(() => {
+                     setActivities(prev => initialActivities.length > 0 ? initialActivities : prev);
+                     setLoading(false);
+                 }, 0);
             }
             return;
         }
 
         // If we have initial data, we aren't loading, but we still want live updates.
-        // However, for optimization, we might skip live updates or delay them.
-        // For now, let's keep live updates but set loading to false immediately if we have data.
-        if (initialActivities.length > 0) {
-            setLoading(false);
-        } else {
-            setLoading(true);
-        }
 
         const activitiesRef = collection(db, 'activities');
         const q = query(

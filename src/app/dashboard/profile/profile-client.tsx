@@ -423,7 +423,9 @@ function CompletedJobsStat() {
     useEffect(() => {
         // Hydration Guard: Ensure we have a valid user ID before performing Firestore queries
         if (!user?.id || role !== 'Professional' || !db) {
-            setLoading(false);
+            queueMicrotask(() => {
+                setLoading(false);
+            });
             return;
         }
         const fetchJobsData = async () => {
@@ -596,7 +598,9 @@ function ReferralCard({ user }: { user: User }) {
     const [origin, setOrigin] = React.useState("");
 
     React.useEffect(() => {
-        setOrigin(window.location.origin);
+        queueMicrotask(() => {
+            setOrigin(window.location.origin);
+        });
     }, []);
 
     const referralLink = `${origin}/login?tab=signup&ref=${user.id}`;
@@ -870,7 +874,9 @@ export default function ProfileClient() {
     const [isMounted, setIsMounted] = React.useState(false);
 
     React.useEffect(() => {
-        setIsMounted(true);
+        queueMicrotask(() => {
+            setIsMounted(true);
+        });
     }, []);
 
     const fetchUser = useCallback(async () => {

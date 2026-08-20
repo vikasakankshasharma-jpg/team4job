@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Info, Lock, CheckCircle2, TrendingUp } from "lucide-react";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -183,7 +183,7 @@ export function PlaceBidDialog({
         }
     }
 
-    const currentAmount = form.watch("amount");
+    const currentAmount = useWatch({ control: form.control, name: "amount" }) ?? 0;
 
     const professionalTierPriority = user.professionalProfile?.tierPriority || 1;
     let commissionPercentage = 5;

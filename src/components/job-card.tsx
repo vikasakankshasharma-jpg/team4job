@@ -43,12 +43,14 @@ export function JobCard({ job }: JobCardProps) {
   const [postedAt, setPostedAt] = React.useState('');
 
   React.useEffect(() => {
-    if (job.deadline) {
-      setTimeRemaining(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
-    }
-    if (job.postedAt) {
-      setPostedAt(formatDistanceToNow(toDate(job.postedAt), { addSuffix: true }));
-    }
+    queueMicrotask(() => {
+      if (job.deadline) {
+        setTimeRemaining(formatDistanceToNow(toDate(job.deadline), { addSuffix: true }));
+      }
+      if (job.postedAt) {
+        setPostedAt(formatDistanceToNow(toDate(job.postedAt), { addSuffix: true }));
+      }
+    });
   }, [job.deadline, job.postedAt]);
 
   const isNearby = React.useMemo(() => {

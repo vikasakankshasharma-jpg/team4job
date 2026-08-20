@@ -38,6 +38,7 @@ export default function LoginClient() {
 
   const initialTab = searchParams?.get("tab") ?? "login";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [prevUrlTab, setPrevUrlTab] = useState(initialTab);
   const { setHelp } = useHelp();
 
   useEffect(() => {
@@ -55,12 +56,10 @@ export default function LoginClient() {
     });
   }, [setHelp, t]);
 
-  useEffect(() => {
-    const tabFromUrl = searchParams?.get("tab") ?? "login";
-    if (tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams, activeTab]);
+  if (initialTab !== prevUrlTab) {
+    setPrevUrlTab(initialTab);
+    setActiveTab(initialTab);
+  }
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

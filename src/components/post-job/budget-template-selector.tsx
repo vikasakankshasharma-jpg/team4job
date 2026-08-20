@@ -75,7 +75,9 @@ export function BudgetTemplateSelector({ onSelect, currentValues }: BudgetTempla
 
     // Load templates
     useEffect(() => {
-        loadTemplates();
+        queueMicrotask(() => {
+            loadTemplates();
+        });
     }, [loadTemplates]);
 
     const handleSaveTemplate = async () => {

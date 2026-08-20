@@ -363,7 +363,7 @@ export default function VerifyProfessionalClient() {
                   }
                 } else {
                   // Manual Mode
-                  setVerificationId(`MANUAL_${Date.now()}`);
+                  setVerificationId(`MANUAL_${new Date().getTime()}`);
                   setStep("enterOtp");
                   toast({ title: t('alerts.detailsRecorded'), description: t('alerts.detailsRecordedDesc') });
                   setIsLoading(false);

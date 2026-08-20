@@ -21,7 +21,9 @@ export default function SubscriptionPlansClient() {
     }, [db]);
 
     useEffect(() => {
-        fetchData();
+        queueMicrotask(() => {
+            fetchData();
+        });
     }, [fetchData]);
 
     if (loading) {

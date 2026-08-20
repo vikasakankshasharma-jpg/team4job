@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useUser } from "@/hooks/use-user";
 import { listAllDisputesAction } from "@/app/actions/dispute.actions";
 import { Dispute } from "@/domains/disputes/dispute.types";
@@ -29,7 +29,7 @@ export function AdminDisputesClient() {
     const [resolving, setResolving] = useState(false);
     const [adminNotes, setAdminNotes] = useState("");
 
-    const fetchDisputes = async () => {
+    const fetchDisputes = useCallback(async () => {
         if (!user) return;
         setLoading(true);
         try {
@@ -44,13 +44,15 @@ export function AdminDisputesClient() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, toast]);
 
     useEffect(() => {
         if (!userLoading && user) {
-            fetchDisputes();
+            queueMicrotask(() => {
+                fetchDisputes();
+            });
         }
-    }, [user, userLoading]);
+    }, [user, userLoading, fetchDisputes]);
 
     const handleResolve = async (resolution: 'REFUND' | 'RELEASE' | 'SPLIT') => {
         if (!selectedDispute || !selectedDispute.jobId) return;

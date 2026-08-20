@@ -40,14 +40,16 @@ export function StepPhoto() {
   }, [toast, tAuth]);
 
   useEffect(() => {
+    const currentVideo = videoRef.current;
+    
     if (!photo) {
-      startCamera();
+      queueMicrotask(() => {
+        startCamera();
+      });
     }
     
     // Cleanup function strictly capturing the current state
     return () => {
-      // Intentionally using a ref value snapshot or safely accessing it
-      const currentVideo = videoRef.current;
       if (currentVideo && currentVideo.srcObject) {
         const stream = currentVideo.srcObject as MediaStream;
         stream.getTracks().forEach(track => track.stop());

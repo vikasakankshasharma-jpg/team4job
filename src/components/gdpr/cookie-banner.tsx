@@ -12,7 +12,9 @@ export default function CookieBanner() {
     const isDark = theme === "dark";
 
     React.useEffect(() => {
-        setMounted(true);
+        queueMicrotask(() => {
+            setMounted(true);
+        });
     }, []);
 
     if (!mounted) return null;

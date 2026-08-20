@@ -62,7 +62,6 @@ export default function AdminClient() {
     const { toast } = useToast();
 
     const [alerts, setAlerts] = React.useState<AdminAlert[]>([]);
-    const [filteredAlerts, setFilteredAlerts] = React.useState<AdminAlert[]>([]);
     const [alertFilter, setAlertFilter] = React.useState<'ALL' | 'INFO' | 'WARNING' | 'CRITICAL' | 'UNREAD'>('ALL');
     const { metrics, statsLoading, platformHealth } = useAdminMetrics();
 
@@ -88,8 +87,7 @@ export default function AdminClient() {
         return () => unsubscribe();
     }, [db, user]);
 
-    // 4. Filter Alerts
-    React.useEffect(() => {
+    const filteredAlerts = React.useMemo(() => {
         let filtered = alerts;
 
         if (alertFilter === 'UNREAD') {
@@ -98,7 +96,7 @@ export default function AdminClient() {
             filtered = alerts.filter(a => a.level === alertFilter);
         }
 
-        setFilteredAlerts(filtered);
+        return filtered;
     }, [alerts, alertFilter]);
 
     const markAsRead = async (alertId: string) => {

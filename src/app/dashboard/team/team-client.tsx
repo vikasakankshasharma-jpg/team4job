@@ -80,7 +80,9 @@ export default function TeamClient() {
     if (!userLoading && !isAdmin) {
       router.push('/dashboard');
     } else if (user && isAdmin && db) {
-      setLoading(true);
+      queueMicrotask(() => {
+        setLoading(true);
+      });
       const q = query(collection(db, "users"), or(
         where("roles", "array-contains", "Admin"),
         where("roles", "array-contains", "Support Team")

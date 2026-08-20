@@ -97,7 +97,11 @@ export function useAutoSave(
 
         const currentData = JSON.stringify(getDraftData());
         if (currentData !== lastSavedData && currentData !== '{}') {
-            setHasChanges(true);
+            const timer = setTimeout(() => setHasChanges(true), 0);
+            return () => clearTimeout(timer);
+        } else {
+            const timer = setTimeout(() => setHasChanges(false), 0);
+            return () => clearTimeout(timer);
         }
     }, [getDraftData, lastSavedData, enabled]);
 

@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useForm, useWatch, Control } from "react-hook-form";
@@ -38,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 import { Job, JobAttachment, User, PlatformSettings, Address } from "@/lib/types";
 import { AddressForm } from "@/components/ui/address-form";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc } from "firebase/firestore";
 import { useHelp } from "@/hooks/use-help";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,7 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { format, addDays } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { jobCategoryTemplates } from "@/lib/job-category-templates";
@@ -121,6 +120,7 @@ const jobSchema = z.object({
   preferredTimeSlot: z.enum(['Morning', 'Afternoon', 'Evening', 'Weekend', 'Any']).default('Any'),
   attachments: z.array(z.instanceof(File)).optional(),
   directAwardProfessionalId: z.string().optional(),
+  verifyDetails: z.boolean().default(false),
 }).refine(data => {
   if (data.directAwardProfessionalId) {
     return !!data.priceEstimate && data.priceEstimate.min > 0;
@@ -150,12 +150,7 @@ const jobSchema = z.object({
 }, {
   message: "validation.maxBudgetLow",
   path: ["priceEstimate.max"],
-}).and(z.object({
-  verifyDetails: z.boolean().refine(val => val === true, {
-    message: "validation.verifyReq",
-  }),
-}));
-
+});
 
 function DirectAwardInput({ control }: { control: Control<any> }) {
   const { db } = useFirebase();
@@ -164,39 +159,41 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<User | null>(null);
 
+  const professionalId = useWatch({ control, name: "directAwardProfessionalId" });
+
   const debouncedCheck = useMemo(
     () => debounce(async (id: string) => {
-      if (!id) {
+      if (!id || !db) {
         setSelectedProfessional(null);
         setIsLoading(false);
         return;
       }
-
-      // const result = await verifyProfessionalAction(id);
-      const result = { success: false, professional: undefined }; // Disabled for 500 error debugging
-
-      if (result.success && result.professional) {
-        setSelectedProfessional(result.professional as User);
-      } else {
+      try {
+        const userDoc = await getDoc(doc(db, "users", id));
+        if (userDoc.exists()) {
+          const data = userDoc.data() as User;
+          setSelectedProfessional(data);
+        } else {
+          setSelectedProfessional(null);
+        }
+      } catch {
         setSelectedProfessional(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }, 500),
-    []
+    [db]
   );
-
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setIsLoading(true);
-    debouncedCheck(value);
-  };
-
-  const professionalId = useWatch({ control, name: "directAwardProfessionalId" });
 
   useEffect(() => {
     if (professionalId) {
-      setIsLoading(true);
+      queueMicrotask(() => {
+        setIsLoading(true);
+      });
       debouncedCheck(professionalId);
+    } else {
+      setSelectedProfessional(null);
+      setIsLoading(false);
     }
   }, [professionalId, debouncedCheck]);
 
@@ -206,15 +203,11 @@ function DirectAwardInput({ control }: { control: Control<any> }) {
       name="directAwardProfessionalId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{tJob('professionalId')}</FormLabel>
+          <FormLabel>{tJob('directAwardLabel')}</FormLabel>
           <FormControl>
             <Input
-              placeholder={tJob('professionalIdPlaceholder')}
+              placeholder={tJob('directAwardPlaceholder')}
               {...field}
-              onChange={(e) => {
-                field.onChange(e);
-                handleIdChange(e);
-              }}
             />
           </FormControl>
           <FormDescription>
@@ -1547,7 +1540,7 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
                   <FormControl>
                     <Checkbox
                       data-testid="verify-details-checkbox"
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>

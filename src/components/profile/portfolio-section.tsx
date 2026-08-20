@@ -53,12 +53,12 @@ export function PortfolioSection({ user, onUpdate }: { user: User, onUpdate: () 
       let payload: any = { type: mode, title, description, category };
 
       if (mode === 'single') {
-        const fileRef = ref(storage, `portfolios/${user.id}/${Date.now()}_single`);
+        const fileRef = ref(storage, `portfolios/${user.id}/${new Date().getTime()}_single`);
         await uploadBytes(fileRef, singleFile[0]);
         payload.imageUrl = await getDownloadURL(fileRef);
       } else {
-        const beforeRef = ref(storage, `portfolios/${user.id}/${Date.now()}_before`);
-        const afterRef = ref(storage, `portfolios/${user.id}/${Date.now()}_after`);
+        const beforeRef = ref(storage, `portfolios/${user.id}/${new Date().getTime()}_before`);
+        const afterRef = ref(storage, `portfolios/${user.id}/${new Date().getTime()}_after`);
         await uploadBytes(beforeRef, beforeFile[0]);
         await uploadBytes(afterRef, afterFile[0]);
         payload.beforeImageUrl = await getDownloadURL(beforeRef);

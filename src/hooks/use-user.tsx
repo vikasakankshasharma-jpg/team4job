@@ -89,11 +89,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isLoggingOut = useRef(false);
   const lastRedirectPath = useRef<string | null>(null);
   const lastUpdateRef = useRef<number>(0);
-  const isInitialAuthCheckDone = useRef(false);
+  const [isInitialAuthCheckDone, setIsInitialAuthCheckDone] = useState(false);
 
   // Sync role from localStorage after hydration
   useEffect(() => {
-    setIsMounted(true);
+    queueMicrotask(() => {
+      setIsMounted(true);
+    });
     const storedRole = localStorage.getItem('userRole') as Role;
     if (storedRole) {
       setRoleState(storedRole);
@@ -187,7 +189,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       const isE2EMode = process.env.NEXT_PUBLIC_E2E === 'true' || process.env.NEXT_PUBLIC_E2E_MODE === 'true';
-      isInitialAuthCheckDone.current = true;
+      setIsInitialAuthCheckDone(true);
       if (isLoggingOut.current) {
         return;
       }
@@ -401,7 +403,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getRedirectPath = (): string | null => {
     // If still loading auth state, we are not ready to decide
-    if (loading || !isInitialAuthCheckDone.current) {
+    if (loading || !isInitialAuthCheckDone) {
         if (pathname.startsWith('/dashboard')) {
         }
         return null;
@@ -584,7 +586,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // High-level "blocking" loader only for initial auth check or if user is missing on protected path
   // If we have a redirectPath, it means we definitely need to go somewhere else.
   // We only block the whole screen if we are still doing the initial check.
-  const shouldBlockScreen = (loading && !isInitialAuthCheckDone.current && !isPublic) || (redirectPath !== null && !isMounted);
+  const shouldBlockScreen = (loading && !isInitialAuthCheckDone && !isPublic) || (redirectPath !== null && !isMounted);
 
   if (shouldBlockScreen) {
     return (
@@ -600,7 +602,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   // If we are on a protected path but don't have a user, and initial check is done
-  if (!isPublic && !user && isInitialAuthCheckDone.current) {
+  if (!isPublic && !user && isInitialAuthCheckDone) {
     // If we have a redirect path, we'll let the useEffect handle it, 
     // but we show a loader here to prevent flashing protected content.
     if (redirectPath) {

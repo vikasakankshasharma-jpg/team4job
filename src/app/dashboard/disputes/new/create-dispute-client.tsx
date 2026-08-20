@@ -97,7 +97,7 @@ export default function CreateDisputeClient() {
             return;
         }
 
-        const newDisputeId = `DISPUTE-${Date.now()}`;
+        const newDisputeId = `DISPUTE-${new Date().getTime()}`;
         let attachmentUrls: { fileName: string, fileUrl: string, fileType: string }[] = [];
 
         if (values.attachments && values.attachments.length > 0) {

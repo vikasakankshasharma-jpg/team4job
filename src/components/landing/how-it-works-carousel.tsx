@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Autoplay from "embla-carousel-autoplay";
 
 export default function HowItWorksCarousel() {
-  const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
+  const plugin = React.useMemo(
+    () => Autoplay({ delay: 4000, stopOnInteraction: true }),
+    []
   );
 
   const howItWorks = [
@@ -59,7 +60,7 @@ export default function HowItWorksCarousel() {
   return (
     <div className="relative w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto">
       <Carousel
-        plugins={[plugin.current]}
+        plugins={[plugin]}
         opts={{
           align: "start",
           loop: true,

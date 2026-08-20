@@ -105,7 +105,9 @@ export default function ChatClient() {
         // Actually, trigger creation if not exists
         const existing = conversations.find(c => c.participants.includes(initialRecipientId));
         if (existing) {
-            setActiveConversationId(existing.id);
+            queueMicrotask(() => {
+                setActiveConversationId(existing.id);
+            });
         } else {
             // Create phantom/optimistic ID or wait for user to send first message? 
             // Better: Create placeholder UI state. 

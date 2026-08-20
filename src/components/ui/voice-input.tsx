@@ -48,7 +48,7 @@ export function VoiceInput({ onTranscript, isProcessing = false, className }: Vo
 
                 recognitionRef.current = recognition;
             } else {
-                setIsSupported(false);
+                queueMicrotask(() => setIsSupported(false));
             }
         }
     }, [onTranscript]);

@@ -183,7 +183,10 @@ export default function DisputesClient() {
 
     useEffect(() => {
         if (!userLoading && user) {
-            fetchDisputes();
+            const timer = setTimeout(() => {
+                fetchDisputes();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [userLoading, user, fetchDisputes]);
 

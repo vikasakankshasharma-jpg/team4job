@@ -77,8 +77,10 @@ export function MapInput({ name, label, control, center: propCenter, isMapLoaded
 
   useEffect(() => {
     if (propCenter) {
-      setCenter(propCenter);
-      setMarker(propCenter);
+      queueMicrotask(() => {
+        setCenter(propCenter);
+        setMarker(propCenter);
+      });
       if (map) {
         map.panTo(propCenter);
       }

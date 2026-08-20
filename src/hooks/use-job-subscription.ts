@@ -14,8 +14,6 @@ export function useJobSubscription(jobId: string, initialData?: Job | null) {
     useEffect(() => {
         if (!jobId) return;
 
-        if (!job && !initialData) setLoading(true); // Only show loader if we don't have data
-
         const unsubscribe = jobClientService.subscribeToJob(
             jobId,
             (updatedJob) => {
@@ -39,8 +37,10 @@ export function useJobSubscription(jobId: string, initialData?: Job | null) {
             }
         );
 
-        return () => unsubscribe();
-    }, [jobId, toast, initialData]); // eslint-disable-line react-hooks/exhaustive-deps
+        return () => {
+            unsubscribe();
+        };
+    }, [jobId, toast]);
 
     return { job, loading, error };
 }

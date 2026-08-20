@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -8,23 +7,20 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, CreditCard, Gift, Loader2, Ticket } from "lucide-react";
+import { CheckCircle2, Loader2, Ticket } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useFirebase } from "@/infrastructure/firebase/client-provider";
-import { SubscriptionPlan, User } from "@/lib/types";
-import { collection, getDocs, query, where, doc, updateDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { format, formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
+import { SubscriptionPlan } from "@/lib/types";
+import { collection, getDocs, query, where, doc, getDoc, updateDoc } from "firebase/firestore";
+import { format, formatDistanceToNowStrict } from "date-fns";
 import { toDate } from "@/lib/utils";
 import { useHelp } from "@/hooks/use-help";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-// import axios from "axios"; // Removed
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -147,7 +143,7 @@ export default function BillingClient() {
   }, [db, role]);
 
   const fetchUser = useCallback(async () => {
-    if (!db || !user) return;
+    if (!user) return;
     const userDoc = await getDoc(doc(db, 'users', user.id));
     if (userDoc.exists() && setUser) {
       setUser({ id: userDoc.id, ...userDoc.data() } as any);
@@ -155,7 +151,7 @@ export default function BillingClient() {
   }, [db, user, setUser]);
 
   useEffect(() => {
-    fetchPlans();
+    queueMicrotask(() => fetchPlans());
   }, [fetchPlans]);
 
   // Poll for subscription updates if payment was successful
@@ -192,7 +188,7 @@ export default function BillingClient() {
     if (!user || !db) return;
     setIsPurchasing(plan.id);
 
-        try {
+    try {
       const { createSubscriptionOrderAction } = await import('@/app/actions/subscription.actions');
       const res = await createSubscriptionOrderAction(user.id, plan.id, plan.name, plan.price);
 
@@ -290,4 +286,3 @@ export default function BillingClient() {
     </div>
   );
 }
-

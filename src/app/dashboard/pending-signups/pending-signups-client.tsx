@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useTranslations } from "next-intl";
 import { useFirestore } from "@/infrastructure/firebase/client-provider";
@@ -72,7 +72,7 @@ export default function PendingSignupsClient() {
     const [selectedSignup, setSelectedSignup] = useState<PendingSignup | null>(null);
 
     // Manual Fetch
-    const fetchSignups = async () => {
+    const fetchSignups = useCallback(async () => {
         if (!db || !isAdmin) return;
         setLoading(true);
         try {
@@ -99,13 +99,14 @@ export default function PendingSignupsClient() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [db, isAdmin, toast]);
 
     // Initial Load
     useEffect(() => {
-        fetchSignups();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [db, isAdmin]);
+        queueMicrotask(() => {
+            fetchSignups();
+        });
+    }, [fetchSignups]);
 
     if (!isAdmin) {
         return <div className="p-8 text-center">Access denied. Admin only.</div>;

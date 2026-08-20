@@ -121,11 +121,13 @@ export default function TransactionsClient() {
         } finally {
             setLoading(false);
         }
-    }, [user, auth?.currentUser]);
+    }, [user, auth]);
 
     useEffect(() => {
         if (user) {
-            fetchTransactionsAndUsers();
+            queueMicrotask(() => {
+                fetchTransactionsAndUsers();
+            });
         }
     }, [user, fetchTransactionsAndUsers]);
 

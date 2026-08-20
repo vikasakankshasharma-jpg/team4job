@@ -76,7 +76,9 @@ export function ApprovalsClient() {
 
     useEffect(() => {
         if (isAdmin) {
-            fetchPendingProfessionals();
+            queueMicrotask(() => {
+                fetchPendingProfessionals();
+            });
         }
     }, [isAdmin, fetchPendingProfessionals]);
 

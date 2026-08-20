@@ -247,9 +247,11 @@ export default function MyProfessionalsClient({ initialProfessionals }: { initia
   useEffect(() => {
     // Only fetch client-side if we DO NOT have initial data
     if (!initialProfessionals && user) {
-      fetchRelatedProfessionals();
+      queueMicrotask(() => {
+        fetchRelatedProfessionals();
+      });
     }
-  }, [db, user, fetchRelatedProfessionals, initialProfessionals]);
+  }, [initialProfessionals, user, fetchRelatedProfessionals]);
 
   // Phase 11: Fetch metrics for all Professionals
   useEffect(() => {

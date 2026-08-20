@@ -131,12 +131,17 @@ export default function DashboardClient({ initialData }: { initialData?: Dashboa
     );
   }
 
+  useEffect(() => {
+    if (!loading && !user) {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
+  }, [user, loading]);
+
   // Auth resolved but no user — session may have expired or Firestore SDK error blocked profile load.
   // Redirect to login; the hard-fallback in use-user will handle it if the router doesn't.
   if (!user) {
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.href = '/login';
-    }
     return (
       <div className="flex h-48 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

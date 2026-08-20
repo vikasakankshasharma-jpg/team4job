@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -115,7 +115,7 @@ export function LoginForm() {
     },
   });
 
-  const identifierVal = form.watch("identifier");
+  const identifierVal = useWatch({ control: form.control, name: "identifier" }) || "";
   const isEmail = z.string().email().safeParse(identifierVal).success;
   const isMobile = /^\d{10}$/.test(identifierVal);
 
