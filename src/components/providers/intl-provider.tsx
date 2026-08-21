@@ -29,14 +29,14 @@ export function IntlProvider({ children }: IntlProviderProps) {
 
             try {
                 // Dynamically import the translation file
-                const module = await import(`@/i18n/locales/${validLocale}.json`);
+                const langModule = await import(`@/i18n/locales/${validLocale}.json`);
                 setLocale(validLocale);
-                setMessages(module.default);
+                setMessages(langModule.default);
             } catch (error) {
                 // Fallback to English if locale load fails
-                const module = await import('@/i18n/locales/en.json');
+                const langModule = await import('@/i18n/locales/en.json');
                 setLocale('en');
-                setMessages(module.default);
+                setMessages(langModule.default);
             }
         };
         
