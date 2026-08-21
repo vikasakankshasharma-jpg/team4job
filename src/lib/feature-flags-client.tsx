@@ -31,10 +31,8 @@ export function FeatureFlagProvider({ children }: { children: React.ReactNode })
             if (docSnap.exists()) {
                 setFlags({ ...defaultFlags, ...docSnap.data() });
             } else {
-                // Seed defaults if document doesn't exist
-                setDoc(docRef, defaultFlags).catch(err => 
-                    logger.error("Failed to seed default feature flags", err)
-                );
+                // Just use defaults locally if it doesn't exist
+                setFlags(defaultFlags);
             }
         }, (error) => {
             logger.error("Error fetching feature flags", error);
