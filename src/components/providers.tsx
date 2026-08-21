@@ -4,7 +4,7 @@
 import { HelpProvider } from "@/hooks/use-help";
 import { useFcm } from "@/hooks/use-fcm";
 import { QueryProvider } from "@/providers/query-provider";
-import { FeatureFlagProvider } from "@/lib/feature-flags";
+import { FeatureFlagProvider } from "@/lib/feature-flags-client";
 
 import { useEffect } from "react";
 

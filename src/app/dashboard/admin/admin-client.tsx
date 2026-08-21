@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useTranslations } from 'next-intl';
 import { JOB_STATUS, TRANSACTION_STATUS, DISPUTE_STATUS, USER_ROLES } from "@/lib/constants/statuses";
 import { useAdminMetrics } from "@/hooks/use-admin-metrics";
-import { useAllFeatureFlags, toggleFeatureFlag } from "@/lib/feature-flags";
+import { useAllFeatureFlags, toggleFeatureFlag } from "@/lib/feature-flags-client";
 
 interface AdminAlert {
     id: string;
