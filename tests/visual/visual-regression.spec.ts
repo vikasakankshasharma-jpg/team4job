@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { TestHelper } from '../utils/helpers';
-import { TEST_ACCOUNTS } from '../fixtures/test-data';
 
 /**
  * Visual Regression Testing

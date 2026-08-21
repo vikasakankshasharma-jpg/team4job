@@ -53,7 +53,7 @@ export function useNotifications() {
         setNotifications(prev => Array.isArray(prev) ? prev.map(n => n.id === notificationId ? { ...n, read: true } : n) : []);
         try {
             await NotificationsService.markAsRead(notificationId);
-        } catch (error) {
+        } catch (_error) {
             // Revert or handle silently
         }
     }, []);
@@ -64,7 +64,7 @@ export function useNotifications() {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         try {
             await NotificationsService.markAllAsRead(user.id);
-        } catch (error) {
+        } catch (_error) {
             setNotifications(previous);
         }
     }, [user, notifications]);

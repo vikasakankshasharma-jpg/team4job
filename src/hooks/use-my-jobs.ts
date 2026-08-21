@@ -81,8 +81,9 @@ export function useMyJobs(initialData?: Job[]): UseMyJobsReturn {
                 setHasMore(true);
             }
 
-        } catch (err: any) {
-            setError(err.message || "Failed to load jobs");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Failed to load jobs";
+            setError(message);
         } finally {
             if (isLoadMore) {
                 setLoadMoreLoading(false);

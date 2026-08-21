@@ -6,10 +6,9 @@ import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { useUser } from './use-user';
 import { useFirebase } from '@/infrastructure/firebase/client-provider';
 import { userClientService } from '@/domains/users/user.client.service';
-import { logger } from '@/infrastructure/logger';
 
 export const useFcm = () => {
-    const { app, db } = useFirebase();
+    const { app } = useFirebase();
     const { user } = useUser();
 
     useEffect(() => {
@@ -40,7 +39,7 @@ export const useFcm = () => {
                 } else {
                     // Permission not granted
                 }
-            } catch (err: any) {
+            } catch (_err) {
                 // Error retrieving token
             }
         };
@@ -49,7 +48,7 @@ export const useFcm = () => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.ready.then(registration => {
                 requestPermissionAndToken(registration);
-            }).catch(err => {
+            }).catch((_err) => {
                 // Service Worker registration failed to become ready
             });
         }
@@ -66,5 +65,5 @@ export const useFcm = () => {
             unsubscribe();
         };
 
-    }, [app, user, db]);
+    }, [app, user]);
 };

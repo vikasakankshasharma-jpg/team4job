@@ -42,7 +42,7 @@ export function useAutoSave(
         }
 
         // Allow disabling auto-save via window property for testing
-        if (typeof window !== 'undefined' && (window as any).__DISABLE_AUTO_SAVE__) {
+        if (typeof window !== 'undefined' && (window as unknown as { __DISABLE_AUTO_SAVE__?: boolean }).__DISABLE_AUTO_SAVE__) {
             return;
         }
 

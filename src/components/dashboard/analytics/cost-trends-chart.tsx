@@ -13,7 +13,15 @@ export function CostTrendsChart({ data }: CostTrendsChartProps) {
     const t = useTranslations('analytics');
 
     if (!data || data.length === 0) {
-        return null; // Or return an empty state managed by wrapper
+        return (
+            <div data-testid="analytics-chart-spending-trends">
+                <MetricChartCard title={t('spendingTrends')} description={t('monthlySpendingDescription')}>
+                    <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground/30 bg-background/20 rounded-[3rem] border border-dashed border-white/5 shadow-inner">
+                        <p className="text-[10px] font-black uppercase tracking-[0.5em] italic">{t('noData') || 'NO DATA'}</p>
+                    </div>
+                </MetricChartCard>
+            </div>
+        );
     }
 
     return (

@@ -4,13 +4,12 @@ import { User } from '@/lib/types';
 import { usePathname, useRouter } from "next/navigation";
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as FirebaseUser } from "firebase/auth";
-import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, getDocs, getDoc, Timestamp } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
-import { useFirestore, useFirebase } from "@/infrastructure/firebase/client-provider";
-import { toDate } from "@/lib/utils";
+import { useFirebase } from "@/infrastructure/firebase/client-provider";
 // getUserProfileAction removed — replaced with direct Firestore reads to avoid CSRF 400 errors
 
 
@@ -88,7 +87,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const manualRoleSet = useRef(false);
   const isLoggingOut = useRef(false);
   const lastRedirectPath = useRef<string | null>(null);
-  const lastUpdateRef = useRef<number>(0);
   const [isInitialAuthCheckDone, setIsInitialAuthCheckDone] = useState(false);
 
   // Sync role from localStorage after hydration
@@ -177,7 +175,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Reset redirect tracking on path change
     lastRedirectPath.current = null;
 
-    const handlePermissionError = (error: FirestorePermissionError) => {
+    const handlePermissionError = (_error: FirestorePermissionError) => {
       toast({
         title: "Permission Denied",
         description: "You do not have permission to perform this action.",
@@ -214,14 +212,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const errText = await response.text();
             console.error('[useUser] Session sync returned non-OK status:', response.status, errText);
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
+          const errObj = e as { code?: string; message?: string };
           // Token revoked, expired, or user disabled — sign out and let onAuthStateChanged handle redirect
-          const isAuthError = e?.code?.startsWith('auth/') ||
-            e?.message?.includes('revoked') ||
-            e?.message?.includes('token') ||
-            e?.message?.includes('INVALID_ID_TOKEN');
+          const isAuthError = errObj?.code?.startsWith('auth/') ||
+            errObj?.message?.includes('revoked') ||
+            errObj?.message?.includes('token') ||
+            errObj?.message?.includes('INVALID_ID_TOKEN');
           if (isAuthError) {
-            console.warn('[useUser] Auth token error. Signing out...', e?.code);
+            console.warn('[useUser] Auth token error. Signing out...', errObj?.code);
             await signOut(auth).catch(() => {});
             return;
           }
@@ -311,7 +310,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updateUserState(docSnap.data() as User);
               }
               setLoading(false);
-            } catch (e) {
+            } catch (_e) {
               if (resolved) return;
               clearTimeout(loadingTimeout);
               resolved = true;
@@ -342,7 +341,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     ...legacyData,
                     id: firebaseUser.uid,
                     updatedAt: new Date().toISOString()
-                  } as any as User;
+                  } as unknown as User;
                   
                   await setDoc(firestoreDoc(db, "users", firebaseUser.uid), newData);
                   updateUserState(newData);
@@ -365,7 +364,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setLoading(false);
               }
             });
-          } catch (e) {
+          } catch (_e) {
             clearTimeout(loadingTimeout);
             clearTimeout(snapshotFallbackTimer);
             resolved = true;
@@ -425,7 +424,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (isProtectedPath && !user && !hasAuthUser) {
         if (loading) {
-           return null;
+          return null;
         }
         return '/login';
       }
@@ -434,7 +433,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      const professionalPaths = ['/dashboard/my-bids', '/dashboard/verify-professional', '/dashboard/jobs'];
       const clientPaths = ['/dashboard/post-job', '/dashboard/posted-jobs', '/dashboard/my-professionals', '/dashboard/professionals'];
       const adminPaths = ['/dashboard/reports', '/dashboard/users', '/dashboard/team', '/dashboard/all-jobs', '/dashboard/transactions', '/dashboard/subscription-plans', '/dashboard/coupons', '/dashboard/blacklist'];
       const supportPaths = ['/dashboard/disputes'];
@@ -566,7 +564,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       return true;
-    } catch (error: any) {
+    } catch (_error) {
       return false;
     }
   }, [auth, db, toast]);

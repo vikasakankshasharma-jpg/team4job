@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useFirebase } from '@/infrastructure/firebase/client-provider';
-import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { ChatRoom, ChatMessage } from '@/lib/types';
 import { useUser } from '@/hooks/use-user';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
