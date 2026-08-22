@@ -36,13 +36,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const db = getAdminDb();
     
-    // Fetch active jobs
-    const jobsSnapshot = await db
-      .collection('jobs')
-      .where('status', 'in', ['Open for Bidding', 'open'])
-      .get();
+    // Helper function with retry logic for transient Firestore blips
+    const fetchWithRetry = async (query: any, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          return await query.get();
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i))); // Exponential backoff: 1s, 2s, 4s...
+        }
+      }
+    };
 
-    jobsSnapshot.forEach((doc) => {
+    // Fetch active jobs
+    const jobsSnapshot = await fetchWithRetry(
+      db.collection('jobs').where('status', 'in', ['Open for Bidding', 'open'])
+    );
+
+    jobsSnapshot.forEach((doc: any) => {
       const data = doc.data();
       const lastModified = data.postedAt?.toDate() || new Date();
       routes.push({
@@ -54,13 +65,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // Fetch professional profiles
-    const usersSnapshot = await db
-      .collection('users')
-      .where('roles', 'array-contains', 'Professional')
-      .where('status', '==', 'active')
-      .get();
+    const usersSnapshot = await fetchWithRetry(
+      db.collection('users').where('roles', 'array-contains', 'Professional').where('status', '==', 'active')
+    );
 
-    usersSnapshot.forEach((doc) => {
+    usersSnapshot.forEach((doc: any) => {
       const data = doc.data();
       const lastModified = data.memberSince?.toDate() || new Date();
       routes.push({
