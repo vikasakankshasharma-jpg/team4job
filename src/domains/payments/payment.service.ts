@@ -131,6 +131,11 @@ export class PaymentService {
                 throw new Error('Transaction not found');
             }
 
+            // IDEMPOTENCY CHECK: Prevent double-processing (and double-incrementing) on webhook redelivery
+            if (transactionResult.data.status === 'funded' || transactionResult.data.status === 'released') {
+                return;
+            }
+
             await paymentRepository.update(transactionResult.id, {
                 status: 'funded',
                 fundedAt: Timestamp.now() as any,

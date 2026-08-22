@@ -127,58 +127,83 @@ export async function POST(req: NextRequest) {
       token = await getCashfreeBearerToken();
     }
 
-    // 5. Process Payout (if any)
-    if (professionalPayoutAmount > 0 && transaction.payeeId) {
-      const proUserSnap = await db.collection('users').doc(transaction.payeeId).get();
-      const proUser = proUserSnap.data() as User;
-      
-      if (!proUser?.payouts?.beneficiaryId && !isManualMode) {
-        return NextResponse.json({ error: 'Professional does not have a beneficiary account set up' }, { status: 400 });
-      }
+    // 5. Pre-compute Transfer IDs & Atomically Lock Transaction
+    payoutTransferId = isManualMode ? `MANUAL_PAYOUT_${transaction.id}_${Date.now()}` : `PAYOUT_${transaction.id}_${Date.now()}`;
+    refundTransferId = isManualMode ? `MANUAL_REFUND_${transaction.id}_${Date.now()}` : `REFUND_${transaction.id}_${Date.now()}`;
 
-      // Deduct commission
-      let commissionRate = 0.1;
-      try {
-        const settingsSnap = await db.collection('platform_settings').doc('fees').get();
-        if (settingsSnap.exists) {
-          commissionRate = (settingsSnap.data() as PlatformSettings).professionalCommissionRate || 0.1;
+    await db.runTransaction(async (t) => {
+      const doc = await t.get(transactionDoc.ref);
+      if (!doc.exists) throw new Error('Transaction document not found');
+      const currentStatus = doc.data()?.status;
+      if (currentStatus !== 'funded' && currentStatus !== 'disputed') {
+        throw new Error('Transaction is no longer funded or disputed (possibly already resolved)');
+      }
+      t.update(transactionDoc.ref, {
+        status: 'payout_initiated',
+        payoutTransferId: professionalPayoutAmount > 0 ? payoutTransferId : null,
+        refundTransferId: clientRefundAmount > 0 ? refundTransferId : null,
+      });
+    });
+
+    try {
+      // 6. Process Payout (if any)
+      if (professionalPayoutAmount > 0 && transaction.payeeId) {
+        const proUserSnap = await db.collection('users').doc(transaction.payeeId).get();
+        const proUser = proUserSnap.data() as User;
+        
+        if (!proUser?.payouts?.beneficiaryId && !isManualMode) {
+          throw new Error('Professional does not have a beneficiary account set up');
         }
-      } catch (e) {}
 
-      const commission = transaction.commission || (professionalPayoutAmount * commissionRate);
-      const finalTransfer = professionalPayoutAmount - commission;
+        // Deduct commission
+        let commissionRate = 0.1;
+        try {
+          const settingsSnap = await db.collection('platform_settings').doc('fees').get();
+          if (settingsSnap.exists) {
+            commissionRate = (settingsSnap.data() as PlatformSettings).professionalCommissionRate || 0.1;
+          }
+        } catch (e) {}
 
-      payoutTransferId = isManualMode ? `MANUAL_PAYOUT_${transaction.id}_${Date.now()}` : `PAYOUT_${transaction.id}_${Date.now()}`;
-      
-      if (!isManualMode) {
-        await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-          beneId: proUser.payouts?.beneficiaryId,
-          amount: finalTransfer.toFixed(2),
-          transferId: payoutTransferId,
-        }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
-      }
-    }
-
-    // 6. Process Refund (if any)
-    if (clientRefundAmount > 0 && transaction.payerId) {
-      const clientUserSnap = await db.collection('users').doc(transaction.payerId).get();
-      const clientUser = clientUserSnap.data() as User;
-      
-      if (clientUser?.payouts?.beneficiaryId || isManualMode) {
-        refundTransferId = isManualMode ? `MANUAL_REFUND_${transaction.id}_${Date.now()}` : `REFUND_${transaction.id}_${Date.now()}`;
+        const commission = transaction.commission || (professionalPayoutAmount * commissionRate);
+        const finalTransfer = professionalPayoutAmount - commission;
+        
         if (!isManualMode) {
           await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
-            beneId: clientUser.payouts?.beneficiaryId,
-            amount: clientRefundAmount.toFixed(2),
-            transferId: refundTransferId,
+            beneId: proUser.payouts?.beneficiaryId,
+            amount: finalTransfer.toFixed(2),
+            transferId: payoutTransferId,
           }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
         }
-      } else {
-        console.warn(`Client ${transaction.payerId} lacks beneficiary for refund via payouts.`);
       }
+
+      // 7. Process Refund (if any)
+      if (clientRefundAmount > 0 && transaction.payerId) {
+        const clientUserSnap = await db.collection('users').doc(transaction.payerId).get();
+        const clientUser = clientUserSnap.data() as User;
+        
+        if (clientUser?.payouts?.beneficiaryId || isManualMode) {
+          if (!isManualMode) {
+            await axios.post(`${CASHFREE_API_BASE}/payouts/standard`, {
+              beneId: clientUser.payouts?.beneficiaryId,
+              amount: clientRefundAmount.toFixed(2),
+              transferId: refundTransferId,
+            }, { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+          }
+        } else {
+          console.warn(`Client ${transaction.payerId} lacks beneficiary for refund via payouts.`);
+        }
+      }
+    } catch (paymentError) {
+      // Rollback the transaction lock if API calls fail
+      await transactionDoc.ref.update({
+        status: transaction.status,
+        payoutTransferId: null,
+        refundTransferId: null,
+      });
+      throw paymentError;
     }
 
-    // 7. Update Documents
+    // 8. Update Final Documents
     let newStatus = resolution === 'SPLIT' ? 'split_resolved' : (resolution === 'REFUND' ? 'refunded' : 'released');
     if (isManualMode && (professionalPayoutAmount > 0 || clientRefundAmount > 0)) {
         newStatus = 'payout_pending';
