@@ -69,7 +69,13 @@ export async function POST(req: NextRequest) {
       errorMessage = 'A user with this email already exists';
     }
 
-    return NextResponse.json({ error: errorMessage, debug: error.message, stack: error.stack }, { status: 500 });
+    const responseBody: any = { error: errorMessage };
+    if (process.env.NODE_ENV !== 'production') {
+      responseBody.debug = error.message;
+      responseBody.stack = error.stack;
+    }
+
+    return NextResponse.json(responseBody, { status: 500 });
   }
 }
 

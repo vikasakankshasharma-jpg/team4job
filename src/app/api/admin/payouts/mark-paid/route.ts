@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb, getAdminAuth } from '@/infrastructure/firebase/admin';
 import { TRANSACTION_STATUS, JOB_STATUS } from '@/lib/constants/statuses';
 import { paymentService } from '@/domains/payments/payment.service';
+import { userService } from '@/domains/users/user.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
         const auth = getAdminAuth();
         const decodedToken = await auth.verifyIdToken(token);
         
-        if (!decodedToken.roles?.includes('admin')) {
+        const admin = await userService.getProfile(decodedToken.uid);
+        if (!admin || !admin.roles?.includes('Admin')) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
