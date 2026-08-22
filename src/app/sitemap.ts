@@ -72,6 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   } catch (error) {
     console.error('Error generating dynamic sitemap:', error);
+    throw new Error(`Failed to generate dynamic sitemap: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   return routes;
