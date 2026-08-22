@@ -25,7 +25,6 @@ class Logger {
         } else {
             // In development, pretty print
             const color = this.getColor(level);
-            console.log(`${color}[${level.toUpperCase()}] \x1b[0m${message}`, context || '');
         }
 
         // Integrate with Sentry for errors and warnings

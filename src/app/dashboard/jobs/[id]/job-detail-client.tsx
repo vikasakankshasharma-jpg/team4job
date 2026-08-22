@@ -773,7 +773,6 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
 
     // E2E Test Logic
     const handleDirectConfirm = React.useCallback(async (options?: { simulateError?: boolean }) => {
-        console.log('[E2E-FUND] handleDirectConfirm started');
         const token = await auth.currentUser?.getIdToken();
         const runId = id; // use params id
 
@@ -789,13 +788,11 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
         }
 
         try {
-            console.log(`[E2E-FUND] Sending request to v2 for Job: ${runId}`);
             const res = await axios.post('/api/e2e/fund-job-v2', {
                 jobId: runId,
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log('[E2E-FUND] API Response:', res.status, res.data);
             toast({ title: "Test Mode: Payment Initiated", description: "Waiting for external funding..." });
         } catch (e: any) {
             console.error('[E2E-FUND] Direct fund failed:', e.response?.data || e.message);

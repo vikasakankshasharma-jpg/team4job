@@ -105,7 +105,7 @@ export class AuthService {
                 emailVerified: user.isEmailVerified || false,
                 mobileVerified: user.isMobileVerified || false,
             };
-        } catch (error) {
+        } catch (error: any) {
 
             return null;
         }
@@ -118,7 +118,7 @@ export class AuthService {
         try {
             await authRepository.updateEmailVerification(uid, true);
 
-        } catch (error) {
+        } catch (error: any) {
 
             throw new Error('Failed to verify email');
         }

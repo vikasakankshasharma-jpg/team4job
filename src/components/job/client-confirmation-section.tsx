@@ -101,18 +101,13 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
     };
 
     const handleRaiseDispute = async () => {
-        console.log("CLIENT DEBUG: handleRaiseDispute called!", { hasUser: !!user, reasonLength: disputeReason.length });
         if (!user) {
-            console.log("CLIENT DEBUG: Returning early due to !user");
             return;
         }
         if (!disputeReason.trim()) {
-            console.log("CLIENT DEBUG: Returning early due to empty reason");
             toast({ title: t('reasonRequired'), description: t('reasonRequiredDesc'), variant: "destructive" });
             return;
         }
-
-        console.log("CLIENT DEBUG: Setting loading state");
         setIsLoading(true);
         try {
             const uploadPromises = disputeFiles.map(async (file) => {
@@ -122,8 +117,6 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                 return { fileName: file.name, fileUrl: downloadURL, fileType: file.type };
             });
             const uploadedAttachments = await Promise.all(uploadPromises);
-
-            console.log("CLIENT DEBUG: Calling raiseDisputeAction");
             const res = await raiseDisputeAction(
                 job.id,
                 user.id,
@@ -132,11 +125,8 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
                 "Job Dispute",
                 uploadedAttachments
             );
-            console.log("CLIENT DEBUG: raiseDisputeAction result", res);
-
             if (res.success && res.disputeId) {
                 toast({ title: t('disputeSuccess'), description: t('disputeSuccessDesc') });
-                console.log("CLIENT DEBUG: Redirecting to", `/dashboard/disputes/${res.disputeId}`);
                 router.push(`/dashboard/disputes/${res.disputeId}`);
             } else {
                 throw new Error(res.error || "Failed to raise dispute");
@@ -145,7 +135,6 @@ export function ClientConfirmationSection({ job, user, onJobUpdate, onCancel, on
             console.error("Dispute init error:", error);
             toast({ title: t('errorTitle'), description: error.message || t('genericError'), variant: "destructive" });
         } finally {
-            console.log("CLIENT DEBUG: Clearing loading state");
             setIsLoading(false);
         }
     };

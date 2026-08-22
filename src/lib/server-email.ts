@@ -14,9 +14,6 @@ export async function sendServerEmail(to: string, subject: string, text: string,
             controller.abort();
             console.error(`[sendServerEmail] Email sending to ${to} timed out after 10 seconds.`);
         }, 10000); // 10s timeout
-
-        console.log(`[sendServerEmail] Attempting to send email to ${to} with subject: "${subject}"`);
-
         const response = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {

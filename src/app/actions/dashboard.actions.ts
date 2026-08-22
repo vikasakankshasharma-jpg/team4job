@@ -9,9 +9,7 @@ import { Transaction } from "@/lib/types";
 
 export async function getDashboardStatsAction(userId: string) {
     try {
-        console.log(`[DashboardAction] Starting data fetch for user: ${userId}`);
         const db = getAdminDb();
-        console.log(`[DashboardAction] Admin DB instance obtained`);
         const startTime = Date.now();
 
         const timeout = new Promise<never>((_, reject) => 
@@ -25,19 +23,16 @@ export async function getDashboardStatsAction(userId: string) {
                     .orderBy('createdAt', 'desc')
                     .limit(10)
                     .get()
-                    .then(snap => { console.log('[DashboardAction] Transactions fetched'); return snap; }),
+                    .then(snap => { return snap; }),
                 jobService.getStatsForProfessional(userId)
-                    .then(stats => { console.log('[DashboardAction] Professional stats fetched'); return stats; }),
+                    .then(stats => { return stats; }),
                 jobService.getStatsForClient(userId)
-                    .then(stats => { console.log('[DashboardAction] Client stats fetched'); return stats; }),
+                    .then(stats => { return stats; }),
                 jobService.getQuickMetrics(userId)
-                    .then(metrics => { console.log('[DashboardAction] Quick metrics fetched'); return metrics; })
+                    .then(metrics => { return metrics; })
             ]),
             timeout
         ]);
-
-        console.log(`[DashboardAction] All data fetched in ${Date.now() - startTime}ms`);
-
         const transactions = transactionsSnapshot.docs.map(doc => {
             const data = doc.data();
             const mapDate = (d: any) => {

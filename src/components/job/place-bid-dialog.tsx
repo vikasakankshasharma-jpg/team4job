@@ -126,14 +126,8 @@ export function PlaceBidDialog({
             (window.location.hostname === 'localhost' || 
              window.location.hostname === '127.0.0.1' || 
              process.env.NEXT_PUBLIC_E2E === 'true');
-             
-        if (isE2E) {
-            console.log('[PlaceBidDialog] onSubmit started', { 
-                values, 
-                isValid: form.formState.isValid,
-                errors: form.formState.errors 
-            });
-        }
+
+        if (isE2E) {}
 
         if (!user.isMobileVerified) {
             if (!isE2E) {
@@ -153,12 +147,10 @@ export function PlaceBidDialog({
                     action: <Link href="/dashboard/profile" className={buttonVariants({ variant: "outline", size: "sm" })}>Setup Now</Link>
                 });
                 return;
-            } else {
-                console.log('[PlaceBidDialog] Payout missing, but bypassing for E2E');
-            }
+            } else {}
         }
 
-        if (isE2E) console.log('[PlaceBidDialog] Proceeding with submission check...');
+        isE2E;
 
         try {
             const result = await placeBidAction(job.id, user.id, 'Professional', {
@@ -170,7 +162,7 @@ export function PlaceBidDialog({
             });
 
             if (result.success) {
-                if (isE2E) console.log('[PlaceBidDialog] Bid success, closing dialog');
+                isE2E;
                 toast({ title: "Bid Placed!", description: "The Client has been notified." });
                 onBidSubmit();
                 onOpenChange(false);

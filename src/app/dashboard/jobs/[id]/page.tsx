@@ -48,9 +48,7 @@ export default async function JobDetailPageWrapper(props: Props) {
 
     if (id) {
         try {
-            console.log(`[JobDetailSSR] Starting SSR fetch for Job ID: ${id}`);
             const userId = await getUserIdFromSession();
-            console.log(`[JobDetailSSR] Session userId: ${userId || 'Anonymous'}`);
 
             // Only fetch bids if we have a user (though layouts usually enforce auth)
             const [jobData, bidsRes] = await Promise.all([
@@ -66,12 +64,10 @@ export default async function JobDetailPageWrapper(props: Props) {
                 initialJob = null;
             } else {
                 initialJob = JSON.parse(JSON.stringify(jobData));
-                console.log(`[JobDetailSSR] Job data fetched successfully: ${initialJob.title}`);
             }
 
             if (bidsRes && 'success' in bidsRes && bidsRes.success) {
                 initialBids = bidsRes.bids || [];
-                console.log(`[JobDetailSSR] Bids fetched: ${initialBids.length}`);
             } else {
                 const errorMsg = bidsRes && 'error' in bidsRes ? bidsRes.error : 'Fetch failed';
                 console.warn(`[JobDetailSSR] Bids fetch failed: ${errorMsg}`);

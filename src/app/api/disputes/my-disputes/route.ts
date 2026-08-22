@@ -12,13 +12,11 @@ export async function GET(request: Request) {
         const adminAuth = getAdminAuth();
         const decodedToken = await adminAuth.verifyIdToken(token);
         const userId = decodedToken.uid;
-        
+
         const db = getAdminDb();
         const userDoc = await db.collection('users').doc(userId).get();
         const userData = userDoc.data();
         const isAdmin = userDoc.exists && (userData?.role === 'admin' || userData?.roles?.includes('Admin'));
-        
-        console.log('[my-disputes] API Hit by user:', userId, 'isAdmin:', isAdmin);
 
         let disputesMap = new Map();
 
@@ -63,9 +61,7 @@ export async function GET(request: Request) {
 
         await Promise.all(userFetchPromises);
 
-        console.log(`[my-disputes] Returning ${disputes.length} disputes for user ${userId}`);
         return NextResponse.json({ success: true, disputes, involvedUsers });
-
     } catch (error: any) {
         console.error('[my-disputes] API Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });

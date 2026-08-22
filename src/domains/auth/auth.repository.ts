@@ -23,7 +23,7 @@ export class AuthRepository {
             });
 
 
-        } catch (error) {
+        } catch (error: any) {
 
             throw error;
         }
@@ -47,7 +47,7 @@ export class AuthRepository {
 
             const doc = snapshot.docs[0];
             return { id: doc.id, ...doc.data() } as User;
-        } catch (error) {
+        } catch (error: any) {
 
             throw error;
         }
@@ -66,7 +66,7 @@ export class AuthRepository {
             }
 
             return { id: doc.id, ...doc.data() } as User;
-        } catch (error) {
+        } catch (error: any) {
 
             throw error;
         }
@@ -84,7 +84,7 @@ export class AuthRepository {
             });
 
 
-        } catch (error) {
+        } catch (error: any) {
 
             throw error;
         }
@@ -102,7 +102,7 @@ export class AuthRepository {
             });
 
 
-        } catch (error) {
+        } catch (error: any) {
 
             throw error;
         }

@@ -226,7 +226,10 @@ export default function UsersClient() {
       if (pageParam) q = query(q, startAfter(pageParam));
 
       const snapshot = await getDocs(q);
-      const pageUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User);
+      const pageUsers = snapshot.docs.map(doc => (({
+        id: doc.id,
+        ...doc.data()
+      }) as User));
       const lastDoc = snapshot.docs[snapshot.docs.length - 1];
       return { users: pageUsers, lastDoc };
     },

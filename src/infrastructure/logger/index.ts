@@ -24,9 +24,7 @@ class Logger {
         return `[${timestamp}] [${level.toUpperCase()}] ${message} ${contextStr}`;
     }
 
-    info(message: string, context?: LogContext) {
-        console.log(this.formatMessage('info', message, context));
-    }
+    info(message: string, context?: LogContext) {}
 
     warn(message: string, context?: LogContext) {
         console.warn(this.formatMessage('warn', message, context));

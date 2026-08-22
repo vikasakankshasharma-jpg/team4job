@@ -50,14 +50,14 @@ export class PaymentRepository {
     }
 
     async findByPayerId(userId: string, limit?: number): Promise<Transaction[]> {
-        let query: any = this.collection.where("payerId", "==", userId);
+        let query = this.collection.where("payerId", "==", userId);
         if (limit) query = query.limit(limit);
         const snapshot = await query.get();
         return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Transaction));
     }
 
     async findByPayeeId(userId: string, limit?: number): Promise<Transaction[]> {
-        let query: any = this.collection.where("payeeId", "==", userId);
+        let query = this.collection.where("payeeId", "==", userId);
         if (limit) query = query.limit(limit);
         const snapshot = await query.get();
         return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Transaction));

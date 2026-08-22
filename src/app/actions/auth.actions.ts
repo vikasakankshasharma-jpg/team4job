@@ -32,7 +32,6 @@ export async function removeSessionTokenAction() {
  */
 export async function getUserProfileAction(uid: string): Promise<User | null> {
     const startTime = Date.now();
-    console.log(`[AuthAction] Fetching profile for UID: ${uid}`);
     try {
         const db = getAdminDb();
         
@@ -44,8 +43,6 @@ export async function getUserProfileAction(uid: string): Promise<User | null> {
 
         if (profileDoc.exists) {
             const data = profileDoc.data();
-            console.log(`[AuthAction] Profile found for ${uid} in ${Date.now() - startTime}ms`);
-            
             // Helper to recursively serialize timestamps
             const serializeTimestamps = (obj: any): any => {
                 if (!obj || typeof obj !== 'object') return obj;
@@ -74,7 +71,6 @@ export async function getUserProfileAction(uid: string): Promise<User | null> {
             };
             return userData as User;
         }
-        console.log(`[AuthAction] Profile NOT found for ${uid} in ${Date.now() - startTime}ms`);
         return null;
     } catch (error: any) {
         console.error(`[AuthAction] Error fetching user profile [${Date.now() - startTime}ms]:`, error.message);

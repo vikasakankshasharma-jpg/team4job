@@ -450,7 +450,6 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
     const currentTitle = form.getValues('jobTitle');
     const currentDesc = form.getValues('jobDescription');
     if (currentTitle && currentTitle !== draft.title && currentTitle.length > 5) {
-      console.log("[PostJob] Skipping auto-resume: Form already has user data.");
       return;
     }
 
@@ -484,9 +483,8 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
       if (!user || isEditMode || repostJobId || isSubmitted) return;
       
       try {
-        console.log(`[PostJob] Checking for draft (Attempt ${11 - retries})...`);
         const res = await getLatestDraftAction(user.id);
-        
+
         let foundDraft = null;
         if (res.success && res.draft) {
           foundDraft = res.draft;
@@ -507,13 +505,10 @@ export default function PostJobClient({ isMapLoaded }: { isMapLoaded: boolean })
             setShowDraftDialog(true);
           }
         } else if (isWizardCompleted && retries > 0) {
-           console.log(`[PostJob] Wizard completed but no draft found yet. Retrying in 2.5s... (${retries} left)`);
-           setTimeout(() => checkForDraft(retries - 1), 2500);
+          setTimeout(() => checkForDraft(retries - 1), 2500);
         } else if (isWizardCompleted) {
            console.warn("[PostJob] Wizard completed but no draft found in Firestore after extended retries.");
         } else if (!directAwardParam && !isWizardCompleted && process.env.NEXT_PUBLIC_E2E !== 'true' && !userLoading && user?.roles?.includes('Client')) {
-          // Safety: only redirect if definitely no draft, not coming from wizard, and user is a Client
-          console.log("[PostJob] No draft found and no special params. Redirecting to wizard.");
           router.replace('/wizard');
         }
       } catch (error: any) {

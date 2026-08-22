@@ -166,7 +166,7 @@ export function ProfessionalCompletionSection({ job, user, onJobUpdate, onSubmit
             data-testid="professional-completion-section"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5 blur-3xl opacity-30 -z-10" />
-            
+
             <Card className="border-none shadow-[0_40px_100px_rgba(0,0,0,0.1)] bg-surface-container-low/40 dark:bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden ring-1 ring-white/5 relative">
                 <div className="h-2 w-full bg-gradient-to-r from-success via-primary to-success animate-gradient-x opacity-30" />
                 

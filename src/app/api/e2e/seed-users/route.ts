@@ -300,13 +300,6 @@ export async function POST(req: NextRequest) {
         const auth = getAdminAuth();
         const db = getAdminDb();
 
-        console.log('[SeedAPI] ENV Check:', {
-            USE_EMU: process.env.NEXT_PUBLIC_USE_EMULATOR || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR,
-            AUTH_HOST: process.env.FIREBASE_AUTH_EMULATOR_HOST,
-            DB_HOST: process.env.FIRESTORE_EMULATOR_HOST,
-            PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT
-        });
-
         // Simple retry helper to handle transient emulator startup/connectivity issues
         const retryAsync = async <T>(fn: () => Promise<T>, attempts = 5, delayMs = 500): Promise<T> => {
             let lastErr: any;
@@ -341,7 +334,6 @@ export async function POST(req: NextRequest) {
                         displayName: user.name,
                         emailVerified: true
                     }));
-                    console.log(`[SeedAPI] Updated existing user: ${user.email}`);
                 } catch (err: any) {
                     if (err.code === 'auth/user-not-found') {
                         userRecord = await retryAsync(() =>

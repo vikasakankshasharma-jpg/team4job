@@ -13,7 +13,6 @@ let appInstance: App | undefined;
  * Robust implementation with trimming and diagnostics.
  */
 export function getAdminApp(): App {
-    
     if (appInstance) {
         return appInstance;
     }
@@ -28,15 +27,12 @@ export function getAdminApp(): App {
     const apps = getApps();
     const existingApp = apps.find(a => a.name === (useEmulator ? 'admin-emulator' : 'admin-live'));
     if (existingApp) {
-        console.log(`[FirebaseAdmin] Found existing named app (${existingApp.name}) in global context`);
         appInstance = existingApp;
         return appInstance;
     }
 
     if (useEmulator) {
-        console.log('[FirebaseAdmin] INITIALIZING WITH EMULATOR CONFIG (No Cert)');
         const projectId = (process.env.DO_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'team4job-test').trim();
-        console.log(`[FirebaseAdmin] Using Project ID: ${projectId}`);
         appInstance = initializeApp({ projectId }, 'admin-emulator');
         return appInstance;
     }
@@ -49,7 +45,6 @@ export function getAdminApp(): App {
         console.error('[FirebaseAdmin] Missing required credentials in environment variables');
         // Fallback to Application Default Credentials if possible
         try {
-            console.log('[FirebaseAdmin] Attempting initialization with Application Default Credentials...');
             appInstance = initializeApp();
             return appInstance;
         } catch (e) {
@@ -59,21 +54,16 @@ export function getAdminApp(): App {
 
     // Extra robust private key processing
     let privateKey = rawPrivateKey;
-    
+
     // Remove wrapping quotes if they exist (sometimes .env values are literal strings)
     if ((privateKey.startsWith('"') && privateKey.endsWith('"')) || (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
         privateKey = privateKey.substring(1, privateKey.length - 1);
     }
-    
+
     // Convert literal \n to real newlines if present
     if (privateKey.includes('\\n')) {
         privateKey = privateKey.replace(/\\n/g, '\n');
     }
-
-    console.log(`[FirebaseAdmin] Initializing for project: ${projectId}`);
-    console.log(`[FirebaseAdmin] Client Email: ${clientEmail}`);
-    console.log(`[FirebaseAdmin] Private Key Length: ${privateKey.length}`);
-    console.log(`[FirebaseAdmin] Private Key start: ${privateKey.substring(0, 40)}...`);
 
     try {
         appInstance = initializeApp({
@@ -85,7 +75,6 @@ export function getAdminApp(): App {
             projectId,
             databaseURL: `https://${projectId}.firebaseio.com`
         }, 'admin-live');
-        console.log('[FirebaseAdmin] initialization successful');
         return appInstance;
     } catch (error: any) {
         console.error('[FirebaseAdmin] CRITICAL Initialization error:', error.message);

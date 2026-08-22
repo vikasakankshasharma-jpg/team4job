@@ -147,7 +147,6 @@ export function ProfessionalAcceptanceSection({ job, user, onJobUpdate }: Profes
 
     const processAcceptance = async () => {
         setIsLoading(true);
-        console.log(`[ACCEPT-DEBUG] Attempting acceptance for Job: ${job.id}, User: ${user.id}`);
         try {
             const result = await acceptJobAction(job.id, user.id);
 

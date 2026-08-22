@@ -45,14 +45,12 @@ export class UserService {
         // 3. Handle Mobile Change (with Cooling Period)
         if (data.mobile && data.mobile !== user.mobile) {
             if (!this.isValidMobile(data.mobile)) throw new Error('Invalid mobile number');
-            
+
             const oldMobile = user.mobile;
             updates.mobile = data.mobile;
             updates.isMobileVerified = false;
             updates.restrictedUntil = Timestamp.fromDate(new Date(Date.now() + 48 * 60 * 60 * 1000));
-            
-            // Replaced whatsapp notification with standard logging as whatsapp module was removed
-            console.log(`Security Alert: Mobile number changed for user ${userId} from ${oldMobile} to ${data.mobile}`);
+
             securityAlerts.push("Mobile number was changed. 48-hour cooling period applied.");
         }
 

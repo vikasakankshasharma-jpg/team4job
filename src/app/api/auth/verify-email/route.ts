@@ -15,11 +15,8 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
-        console.log('[VerifyEmailAPI] Request received');
         const db = getAdminDb();
-        console.log('[VerifyEmailAPI] Got Admin DB');
         const body = await req.json();
-        console.log('[VerifyEmailAPI] Body parsed:', JSON.stringify(body));
 
         // 1. Rate Limiting (Prevent brute-force and email spam)
         const clientIp = req.headers.get('x-forwarded-for') || 'anonymous';
@@ -40,18 +37,14 @@ export async function POST(req: NextRequest) {
         const { email, otp, action, intent } = validation.data;
 
         if (action === 'send') {
-            console.log('[VerifyEmailAPI] Generating OTP');
             // Generate 6-digit OTP
             const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-            // Store in Firestore with 10-minute expiry
-            console.log('[VerifyEmailAPI] Calculating expiry');
             const expiry = new Date();
             expiry.setMinutes(expiry.getMinutes() + 10);
 
-            console.log(`[VerifyEmailAPI] Saving OTP for ${email} to Firestore...`);
             const docRef = db.collection('emailVerifyCodes').doc(email.toLowerCase());
-            
+
             // Promise race to prevent indefinite hang on Firestore call
             const firestorePromise = docRef.set({
                 otp: generatedOtp,
@@ -64,8 +57,6 @@ export async function POST(req: NextRequest) {
             );
 
             await Promise.race([firestorePromise, timeoutPromise]);
-            console.log(`[VerifyEmailAPI] OTP saved successfully in Firestore`);
-            console.log(`[VerifyEmailAPI] OTP saved. Initiating email send...`);
 
             // Send Email via Brevo
             await sendServerEmail(
@@ -112,9 +103,7 @@ export async function POST(req: NextRequest) {
             if (data.otp !== otp) {
                 // Test Bypass for development/test credentials
                 const isTestEmail = email.toLowerCase() === 'test@example.com' || email.toLowerCase().endsWith('@test.com');
-                if (otp === '123456' && (isTestEmail || process.env.NODE_ENV !== 'production')) {
-                    console.log(`[VerifyEmailAPI] Test bypass triggered for ${email}`);
-                } else {
+                if (otp === '123456' && (isTestEmail || process.env.NODE_ENV !== 'production')) {} else {
                     return NextResponse.json({ success: false, message: 'Invalid OTP' }, { status: 400 });
                 }
             }
@@ -143,7 +132,6 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ success: false, message: 'Invalid action' }, { status: 400 });
-
     } catch (error: any) {
         console.error('[VerifyEmailAPI] Critical Error:', error);
         if (error.message?.includes('16 UNAUTHENTICATED')) {

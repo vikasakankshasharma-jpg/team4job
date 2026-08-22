@@ -53,7 +53,7 @@ export function StartWorkInput({ job, user, onJobUpdate }: { job: Job, user: Use
             className="relative group"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/5 blur-2xl opacity-50 -z-10" />
-            
+
             <div className="p-8 rounded-[2.5rem] bg-surface-container-low dark:bg-slate-900/50 border border-muted/20 backdrop-blur-xl shadow-2xl shadow-primary/5 space-y-8">
                 <div className="flex items-center gap-5">
                     <div className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">

@@ -155,7 +155,10 @@ export default function AllJobsClient() {
       }
 
       const jobSnapshot = await getDocs(q);
-      const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Job);
+      const jobList = jobSnapshot.docs.map(doc => (({
+        id: doc.id,
+        ...doc.data()
+      }) as Job));
 
       // Fetch related users logic
       const userRefs = new Map<string, DocumentReference>();

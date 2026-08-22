@@ -13,7 +13,6 @@ export async function POST(req: NextRequest) {
 
     try {
         const text = await req.text();
-        console.log(`[E2E-FUND] Request Body: "${text}"`);
         if (!text) {
             return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
         }
@@ -25,14 +24,12 @@ export async function POST(req: NextRequest) {
         }
 
         const db = getAdminDb();
-        console.log(`[E2E-FUND] Processing Job ID: ${jobId}`);
         const jobRef = db.collection('jobs').doc(jobId);
         const jobSnap = await jobRef.get();
         if (!jobSnap.exists) {
             console.error(`[E2E-FUND] Job Not Found in Firestore: ${jobId}`);
             return NextResponse.json({ error: 'Job not found' }, { status: 404 });
         }
-        console.log(`[E2E-FUND] Job Found: ${jobSnap.id}, Current Status: ${jobSnap.data()?.status}`);
         const job = jobSnap.data();
 
         // Create Funded Transaction
@@ -76,7 +73,6 @@ export async function POST(req: NextRequest) {
         const dummyOtp = Math.floor(100000 + Math.random() * 900000).toString();
         const completionOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        console.log(`[E2E-FUND] Updating status to 'In Progress' for Job: ${jobId}`);
         await jobRef.update({
             status: 'In Progress',
             startOtp: dummyOtp,
@@ -85,10 +81,8 @@ export async function POST(req: NextRequest) {
             transactionId: transactionId,
             workStartedAt: FieldValue.delete()
         });
-        console.log(`[E2E-FUND] Successfully updated Job: ${jobId}`);
 
         return NextResponse.json({ success: true, transactionId, startOtp: dummyOtp });
-
     } catch (error: any) {
         console.error('[E2E-FUND] Error:', error);
         return NextResponse.json({ 

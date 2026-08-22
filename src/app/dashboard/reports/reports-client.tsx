@@ -568,7 +568,10 @@ export default function ReportsClient() {
         queryFn: async () => {
             if (!db || !isAdmin) return { users: [], Professionals: [] };
             const usersSnap = await getDocs(query(collection(db, 'users'), limit(1000)));
-            const users = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as User);
+            const users = usersSnap.docs.map(doc => (({
+                id: doc.id,
+                ...doc.data()
+            }) as User));
             return {
                 users,
                 Professionals: users.filter(u => u.roles.includes('Professional'))
@@ -592,7 +595,10 @@ export default function ReportsClient() {
                 orderBy('postedAt', 'desc'),
                 limit(500)
             ));
-            return jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Job);
+            return jobsSnap.docs.map(doc => (({
+                id: doc.id,
+                ...doc.data()
+            }) as Job));
         },
         enabled: !!db && !!isAdmin,
         staleTime: 5 * 60 * 1000,
@@ -612,7 +618,10 @@ export default function ReportsClient() {
                 orderBy('createdAt', 'desc'),
                 limit(500)
             ));
-            return txSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Transaction);
+            return txSnap.docs.map(doc => (({
+                id: doc.id,
+                ...doc.data()
+            }) as Transaction));
         },
         enabled: !!db && !!isAdmin,
         staleTime: 5 * 60 * 1000,
@@ -632,7 +641,10 @@ export default function ReportsClient() {
                 orderBy('createdAt', 'desc'),
                 limit(200)
             ));
-            return dSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Dispute);
+            return dSnap.docs.map(doc => (({
+                id: doc.id,
+                ...doc.data()
+            }) as Dispute));
         },
         enabled: !!db && !!isAdmin,
         staleTime: 5 * 60 * 1000,
