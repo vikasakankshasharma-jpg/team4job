@@ -127,8 +127,6 @@ export function PlaceBidDialog({
              window.location.hostname === '127.0.0.1' || 
              process.env.NEXT_PUBLIC_E2E === 'true');
 
-        if (isE2E) {}
-
         if (!user.isMobileVerified) {
             if (!isE2E) {
                 toast({ title: "Verification Required", description: "Please verify your mobile number to place bids.", variant: "destructive" });
@@ -150,8 +148,6 @@ export function PlaceBidDialog({
             } else {}
         }
 
-        isE2E;
-
         try {
             const result = await placeBidAction(job.id, user.id, 'Professional', {
                 jobId: job.id,
@@ -162,7 +158,6 @@ export function PlaceBidDialog({
             });
 
             if (result.success) {
-                isE2E;
                 toast({ title: "Bid Placed!", description: "The Client has been notified." });
                 onBidSubmit();
                 onOpenChange(false);
