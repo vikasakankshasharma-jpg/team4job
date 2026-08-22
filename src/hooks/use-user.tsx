@@ -7,8 +7,8 @@ import { onAuthStateChanged, signOut, signInWithEmailAndPassword, User as Fireba
 import { doc, onSnapshot, collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { useToast } from "./use-toast";
-import { errorEmitter } from "@/firebase/error-emitter";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { errorEmitter } from "@/infrastructure/firebase/error-emitter";
+import { FirestorePermissionError } from "@/infrastructure/firebase/errors";
 import { useFirebase } from "@/infrastructure/firebase/client-provider";
 // getUserProfileAction removed — replaced with direct Firestore reads to avoid CSRF 400 errors
 

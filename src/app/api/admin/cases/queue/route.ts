@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     const { admin } = await authenticateAdmin(req);
     const body = await req.json();
-    const adminId = admin.id || body.adminId;
+    const adminId = admin.id;
     const role = (admin.roles?.find(r => ['support_agent', 'risk_analyst', 'finance_ops', 'compliance_manager', 'platform_admin', 'super_admin'].includes(r)) || 'support_agent') as AdminRole;
 
     if (!adminId || !role) {

@@ -30,7 +30,7 @@ config({ path: '.env.production' }); // Load production env vars as base
 const envLocalPath = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(envLocalPath)) {
     config({ path: envLocalPath, override: true }); // Override with .env.local
-    /* console.log stripped */
+    console.log('✅ Loaded .env.local overrides for local seeding');
 }
 
 // --- Firebase Admin SDK Initialization ---
