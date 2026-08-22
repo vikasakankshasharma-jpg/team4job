@@ -13,7 +13,7 @@
 - [x] **No Build Errors** â€“ Clean Next.js build
 - [x] **Type Safety** â€“ Full `--noEmit` pass
 - [x] **Test Coverage** â€“ E2E tests passing (when emulators running)
-- [x] **Dependencies** â€“ Pinned versions, no vulnerabilities
+- [x] **Dependencies** — Pinned versions; see Known Security Exceptions for accepted dev-only vulns
 
 ---
 
@@ -69,7 +69,7 @@
 - [x] **Authentication** â€“ Firebase Auth configured
 - [x] **CORS Policies** â€“ Configured for production domain
 - [x] **Content Security Policy** â€“ Next.js default + customizations
-- [x] **Dependencies** â€“ No known vulnerabilities
+- [x] **Dependencies** — Pinned versions; see Known Security Exceptions for accepted dev-only vulns
 
 ---
 
