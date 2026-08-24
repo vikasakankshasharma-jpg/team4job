@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache';
 
 export async function getLatestDraftAction(userId: string): Promise<{ success: boolean; draft?: JobDraft; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const draft = await draftService.getLatestDraft(userId);
         return { success: true, draft: draft ? JSON.parse(JSON.stringify(draft)) : undefined };
     } catch (error: any) {
@@ -20,6 +22,8 @@ export async function saveDraftAction(
     draftId?: string
 ): Promise<{ success: boolean; draftId?: string; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const id = await draftService.saveDraft(userId, data, draftId);
         return { success: true, draftId: id };
     } catch (error: any) {
@@ -29,6 +33,8 @@ export async function saveDraftAction(
 
 export async function deleteDraftAction(userId: string, draftId: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await draftService.deleteDraft(userId, draftId);
         return { success: true };
     } catch (error: any) {
@@ -38,6 +44,8 @@ export async function deleteDraftAction(userId: string, draftId: string): Promis
 
 export async function getTemplatesAction(userId: string): Promise<{ success: boolean; templates: JobTemplate[]; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const templates = await draftService.getTemplates(userId);
         return { success: true, templates: JSON.parse(JSON.stringify(templates)) };
     } catch (error: any) {
@@ -47,6 +55,8 @@ export async function getTemplatesAction(userId: string): Promise<{ success: boo
 
 export async function incrementTemplateUsageAction(userId: string, templateId: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await draftService.incrementTemplateUsage(userId, templateId);
         return { success: true };
     } catch (error: any) {

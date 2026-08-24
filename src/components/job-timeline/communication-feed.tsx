@@ -21,6 +21,7 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/ui/file-upload";
 import { sendMessageAction } from "@/app/actions/job.actions";
+import { useCommunications } from "@/lib/hooks/use-communications";
 
 interface CommunicationFeedProps {
     jobId: string;
@@ -34,42 +35,20 @@ export function CommunicationFeed({
     otherParticipant
 }: CommunicationFeedProps) {
     const { db, storage } = useFirebase();
-    const [messages, setMessages] = useState<CommunicationItem[]>([]);
+    const { data: messages = [], isLoading: loading } = useCommunications(jobId);
+    
     const [newMessage, setNewMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [showUpload, setShowUpload] = useState(false);
     const [sending, setSending] = useState(false);
-    const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Real-time listener for messages
+    // Scroll to bottom when new messages arrive
     useEffect(() => {
-        if (!db) return;
-
-        const q = query(
-            collection(db, `jobs/${jobId}/communications`),
-            orderBy('timestamp', 'asc'),
-            limit(100)
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const msgs = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            } as CommunicationItem));
-            setMessages(msgs);
-            setLoading(false);
-
-            // Scroll to bottom when new messages arrive
-            setTimeout(() => {
-                if (scrollRef.current) {
-                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                }
-            }, 100);
-        });
-
-        return () => unsubscribe();
-    }, [db, jobId]);
+        if (messages.length > 0 && scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages.length]);
 
     const handleSendMessage = async () => {
         if ((!newMessage.trim() && selectedFiles.length === 0) || !db || sending) return;

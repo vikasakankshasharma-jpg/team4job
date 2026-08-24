@@ -98,21 +98,18 @@ export class ReviewService {
 
             // 6. Award Rating-based Reputation Points
             try {
-                const bonusPoints = await reputationService.calculatePointsForJob(input.rating);
-                // Note: Completion points (+50) are handled by Cloud Function on status change.
-                // Here we only subtract the points that are ALREADY in completion.
-                // Actually calculatePointsForJob(rating) returns (completion + rating_bonus).
-                // Let's adjust calculatePointsForJob to only return a bonus or just hardcode the bonus here.
+                const jobValue = job.priceEstimate?.max || 500;
+                const { bonus, reason } = reputationService.calculateDynamicPoints(jobValue, input.rating);
                 
-                // Let's just award the rating-specific bonus: 
-                // 5 star = 20, 4 star = 10, 1 star = -25.
-                let bonus = 0;
-                if (input.rating === 5) bonus = 20;
-                else if (input.rating === 4) bonus = 10;
-                else if (input.rating === 1) bonus = -25;
-
                 if (bonus !== 0) {
-                    await reputationService.awardPoints(input.targetUserId, bonus, `Rating Bonus (${input.rating} stars)`);
+                    await reputationService.recordEvent({
+                        userId: input.targetUserId,
+                        points: bonus,
+                        reason: `Rating Bonus: ${reason}`,
+                        eventType: 'RATING_RECEIVED',
+                        jobId: input.jobId,
+                        jobValue: jobValue
+                    });
                 }
             } catch (e) {
                 console.error("[ReviewService] Reputation update failed", e);

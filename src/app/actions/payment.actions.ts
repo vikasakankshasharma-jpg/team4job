@@ -15,6 +15,9 @@ export async function createPaymentOrderAction(
     travelTip?: number
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
+        const { requireAuth } = await import('@/lib/auth-server');
+        await requireAuth(userId);
+
         const input: CreatePaymentOrderInput = {
             jobId,
             userId,
@@ -44,6 +47,9 @@ export async function createAddFundsOrderAction(
     taskId?: string
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
+        const { requireAuth } = await import('@/lib/auth-server');
+        await requireAuth(userId);
+
         const input: CreatePaymentOrderInput = {
             jobId,
             userId,
@@ -60,6 +66,52 @@ export async function createAddFundsOrderAction(
         return {
             success: false,
             error: error.message || 'Failed to initiate add-funds payment',
+        };
+    }
+}
+
+/**
+ * Server Action to onboard a Professional as a Cashfree Vendor (Easy Split)
+ */
+export async function onboardCashfreeVendorAction(
+    userId: string,
+    bankDetails: { account_number: string; ifsc: string; account_holder: string }
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { requireAuth } = await import('@/lib/auth-server');
+        await requireAuth(userId);
+
+        const { userRepository } = await import('@/domains/users/user.repository');
+        const user = await userRepository.fetchById(userId);
+        if (!user) throw new Error('User not found');
+
+        const { cashfreeClient } = await import('@/domains/payments/cashfree.client');
+
+        // Create vendor on Cashfree
+        await cashfreeClient.createVendor({
+            vendorId: userId,
+            name: user.name,
+            email: user.email,
+            phone: user.mobile,
+            bankDetails,
+        });
+
+        // Save partial details to user profile (Masked)
+        const maskedAccount = 'XXXX' + bankDetails.account_number.slice(-4);
+        await userRepository.update(userId, {
+            payouts: {
+                beneficiaryId: userId,
+                accountHolderName: bankDetails.account_holder,
+                accountNumberMasked: maskedAccount,
+                ifsc: bankDetails.ifsc,
+            }
+        });
+
+        return { success: true };
+    } catch (error: any) {
+        return {
+            success: false,
+            error: error.message || 'Failed to connect bank account',
         };
     }
 }

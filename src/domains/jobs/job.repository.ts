@@ -33,7 +33,6 @@ export class JobRepository {
                 updatedAt: Timestamp.now(),
                 bids: [],
                 comments: [],
-                statusHistory: [],
             }));
 
 
@@ -117,7 +116,25 @@ export class JobRepository {
 
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
         } catch (error) {
+            throw error;
+        }
+    }
 
+    /**
+     * Fetch all B2B jobs created by a specific dealer
+     */
+    async fetchDealerJobs(dealerId: string, limit = 50): Promise<Job[]> {
+        try {
+            const db = getAdminDb();
+            const snapshot = await db
+                .collection(COLLECTIONS.JOBS)
+                .where('dealerId', '==', dealerId)
+                .orderBy('postedAt', 'desc')
+                .limit(limit)
+                .get();
+
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        } catch (error) {
             throw error;
         }
     }
@@ -216,17 +233,49 @@ export class JobRepository {
             const currentJob = await jobRef.get();
             const currentStatus = currentJob.data()?.status;
 
-            await jobRef.update({
+            if (currentStatus === newStatus) {
+                console.log(`[JobRepository] Status is already ${newStatus}. Skipping update.`);
+                return;
+            }
+
+            const batch = db.batch();
+
+            batch.update(jobRef, {
                 status: newStatus,
                 updatedAt: Timestamp.now(),
-                statusHistory: (currentJob.data()?.statusHistory || []).concat([{
-                    oldStatus: currentStatus,
-                    newStatus: newStatus,
-                    timestamp: Timestamp.now(),
-                    changedBy: updatedBy,
-                    reason,
-                }]),
             });
+
+            const timelineRef = db.collection('job_events').doc();
+            
+            // Map the old JobStatus string to a JobEventType if possible
+            let mappedEventType = 'SYSTEM_EVENT';
+            if (newStatus === 'draft') mappedEventType = 'JOB_CREATED';
+            else if (newStatus === 'Open for Bidding') mappedEventType = 'JOB_UPDATED';
+            else if (newStatus === 'bid_accepted' || newStatus === 'Awarded') mappedEventType = 'BID_AWARDED';
+            else if (newStatus === 'funded' || newStatus === 'Pending Funding') mappedEventType = 'FUNDING_COMPLETED';
+            else if (newStatus === 'In Progress' || newStatus === 'in_progress') mappedEventType = 'WORK_STARTED';
+            else if (newStatus === 'Pending Confirmation' || newStatus === 'work_submitted') mappedEventType = 'WORK_COMPLETED';
+            else if (newStatus === 'Completed' || newStatus === 'completed') mappedEventType = 'CUSTOMER_APPROVED';
+            else if (newStatus === 'disputed' || newStatus === 'Disputed') mappedEventType = 'DISPUTE_OPENED';
+            else if (newStatus === 'cancelled' || newStatus === 'Cancelled') mappedEventType = 'JOB_CANCELLED';
+
+            batch.set(timelineRef, {
+                id: timelineRef.id,
+                jobId: jobId,
+                eventType: mappedEventType,
+                actorId: updatedBy,
+                actorRole: 'SYSTEM', // Note: Ideally passed from caller, defaulting to SYSTEM for backwards compat
+                timestamp: Timestamp.now(),
+                visibility: ['CUSTOMER', 'PROFESSIONAL', 'ADMIN'],
+                metadata: {
+                    oldStatus: currentStatus || 'none',
+                    newStatus: newStatus,
+                    reason: reason || null,
+                    description: `Status changed from ${currentStatus || 'none'} to ${newStatus}`,
+                }
+            });
+
+            await batch.commit();
 
 
         } catch (error) {
@@ -412,6 +461,25 @@ export class JobRepository {
         } catch (error) {
             throw error;
         }
+    }
+
+    /**
+     * Fetch service history based on serviceLocationId
+     */
+    async getServiceHistory(serviceLocationId: string, currentJobId: string): Promise<Job[]> {
+        const db = getAdminDb();
+        const snapshot = await db.collection(COLLECTIONS.JOBS)
+            .where('serviceLocationId', '==', serviceLocationId)
+            .orderBy('postedAt', 'desc')
+            .limit(10)
+            .get();
+
+        if (snapshot.empty) return [];
+
+        const jobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+        
+        // Exclude current job, exclude cancelled jobs
+        return jobs.filter(j => j.id !== currentJobId && j.status !== 'cancelled' && j.status !== 'Cancelled');
     }
 }
 

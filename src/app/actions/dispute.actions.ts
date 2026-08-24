@@ -17,6 +17,8 @@ export async function createDisputeAction(input: CreateDisputeInput) {
 
 export async function listMyDisputesAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const disputes = await disputeService.listMyDisputes(userId);
         return { success: true, disputes };
     } catch (error: any) {
@@ -25,6 +27,8 @@ export async function listMyDisputesAction(userId: string) {
 }
 export async function listAllDisputesAction(adminId: string) {
     try {
+    const { requireStaffSession } = await import('@/lib/auth-server');
+    await requireStaffSession();
         const disputes = await disputeService.listAllDisputes(adminId);
         return { success: true, disputes };
     } catch (error: any) {

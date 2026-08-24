@@ -13,6 +13,8 @@ export async function saveFeedbackAction(
     message: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const feedbackRef = getAdminDb().collection('beta_feedback').doc();
 
         const feedbackData: BetaFeedback = {

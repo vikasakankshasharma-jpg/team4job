@@ -1,6 +1,6 @@
 // domains/jobs/job.rules.ts
 
-import { JobStatus, JOB_STATE_TRANSITIONS, CreateJobInput } from './job.types';
+import { JobStatus, JOB_STATE_TRANSITIONS, CreateJobInput, JobPaymentStatus, JOB_PAYMENT_STATE_TRANSITIONS } from './job.types';
 import { Role } from '@/lib/types';
 
 
@@ -15,6 +15,17 @@ export class JobRules {
     canTransitionTo(currentStatus: JobStatus, newStatus: JobStatus): boolean {
         const allowedTransitions = JOB_STATE_TRANSITIONS[currentStatus];
         if (!allowedTransitions) return true; // Fail safe or handle legacy
+        return allowedTransitions.includes(newStatus);
+    }
+
+    /**
+     * Validate if payment status transition is allowed
+     * Ensures strict financial state machine compliance
+     */
+    canTransitionPaymentTo(currentStatus: JobPaymentStatus | undefined, newStatus: JobPaymentStatus): boolean {
+        const effectiveStatus = currentStatus || 'not_applicable';
+        const allowedTransitions = JOB_PAYMENT_STATE_TRANSITIONS[effectiveStatus];
+        if (!allowedTransitions) return false; // Strict fail for payments
         return allowedTransitions.includes(newStatus);
     }
 

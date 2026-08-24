@@ -149,11 +149,13 @@ This section details the various user stories and is unchanged.
 
 ## 7. Appendix
 
-### Key Test Data (Seeded)
+### Key Test Data (Local Emulator Only)
+Test accounts are dynamically generated when seeding the local emulator database (via `npm run db:seed`). 
+**DO NOT** use default passwords in production. 
 *   **Admin:** `vikasakankshasharma@gmail.com`
 *   **Client:** `jobgiver@example.com`
 *   **Professional:** `installer@example.com`
-*   **Password:** `password123`
+*   **Password:** *(Configured securely during local seeding)*
 
 ### Environment Variables (.env.local)
 These keys must be added to your `.env.local` file for the application to run.

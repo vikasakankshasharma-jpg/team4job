@@ -1,5 +1,7 @@
-﻿{
+{
   "projects": {
-    "default": "team-cctv-live-8294"
+    "default": "dodo-beta",
+    "staging": "dodo-beta",
+    "production": "team4job-live"
   }
 }

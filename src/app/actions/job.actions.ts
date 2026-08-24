@@ -22,6 +22,8 @@ export async function createJobAction(
     userRole: Role
 ): Promise<{ success: boolean; jobId?: string; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         // Delegate business logic to the domain service
         const jobId = await jobService.createJob(userId, userRole, data);
 
@@ -45,6 +47,8 @@ export async function createJobAction(
  */
 export async function getJobForEditAction(jobId: string, userId: string): Promise<{ success: boolean; job?: Job; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const job = await jobService.getJobById(jobId, userId);
 
         // Serialize dates for client
@@ -64,6 +68,8 @@ export async function getJobForEditAction(jobId: string, userId: string): Promis
  */
 export async function updateJobAction(jobId: string, userId: string, data: Partial<Job>): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         // Map CreateJobInput back to Job partial
         // Note: In a real app, we might want a specific UpdateJobInput type
         const updates: Partial<Job> = { ...data };
@@ -87,6 +93,8 @@ export async function updateJobAction(jobId: string, userId: string, data: Parti
  */
 export async function awardJobAction(jobId: string, userId: string, professionalId: string, acceptanceDeadline: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.awardJob(jobId, userId, professionalId, new Date(acceptanceDeadline));
 
         revalidatePath(`/dashboard/jobs/${jobId}`);
@@ -102,6 +110,8 @@ export async function awardJobAction(jobId: string, userId: string, professional
  */
 export async function approveJobAction(jobId: string, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.approveJob(jobId, userId);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -115,6 +125,8 @@ export async function approveJobAction(jobId: string, userId: string): Promise<{
  */
 export async function acceptJobAction(jobId: string, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.acceptJobAssignment(jobId, userId);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         revalidatePath('/dashboard/jobs');
@@ -134,6 +146,8 @@ export async function completeJobWithOtpAction(
     attachments: JobAttachment[]
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.completeJobWithOtp(jobId, userId, otp, attachments);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -151,6 +165,8 @@ export async function submitWorkAction(
     attachments: JobAttachment[]
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.submitWork(jobId, userId, attachments);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         revalidatePath('/dashboard/jobs');
@@ -169,6 +185,8 @@ type InvoiceData = {
 
 export async function getInvoiceDataAction(jobId: string, userId: string, type?: string): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const data = await invoiceService.getInvoiceData(jobId);
 
         // Security check: Only parties or staff can see invoice data
@@ -190,6 +208,8 @@ export async function getInvoiceDataAction(jobId: string, userId: string, type?:
 
 export async function listJobsForClientAction(userId: string, limit = 50, lastPostedAt?: string): Promise<{ success: boolean; data: Job[]; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         // Add timeout to prevent SSR hangs
         const jobs = await Promise.race([
             jobService.listJobsForClient(userId, limit, lastPostedAt ? new Date(lastPostedAt) : undefined),
@@ -224,6 +244,8 @@ export async function listOpenJobsAction(filters?: JobFilters, limit = 50, lastP
 
 export async function startWorkAction(jobId: string, userId: string, otp: string): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.startWork(jobId, userId, otp);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -239,6 +261,8 @@ export async function rescheduleJobAction(
     proposedDate?: string
 ) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.rescheduleJob(jobId, userId, action, proposedDate ? new Date(proposedDate) : undefined);
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -254,6 +278,8 @@ export async function promoteJobAction(
     deadline: string
 ) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.promoteJob(jobId, userId, travelTip, new Date(deadline));
         revalidatePath(`/dashboard/jobs/${jobId}`);
         return { success: true };
@@ -264,6 +290,8 @@ export async function promoteJobAction(
 
 export async function batchJobAction(userId: string, jobIds: string[], action: 'archive' | 'delete') {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await jobService.batchAction(userId, jobIds, action);
         revalidatePath('/dashboard/posted-jobs');
         return { success: true };
@@ -281,6 +309,8 @@ export async function raiseDisputeAction(
     attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
 ): Promise<{ success: boolean; error?: string; disputeId?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const disputeId = await jobService.raiseDispute(jobId, userId, reason, description, category, attachments);
         return { success: true, disputeId };
     } catch (error: any) {
@@ -293,6 +323,8 @@ export async function raiseDisputeAction(
  */
 export async function revealContactAction(jobId: string, userId: string): Promise<{ success: boolean; contact?: Partial<User>; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const contact = await jobService.getCounterParty(jobId, userId);
         return { success: true, contact: contact || undefined };
     } catch (error: any) {
@@ -307,6 +339,8 @@ export async function sendMessageAction(
     targetRecipientId?: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(senderId);
         await jobService.sendCommunication(jobId, senderId, content, attachments, targetRecipientId);
         return { success: true };
     } catch (error: any) {
@@ -322,6 +356,8 @@ export async function postDisputeMessageAction(
     attachments: { fileName: string; fileUrl: string; fileType: string; }[] = []
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(authorId);
         await disputeService.respondToDispute(disputeId, authorId, content, authorRole, attachments);
         return { success: true };
     } catch (error: any) {
@@ -336,6 +372,8 @@ export async function updateDisputeStatusAction(
     resolution?: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
+    const { requireStaffSession } = await import('@/lib/auth-server');
+    await requireStaffSession();
         await AdminGuard.requireStaff(adminId);
         await disputeService.updateDisputeStatus(disputeId, adminId, newStatus, resolution);
         revalidatePath(`/dashboard/disputes/${disputeId}`);
@@ -349,6 +387,8 @@ export async function updateDisputeStatusAction(
 
 export async function addJobCommentAction(jobId: string, authorId: string, content: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(authorId);
         await jobService.addJobComment(jobId, authorId, content);
         return { success: true };
     } catch (e: any) {
@@ -373,3 +413,87 @@ export async function updateJobLocationAction(jobId: string, lat: number, lng: n
 }
 
 
+export async function listDealerJobsAction(userId: string, limit = 50): Promise<{ success: boolean; data: any[]; error?: string }> {
+    try {
+        const { requireAuth } = await import('@/lib/auth-server');
+        await requireAuth(userId);
+        const { jobService } = await import('@/domains/jobs/job.service');
+        const jobs = await Promise.race([
+            jobService.listDealerJobs(userId, limit),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('List dealer jobs timeout')), 10000))
+        ]);
+        return { success: true, data: JSON.parse(JSON.stringify(jobs)) };
+    } catch (error: any) {
+        return { success: false, data: [], error: error.message || 'Failed to list dealer jobs' };
+    }
+}
+export interface ServiceHistoryItem {
+    jobId: string;
+    title: string;
+    category: string;
+    status: string;
+    date: string;
+    installerName?: string;
+}
+
+export async function getJobServiceHistoryAction(jobId: string): Promise<{ success: boolean; data: ServiceHistoryItem[]; error?: string }> {
+    try {
+        const { requireAuth } = await import('@/lib/auth-server');
+        const { uid: userId } = await requireAuth(); // We don't trust client provided user ID here
+
+        const { jobRepository } = await import('@/domains/jobs/job.repository');
+        const { userRepository } = await import('@/domains/users/user.repository');
+        
+        const currentJob = await jobRepository.fetchById(jobId);
+        if (!currentJob) throw new Error('Job not found');
+
+        // Security check: Must be a participant
+        const isAuthorized = 
+            userId === currentJob.clientId ||
+            userId === currentJob.dealerId ||
+            userId === currentJob.endCustomerId ||
+            userId === currentJob.awardedProfessionalId;
+            // Admin/support authorization could be added here if needed
+
+        if (!isAuthorized) {
+            throw new Error('Not authorized to view service history for this location');
+        }
+
+        if (!currentJob.serviceLocationId) {
+            return { success: true, data: [] }; // Legacy job without history
+        }
+
+        const historicalJobs = await jobRepository.getServiceHistory(currentJob.serviceLocationId, currentJob.id);
+
+        const historyItems: ServiceHistoryItem[] = await Promise.all(historicalJobs.map(async (job) => {
+            let installerName = undefined;
+            // Only expose previous installer name to the Dealer, the Admin, or the current Installer
+            const canSeeInstaller = userId === currentJob.dealerId || userId === currentJob.awardedProfessionalId;
+            if (job.awardedProfessionalId && canSeeInstaller) {
+                try {
+                    const pro = await userRepository.fetchById(job.awardedProfessionalId);
+                    installerName = pro?.name || undefined;
+                } catch(e) {
+                    // Ignore fetching errors
+                }
+            }
+
+            return {
+                jobId: job.id,
+                title: job.title || 'Service Job',
+                category: job.jobCategory || 'General',
+                status: job.status,
+                date: (job.postedAt as any)?._seconds 
+                    ? new Date((job.postedAt as any)._seconds * 1000).toISOString() 
+                    : new Date().toISOString(),
+                installerName
+            };
+        }));
+
+        return { success: true, data: historyItems };
+
+    } catch (error: any) {
+        console.error('[JobAction] Error fetching service history:', error);
+        return { success: false, data: [], error: error.message || 'Failed to fetch history' };
+    }
+}

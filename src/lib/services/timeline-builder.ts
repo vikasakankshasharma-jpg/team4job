@@ -4,12 +4,13 @@
  */
 
 import { Job, User } from "@/lib/types";
+import { JobEvent } from "@/domains/jobs/timeline.types";
 import { toDate } from "@/lib/utils";
 import { Timestamp } from "firebase/firestore";
 
 export interface TimelineEvent {
     id: string;
-    type: 'status_change' | 'bid' | 'message' | 'payment' | 'review' | 'system';
+    type: 'status_change' | 'bid' | 'message' | 'payment' | 'review' | 'system' | 'audit';
     timestamp: Date | Timestamp;
     title: string;
     description?: string;
@@ -38,39 +39,77 @@ export interface CommunicationItem {
  */
 export function buildJobTimeline(
     job: Job,
-    communications: CommunicationItem[] = []
+    communications: CommunicationItem[] = [],
+    timelineEvents: JobEvent[] = []
 ): TimelineEvent[] {
     const events: TimelineEvent[] = [];
     let eventId = 0;
 
-    // 1. Job creation
-    events.push({
-        id: `event-${eventId++}`,
-        type: 'status_change',
-        title: 'Job Posted',
-        description: job.title,
-        timestamp: job.postedAt,
-        actor: job.clientId,
-        icon: 'CheckCircle',
-        color: 'green',
-    });
+    // 1. Core Timeline Events from Root Collection
+    if (timelineEvents && timelineEvents.length > 0) {
+        timelineEvents.forEach((te) => {
+            let icon = 'Activity';
+            let color = 'gray';
+            let title: string = te.eventType;
+            let description = te.metadata?.description || '';
 
-    // 2. Bids received
-    if (job.bids && job.bids.length > 0) {
-        job.bids.forEach((bid, idx) => {
+            switch (te.eventType) {
+                case 'JOB_CREATED': icon = 'CheckCircle'; color = 'green'; title = 'Job Posted'; break;
+                case 'JOB_UPDATED': icon = 'Edit'; color = 'gray'; title = 'Job Updated'; break;
+                case 'BID_AWARDED': icon = 'Award'; color = 'green'; title = 'Job Awarded'; break;
+                case 'FUNDING_COMPLETED': icon = 'Wallet'; color = 'blue'; title = 'Payment Funded'; break;
+                case 'WORK_STARTED': icon = 'PlayCircle'; color = 'green'; title = 'Work Started'; break;
+                case 'WORK_COMPLETED': icon = 'CheckCircle2'; color = 'green'; title = 'Work Completed'; break;
+                case 'CUSTOMER_APPROVED': icon = 'CheckCircle'; color = 'green'; title = 'Job Approved'; break;
+                case 'DISPUTE_OPENED': icon = 'AlertCircle'; color = 'red'; title = 'Dispute Opened'; break;
+                case 'JOB_CANCELLED': icon = 'XCircle'; color = 'red'; title = 'Job Cancelled'; break;
+                case 'PAYMENT_RELEASED': icon = 'Wallet'; color = 'blue'; title = 'Payment Released'; break;
+                case 'BID_PLACED': icon = 'DollarSign'; color = 'blue'; title = 'Bid Placed'; break;
+                case 'BID_WITHDRAWN': icon = 'XCircle'; color = 'gray'; title = 'Bid Withdrawn'; break;
+            }
+
             events.push({
-                id: `event-${eventId++}`,
-                type: 'bid',
-                title: 'New Bid Received',
-                description: `₹${bid.amount.toLocaleString()}`,
-                timestamp: bid.timestamp,
-                actor: bid.professionalId || 'unknown',
-                actorName: (bid.professional as any).name || 'Professional',
-                metadata: { bidAmount: bid.amount },
-                icon: 'DollarSign',
-                color: 'blue',
+                id: te.id || `event-${eventId++}`,
+                type: 'status_change',
+                title: title,
+                description: description,
+                timestamp: te.timestamp,
+                actor: te.actorId,
+                metadata: te.metadata,
+                icon: icon,
+                color: color,
             });
         });
+    }
+
+    // 2. Legacy fallback for old jobs without event history
+    if (events.length === 0) {
+        events.push({
+            id: `event-${eventId++}`,
+            type: 'status_change',
+            title: 'Job Posted',
+            description: job.title,
+            timestamp: job.postedAt,
+            actor: job.clientId,
+            icon: 'CheckCircle',
+            color: 'green',
+        });
+        
+        if (job.statusHistory && job.statusHistory.length > 0) {
+            job.statusHistory.forEach((change) => {
+                events.push({
+                    id: `event-${eventId++}`,
+                    type: 'status_change',
+                    title: `Status Changed`,
+                    description: `${change.oldStatus} → ${change.newStatus}`,
+                    timestamp: change.timestamp,
+                    actor: change.changedBy,
+                    metadata: { oldStatus: change.oldStatus, newStatus: change.newStatus, reason: change.reason },
+                    icon: 'ArrowRight',
+                    color: 'green',
+                });
+            });
+        }
     }
 
     // 3. Bidding deadline
@@ -91,80 +130,7 @@ export function buildJobTimeline(
         }
     }
 
-    // 4. Status changes from statusHistory
-    if (job.statusHistory && job.statusHistory.length > 0) {
-        job.statusHistory.forEach((change) => {
-            events.push({
-                id: `event-${eventId++}`,
-                type: 'status_change',
-                title: `Status Changed`,
-                description: `${change.oldStatus} → ${change.newStatus}`,
-                timestamp: change.timestamp,
-                actor: change.changedBy,
-                metadata: { oldStatus: change.oldStatus, newStatus: change.newStatus, reason: change.reason },
-                icon: 'ArrowRight',
-                color: 'green',
-            });
-        });
-    }
-
-    // 5. Award event (if no statusHistory)
-    if (job.awardedProfessionalId && !job.statusHistory?.some(h => h.newStatus === 'Awarded')) {
-        events.push({
-            id: `event-${eventId++}`,
-            type: 'status_change',
-            title: 'Job Awarded',
-            description: 'Professional selected',
-            timestamp: job.postedAt, // Fallback as awardedAt is not available
-            actor: job.clientId,
-            icon: 'Award',
-            color: 'green',
-        });
-    }
-
-    // 6. Payment events
-    if (job.invoice?.id) {
-        events.push({
-            id: `event-${eventId++}`,
-            type: 'payment',
-            title: 'Payment Completed',
-            description: job.invoice.totalAmount ? `₹${job.invoice.totalAmount.toLocaleString()}` : '',
-            timestamp: job.invoice.date || job.postedAt,
-            actor: job.clientId,
-            icon: 'Wallet',
-            color: 'blue',
-        });
-    }
-
-    // 7. Work started
-    if (job.workStartedAt) {
-        events.push({
-            id: `event-${eventId++}`,
-            type: 'status_change',
-            title: 'Work Started',
-            description: 'Professional began work',
-            timestamp: job.workStartedAt,
-            actor: typeof job.awardedProfessional === 'string' ? job.awardedProfessional : 'Professional',
-            icon: 'PlayCircle',
-            color: 'green',
-        });
-    }
-
-    // 8. Work submitted
-    if (job.workSubmittedAt) {
-        events.push({
-            id: `event-${eventId++}`,
-            type: 'status_change',
-            title: 'Work Completed',
-            description: 'Professional marked as complete',
-            timestamp: job.workSubmittedAt,
-            actor: typeof job.awardedProfessional === 'string' ? job.awardedProfessional : 'Professional',
-            icon: 'CheckCircle2',
-            color: 'green',
-        });
-    }
-
-    // 9. Reviews exchanged
+    // 4. Reviews exchanged
     if (job.clientReview) {
         events.push({
             id: `event-${eventId++}`,
@@ -191,7 +157,7 @@ export function buildJobTimeline(
         });
     }
 
-    // 10. Communications
+    // 5. Communications
     communications.forEach((comm) => {
         events.push({
             id: `event-${eventId++}`,

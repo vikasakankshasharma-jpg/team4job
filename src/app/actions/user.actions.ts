@@ -10,6 +10,8 @@ import { User, UpdateProfileInput } from '@/lib/types';
  */
 export async function updateProfileAction(userId: string, data: UpdateProfileInput) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await userService.updateProfile(userId, data);
         revalidatePath('/dashboard/profile');
         revalidatePath(`/dashboard/users/${userId}`);
@@ -24,6 +26,8 @@ export async function updateProfileAction(userId: string, data: UpdateProfileInp
  */
 export async function getProfileAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const user = await userService.getProfile(userId);
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error: any) {
@@ -38,6 +42,8 @@ export async function getProfileAction(userId: string) {
  */
 export async function getRelatedProfessionalsAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const { jobService } = await import('@/domains/jobs/job.service');
 
         // 1. Get unique Professional IDs from completed jobs
@@ -104,6 +110,8 @@ export async function listProfessionalsAction(limit = 50, lastMemberSince?: stri
 
 export async function addPortfolioItemAction(userId: string, item: any) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const user = await userRepository.fetchById(userId);
         if (!user) throw new Error("User not found");
 
@@ -133,6 +141,8 @@ export async function addPortfolioItemAction(userId: string, item: any) {
 
 export async function deletePortfolioItemAction(userId: string, itemId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const user = await userRepository.fetchById(userId);
         if (!user || !user.professionalProfile || !user.professionalProfile.portfolio) {
             return { success: true };
@@ -157,6 +167,8 @@ export async function deletePortfolioItemAction(userId: string, itemId: string) 
 
 export async function adminApproveKYCAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const user = await userRepository.fetchById(userId);
         if (!user) throw new Error("User not found");
 
@@ -180,6 +192,8 @@ export async function adminApproveKYCAction(userId: string) {
 
 export async function adminRejectKYCAction(userId: string, reason?: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const user = await userRepository.fetchById(userId);
         if (!user) throw new Error("User not found");
 

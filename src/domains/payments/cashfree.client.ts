@@ -8,6 +8,11 @@ type OrderPayload = {
     customerEmail: string;
     customerPhone?: string;
     description?: string;
+    orderSplits?: {
+        vendor_id: string;
+        amount?: number;
+        percentage?: number;
+    }[];
 };
 
 type PayoutPayload = {
@@ -116,6 +121,7 @@ export class CashfreeClient {
                 customer_name: payload.customerName,
                 customer_phone: payload.customerPhone || '0000000000',
             },
+            ...(payload.orderSplits && payload.orderSplits.length > 0 ? { order_splits: payload.orderSplits } : {})
         };
 
         const resp = await axios.post(`${paymentsBaseUrl}/pg/orders`, requestBody, {
@@ -192,7 +198,6 @@ export class CashfreeClient {
         );
 
         if (resp.data?.status !== 'OK') {
-
             throw new Error(resp.data?.message || 'Cashfree refund failed');
         }
 
@@ -200,6 +205,55 @@ export class CashfreeClient {
             refundId: resp.data?.refund_id || payload.refundId,
             status: resp.data?.status,
         };
+    }
+
+    /**
+     * Create a Cashfree Vendor (Required for Easy Split)
+     */
+    async createVendor(vendorDetails: { vendorId: string; name: string; email: string; phone: string; bankDetails: any }): Promise<void> {
+        const requestBody = {
+            vendor_id: vendorDetails.vendorId,
+            name: vendorDetails.name,
+            email: vendorDetails.email,
+            phone: vendorDetails.phone,
+            bank: [vendorDetails.bankDetails],
+        };
+
+        const resp = await axios.post(`${paymentsBaseUrl}/pg/vendors`, requestBody, {
+            headers: this.getPaymentHeaders(),
+        });
+
+        if (resp.data?.status && resp.data?.status !== 'OK' && resp.data?.status !== 'SUCCESS') {
+            throw new Error(resp.data?.message || 'Failed to create Cashfree vendor');
+        }
+    }
+
+    /**
+     * Settle/Release Order (For Easy Split)
+     */
+    async settleOrder(orderId: string): Promise<void> {
+        const resp = await axios.post(`${paymentsBaseUrl}/pg/orders/${orderId}/settlements`, {}, {
+            headers: this.getPaymentHeaders(),
+        });
+
+        if (resp.data?.status && resp.data?.status !== 'OK' && resp.data?.status !== 'SUCCESS') {
+            throw new Error(resp.data?.message || 'Failed to settle Cashfree order');
+        }
+    }
+
+    async getSettlements(orderId: string): Promise<any[]> {
+        const resp = await axios.get(`${paymentsBaseUrl}/pg/orders/${orderId}/settlements`, {
+            headers: this.getPaymentHeaders(),
+        });
+        // The API returns an array of settlements in resp.data
+        return Array.isArray(resp.data) ? resp.data : (resp.data?.data || []);
+    }
+
+    async getRefund(orderId: string, refundId: string): Promise<any> {
+        const resp = await axios.get(`${paymentsBaseUrl}/pg/orders/${orderId}/refunds/${refundId}`, {
+            headers: this.getPaymentHeaders(),
+        });
+        return resp.data;
     }
 
     /**

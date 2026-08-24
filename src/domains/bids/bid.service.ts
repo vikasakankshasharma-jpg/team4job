@@ -67,6 +67,18 @@ export class BidService {
         // 1. Create Bid in Subcollection
         const bidId = await bidRepository.create(data.jobId, bid);
 
+        // 1b. Timeline Event
+        const { timelineService } = await import('@/domains/jobs/timeline.service');
+        await timelineService.recordEvent({
+            jobId: data.jobId,
+            eventType: 'BID_PLACED',
+            actorId: userId,
+            actorRole: 'PROFESSIONAL',
+            visibility: ['CUSTOMER', 'PROFESSIONAL', 'ADMIN'],
+            metadata: { bidId, amount: data.amount },
+            idempotencyKey: `bid_placed_${bidId}`
+        });
+
         platformEventEmitter.emit({
             name: 'bid.placed',
             occurredAt: new Date().toISOString(),
@@ -127,6 +139,20 @@ export class BidService {
 
         await jobRepository.update(jobId, {
             bidderIds: updatedBidderIds,
+        });
+
+        await bidRepository.delete(jobId, bidId);
+
+        // Record to Timeline
+        const { timelineService } = await import('@/domains/jobs/timeline.service');
+        await timelineService.recordEvent({
+            jobId: jobId,
+            eventType: 'BID_WITHDRAWN',
+            actorId: userId,
+            actorRole: 'PROFESSIONAL',
+            visibility: ['CUSTOMER', 'PROFESSIONAL', 'ADMIN'],
+            metadata: { bidId, amount: bid.amount },
+            idempotencyKey: `bid_withdrawn_${bidId}`
         });
 
         // Data Aggregation: Decrement Stats

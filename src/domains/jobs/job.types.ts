@@ -33,6 +33,34 @@ export type JobStatus =
     | 'Cancellation Proposed';
 
 /**
+ * Explicit Payment Status - Financial Lifecycle
+ * Decoupled from JobStatus to handle complex financial states independently.
+ */
+export type JobPaymentStatus =
+    | 'not_applicable'
+    | 'payment_pending'
+    | 'escrow_funded'
+    | 'release_pending'
+    | 'released'
+    | 'refund_pending'
+    | 'refunded'
+    | 'disputed';
+
+/**
+ * Financial state machine transitions
+ */
+export const JOB_PAYMENT_STATE_TRANSITIONS: Partial<Record<JobPaymentStatus, JobPaymentStatus[]>> = {
+    not_applicable: ['payment_pending'],
+    payment_pending: ['escrow_funded', 'not_applicable'], // Could cancel job
+    escrow_funded: ['release_pending', 'refund_pending', 'disputed'],
+    release_pending: ['released', 'disputed'],
+    released: ['refund_pending'], // Rare, post-release refund
+    refund_pending: ['refunded', 'disputed'],
+    disputed: ['release_pending', 'refund_pending', 'refunded', 'released'],
+    refunded: [], // Terminal
+};
+
+/**
  * State machine transitions
  * Each status can only transition to specific next states
  */
@@ -60,24 +88,43 @@ export interface Job {
     skills?: string[];
     jobCategory: string;
 
-    // Actors
+    // Actors (Legacy mapping: client == requester)
     client: User | DocumentReference;
     clientId: string;
     awardedProfessional?: User | DocumentReference;
     awardedProfessionalId?: string;
 
-    // Location
+    // B2B & Context
+    requesterType?: 'CUSTOMER' | 'DEALER';
+    requesterId?: string; // Mirrors clientId
+    dealerId?: string; // Used if requesterType === 'DEALER'
+    
+    // End Customer (The actual service beneficiary)
+    endCustomerId?: string; // If they have an existing T4J account
+    endCustomerContact?: {
+        name: string;
+        phone?: string;
+        address?: Address; // For B2B, the location might differ from dealer's location
+    };
+
+    // Location (Service Location)
     location: string;
     fullAddress: string;
     address: Address;
+    serviceLocationId?: string; // Deterministic hash of [ownerId + pincode + phone]
 
-    // Pricing
-    priceEstimate?: { min: number; max: number };
+    // Pricing & Margins
+    priceEstimate?: { min: number; max: number }; // Global visibility limit
     travelTip?: number;
     isGstInvoiceRequired: boolean;
+    // B2B isolated financials
+    dealerMargin?: number; 
+    b2bPrice?: number;
+    b2bCost?: number;
 
     // Status & Lifecycle
     status: JobStatus;
+    paymentStatus?: JobPaymentStatus; // Financial state
     postedAt: Date | Timestamp;
     deadline: Date | Timestamp;
     jobStartDate?: Date | Timestamp;
@@ -92,8 +139,9 @@ export interface Job {
         status: 'pending' | 'accepted' | 'rejected';
     };
 
-    // Bidding
-    bids: Bid[];
+    // Bidding (DEPRECATED: Use /bids subcollection)
+    /** @deprecated Use /bids subcollection */
+    bids?: Bid[];
     bidderIds?: string[];
     disqualifiedProfessionalIds?: string[];
     acceptanceDeadline?: Date | Timestamp;
@@ -125,8 +173,10 @@ export interface Job {
         authorName: string;
     };
 
-    // Communication
-    comments: Comment[];
+    // Communication (DEPRECATED: Use /communications subcollection)
+    /** @deprecated Use /communications subcollection */
+    comments?: Comment[];
+    /** @deprecated Use /communications subcollection */
     privateMessages?: PrivateMessage[];
     attachments?: JobAttachment[];
 
@@ -146,9 +196,10 @@ export interface Job {
     archived?: boolean;
     adminNotes?: string;
 
-    // Audit
+    // Audit (DEPRECATED: Use /timeline subcollection)
+    /** @deprecated Use /timeline subcollection via JobTimelineEvent */
     statusHistory?: {
-        oldStatus: JobStatus | string; // string for backward compatibility
+        oldStatus: JobStatus | string;
         newStatus: JobStatus | string;
         timestamp: Date | Timestamp;
         changedBy: string;
@@ -157,6 +208,21 @@ export interface Job {
 
     // Testing
     isDummyData?: boolean;
+}
+
+/**
+ * Job Timeline Event - Stored in /jobs/{jobId}/timeline
+ */
+export interface JobTimelineEvent {
+    id: string;
+    jobId: string;
+    type: 'STATUS_CHANGE' | 'PAYMENT' | 'DISPUTE' | 'MILESTONE' | 'COMMUNICATION' | 'AUDIT';
+    description: string;
+    actorId: string;
+    actorRole?: string;
+    createdAt: Date | Timestamp;
+    metadata?: Record<string, any>;
+
 }
 
 /**
@@ -170,9 +236,25 @@ export interface CreateJobInput {
     location: string;
     fullAddress: string;
     address: Address;
+    
+    // B2B & Context
+    requesterType?: 'CUSTOMER' | 'DEALER';
+    endCustomerId?: string;
+    endCustomerContact?: {
+        name: string;
+        phone?: string;
+        address?: Address;
+    };
+
     priceEstimate?: { min: number; max: number };
     travelTip?: number;
     isGstInvoiceRequired: boolean;
+    
+    // B2B isolated financials
+    dealerMargin?: number; 
+    b2bPrice?: number;
+    b2bCost?: number;
+    
     deadline: Date;
     jobStartDate?: Date;
     isUrgent?: boolean;

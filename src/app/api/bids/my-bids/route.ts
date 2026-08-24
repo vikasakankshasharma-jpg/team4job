@@ -24,6 +24,13 @@ export async function GET(request: NextRequest) {
             );
         }
 
+        const { requireAuth } = await import('@/lib/auth-server');
+        try {
+            await requireAuth(userId);
+        } catch (authError) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         // Fetch bids with pagination
         const bids = await bidRepository.fetchBidsByProfessional(
             userId,

@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function getOrCreateChatRoomAction(jobId: string, jobTitle: string, professionalId: string, clientId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(professionalId);
         const db = getAdminDb();
         const roomsRef = db.collection('chats');
         

@@ -10,6 +10,8 @@ export async function createSubscriptionOrderAction(
     amount: number
 ): Promise<{ success: boolean; data?: { orderToken: string; orderId: string }; error?: string }> {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const input: CreatePaymentOrderInput = {
             jobId: `SUB-${userId}-${planId}-${Date.now()}`,
             userId,

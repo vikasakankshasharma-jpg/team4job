@@ -89,17 +89,27 @@ export type User = {
   kycDocuments?: string[];
   professionalProfile?: {
     tier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
-    points: number;
+    points: number; // Legacy, keep for backward compatibility
+    lifetimePoints?: number;
+    activeCyclePoints?: number;
+    historicalCycles?: { cycleId: string; points: number; tier: string }[];
+    loyaltyCarryForward?: number;
     tierPriority?: number;
     skills: string[];
-    rating: number;
+    rating: number; // Legacy lifetime rating
+    ratingMetrics?: {
+      lifetime: number;
+      last12Months: number;
+      last90Days: number;
+      confidence: 'Very Low' | 'Low' | 'Medium' | 'High';
+    };
     reviews: number;
     verified: boolean;
     verificationLevel?: 'Basic' | 'Pro';
     shopPhotoUrl?: string | null;
     gstNumber?: string | null;
     adminNotes?: string;
-    reputationHistory?: { month: string; points: number }[];
+    reputationHistory?: { month: string; points: number }[]; // Legacy
     bio?: string;
     specialties?: string[];
     badges?: string[];
@@ -107,6 +117,13 @@ export type User = {
     availability?: {
       status: 'available' | 'busy' | 'on-vacation';
       nextAvailable?: Date | Timestamp;
+    };
+    performanceMetrics?: {
+      totalJobs: number;
+      completedValue: number;
+      disputeRate: number;
+      completionRate: number;
+      activeCycleJobs: number;
     };
   };
   emergencyContacts?: {
@@ -237,7 +254,8 @@ export type Job = Partial<SchemaEnvelope> & {
   acceptanceDeadline?: Date | Timestamp;
   fundingDeadline?: Date | Timestamp;
   completionTimestamp?: Date | Timestamp;
-  bids: Bid[];
+  /** @deprecated Use /bids subcollection */
+  bids?: Bid[];
   bidderIds?: string[];
   disqualifiedProfessionalIds?: string[];
   awardedProfessional?: User | DocumentReference;
@@ -280,7 +298,9 @@ export type Job = Partial<SchemaEnvelope> & {
     gstin?: string;
     pan?: string;
   };
-  comments: Comment[];
+  /** @deprecated Use /communications subcollection */
+  comments?: Comment[];
+  /** @deprecated Use /communications subcollection */
   privateMessages?: PrivateMessage[];
   cancellationProposer?: 'Client' | 'Professional';
   startOtp?: string; // Generated when funded, shared by Client
@@ -289,6 +309,7 @@ export type Job = Partial<SchemaEnvelope> & {
   cancellationReason?: string;
   archived?: boolean;
   adminNotes?: string;
+  /** @deprecated Use /timeline subcollection via JobTimelineEvent */
   statusHistory?: {
     oldStatus: string;
     newStatus: string;
@@ -377,7 +398,7 @@ export type Transaction = Partial<SchemaEnvelope> & {
   clientFee: number; // The fee charged to the client
   totalPaidByClient: number; // The total amount charged to the client (amount + clientFee + travelTip)
   payoutToProfessional: number; // The net amount paid out to the Professional (amount - commission + travelTip)
-  status: 'initiated' | 'funded' | 'released' | 'refunded' | 'failed' | 'disputed' | 'cancelled';
+  status: 'initiated' | 'funded' | 'payout_initiated' | 'released' | 'refund_initiated' | 'refunded' | 'failed' | 'disputed' | 'cancelled' | 'reconciliation_required';
   paymentGatewayOrderId?: string;
   paymentGatewaySessionId?: string;
   payoutTransferId?: string;

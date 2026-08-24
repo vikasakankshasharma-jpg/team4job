@@ -11,6 +11,8 @@ import { revalidatePath } from 'next/cache';
  */
 export async function requestWithdrawalAction(userId: string, amount: number, accountId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const db = getAdminDb();
         
         // In a real app we'd verify the user has sufficient available balance
@@ -72,6 +74,8 @@ export async function requestWithdrawalAction(userId: string, amount: number, ac
  */
 export async function getWalletDataAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const db = getAdminDb();
         
         // Get transactions to calculate balance (simplified for test: total received)

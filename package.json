@@ -146,6 +146,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
     "@svgr/webpack": "^8.1.0",

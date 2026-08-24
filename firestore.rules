@@ -77,25 +77,94 @@ service cloud.firestore {
       allow write: if false; // Only via Cloud Functions or Admin SDK
     }
     
+    // Job Events Timeline - Mode 3 Architecture
+    match /job_events/{eventId} {
+      // Check if user is participant (Client, Awarded Pro, or Admin)
+      function isJobParticipant(jobData) {
+        return request.auth.uid == jobData.clientId 
+          || request.auth.uid == jobData.awardedProfessionalId
+          || (jobData.dealerId != null && request.auth.uid == jobData.dealerId)
+          || isAdmin()
+          || isSupport();
+      }
+
+      allow read: if request.auth != null && 
+        isJobParticipant(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data);
+      
+      // Strict immutability from client. Server uses Admin SDK to create these.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // --- DEALER WORKSPACE (PHASE 3 SECURITY) ---
+    match /dealers/{dealerId} {
+      allow read: if isOwner(dealerId) || isAdmin() || isSupport();
+      // Server-side writes only for Dealer profile to prevent spoofing metrics
+      allow write: if isAdmin(); 
+
+      match /customers/{customerId} {
+        allow read, write: if isOwner(dealerId) || isAdmin();
+      }
+
+      match /serviceSites/{siteId} {
+        allow read: if isOwner(dealerId) || isAdmin();
+        // Cannot spoof dealerId ownership
+        allow create: if isOwner(dealerId) && request.resource.data.dealerId == dealerId;
+        allow update: if isOwner(dealerId) 
+                      && resource.data.dealerId == dealerId 
+                      && request.resource.data.dealerId == dealerId; // Immutable ownership
+        allow delete: if isAdmin();
+      }
+
+      match /operationalMemory/{installerId} {
+        allow read, write: if isOwner(dealerId) || isAdmin();
+      }
+    }
+
     // Jobs - Core Logic Security
     match /jobs/{jobId} {
-      allow read: if request.auth != null;
+      function isJobParticipant(jobData) {
+        return request.auth.uid == jobData.clientId 
+          || request.auth.uid == jobData.awardedProfessionalId
+          || (jobData.dealerId != null && request.auth.uid == jobData.dealerId)
+          || isAdmin()
+          || isSupport();
+      }
+
+      // Installer Isolation: Can only read if participant or job is open.
+      // NOTE: To fully protect exact address and B2B pricing without relying ONLY on DTOs,
+      // those fields should reside in the /private/details subcollection.
+      allow read: if request.auth != null && 
+        (isJobParticipant(resource.data) || resource.data.status in ['open', 'Open for Bidding']);
+        
       allow create: if request.auth != null && 
-        "Client" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
+        ("Client" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles || 
+         "Dealer" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles) &&
         request.resource.data.clientId == request.auth.uid;
       
+      // Strict Update Policy for Jobs: Prevent State-Machine Bypass & Financial Field Manipulation
       allow update: if request.auth != null && 
-        (resource.data.clientId == request.auth.uid || 
-         (
-           (resource.data.awardedProfessionalId == request.auth.uid ||
-            (resource.data.awardedProfessional != null && resource.data.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid))) &&
-           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['budget', 'clientId', 'awardedProfessionalId', 'awardedProfessional', 'paymentStatus'])
-         ) ||
-         isAdmin() || 
-         isSupport());
+        (
+          (resource.data.clientId == request.auth.uid &&
+           !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+             'status', 'paymentStatus', 'awardedProfessionalId', 'awardedProfessional', 
+             'winningBidAmount', 'escrowStatus', 'transactionId', 'disputeId', 'timeline',
+             'dealerMargin', 'b2bPrice', 'b2bCost' // Financial isolation
+           ])
+          ) ||
+          isAdmin() || 
+          isSupport()
+        );
       
       allow delete: if request.auth != null && 
         (resource.data.clientId == request.auth.uid || isAdmin());
+
+      // --- PRIVATE JOB DETAILS (For exact address & dealer financials pre-award) ---
+      match /private/{docId} {
+        allow read: if request.auth != null && isJobParticipant(get(/databases/$(database)/documents/jobs/$(jobId)).data);
+        allow write: if request.auth != null && (get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId == request.auth.uid || isAdmin());
+      }
 
       // --- BIDS SUB-COLLECTION ---
       match /bids/{bidId} {
@@ -108,53 +177,57 @@ service cloud.firestore {
           isSupport()
         );
         
+        // Strict create: Prevent spoofing professionalId
         allow create: if request.auth != null && 
           "Professional" in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles &&
           request.resource.data.professionalId == request.auth.uid &&
           get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId != request.auth.uid;
           
-        allow update, delete: if isOwner(resource.data.professionalId) || isAdmin();
+        // Strict update: Professional can't change professionalId
+        allow update, delete: if isOwner(resource.data.professionalId) && 
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['professionalId'])) || 
+          isAdmin();
       }
       
-      // --- COMMUNICATIONS SUB-COLLECTION (Phase 11 Enhancement #7) ---
+      // --- COMMUNICATIONS SUB-COLLECTION ---
       match /communications/{commId} {
-        // Helper to check if user is job participant
         function isJobParticipant() {
           let jobData = get(/databases/$(database)/documents/jobs/$(jobId)).data;
           return request.auth.uid == jobData.clientId ||
-                 request.auth.uid == jobData.awardedProfessional ||
-                 (jobData.awardedProfessional != null && 
-                  jobData.awardedProfessional == /databases/$(database)/documents/users/$(request.auth.uid));
+                 request.auth.uid == jobData.awardedProfessionalId;
         }
         
-        // Job participants can read all communications
         allow read: if request.auth != null && isJobParticipant();
         
-        // Job participants can create communications
         allow create: if request.auth != null && 
           isJobParticipant() &&
           request.resource.data.author == request.auth.uid &&
           request.resource.data.jobId == jobId;
         
-        // Only admins can update/delete (or author within 5 minutes - future enhancement)
         allow update, delete: if isAdmin();
+      }
+
+      // --- TIMELINE SUB-COLLECTION ---
+      match /timeline/{eventId} {
+        allow read: if request.auth != null && (
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.clientId == request.auth.uid ||
+          get(/databases/$(database)/documents/jobs/$(jobId)).data.awardedProfessionalId == request.auth.uid ||
+          isAdmin() || 
+          isSupport()
+        );
+        
+        // Only created via Server Actions / Cloud Functions to ensure audit trail integrity
+        allow create, update, delete: if isAdmin();
       }
     }
 
-
-    
-
-    
     // Transactions - Production Rules
     match /transactions/{transactionId} {
       allow read: if request.auth != null && (resource.data.payerId == request.auth.uid || resource.data.payeeId == request.auth.uid || isAdmin() || isSupport());
       
-      // Allow creation only if user is the payer
-      allow create: if request.auth != null && 
-        request.resource.data.payerId == request.auth.uid;
-        
-      // Allow updates only by admin (financial records shouldn't be mutable by clients)
-      allow update: if request.auth != null && isAdmin();
+      // CRITICAL SECURITY: Transactions can NEVER be created or updated by clients.
+      // Must go through Server Actions (Firebase Admin SDK bypasses these rules).
+      allow create, update: if isAdmin();
         
       allow delete: if isAdmin();
     }

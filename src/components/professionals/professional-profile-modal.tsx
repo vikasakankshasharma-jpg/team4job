@@ -287,7 +287,7 @@ export function ProfessionalProfileModal({
                                             </div>
                                             <div className="text-right">
                                                 <Badge variant="outline" className="rounded-full border-white/10 text-[10px] font-black uppercase tracking-widest">{job.jobCategory}</Badge>
-                                                <div className="mt-2 text-sm font-black text-primary italic tracking-tight">₹{job.bids.find(b => b.professionalId === Professional.id)?.amount.toLocaleString()}</div>
+                                                <div className="mt-2 text-sm font-black text-primary italic tracking-tight">₹{job.bids?.find(b => typeof b.professional === 'string' ? b.professional === Professional.id : (b.professional as any)?.id === Professional.id || b.professionalId === Professional.id)?.amount.toLocaleString() || '---'}</div>
                                             </div>
                                         </div>
                                     ))

@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Timeline } from "./timeline";
 import { CommunicationFeed } from "./communication-feed";
 import { buildJobTimeline, CommunicationItem, TimelineEvent } from "@/lib/services/timeline-builder";
+import { useCommunications } from "@/lib/hooks/use-communications";
+import { useJobTimelineEvents } from "@/lib/hooks/use-job-timeline-events";
 import { Job, User } from "@/lib/types";
 import { useFirebase } from "@/infrastructure/firebase/client-provider";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
@@ -31,46 +33,23 @@ export function JobTimelineCard({
     onRefresh
 }: JobTimelineCardProps) {
     const { db } = useFirebase();
-    const [communications, setCommunications] = useState<CommunicationItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const { data: communications = [], isLoading: commsLoading } = useCommunications(job.id);
+    const { data: timelineEvents = [], isLoading: timelineLoading } = useJobTimelineEvents(job.id);
 
-    // Listen to communications collection
-    useEffect(() => {
-        if (!db) return;
-
-        const q = query(
-            collection(db, `jobs/${job.id}/communications`),
-            orderBy('timestamp', 'asc'),
-            limit(100)
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const comms = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            } as CommunicationItem));
-
-            setCommunications(comms);
-
-            // Count unread messages from others
-            const unread = comms.filter(c =>
-                c.author !== currentUser.id &&
-                c.author !== 'system' &&
-                !c.read
-            ).length;
-            setUnreadCount(unread);
-
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [db, job.id, currentUser.id]);
+    const loading = commsLoading || timelineLoading;
+    
+    const unreadCount = useMemo(() => {
+        return communications.filter(c =>
+            c.author !== currentUser.id &&
+            c.author !== 'system' &&
+            !c.read
+        ).length;
+    }, [communications, currentUser.id]);
 
     // Build timeline when job or communications change
     const timeline = useMemo(() => {
-        return buildJobTimeline(job, communications);
-    }, [job, communications]);
+        return buildJobTimeline(job, communications, timelineEvents);
+    }, [job, communications, timelineEvents]);
 
     if (loading) {
         return (

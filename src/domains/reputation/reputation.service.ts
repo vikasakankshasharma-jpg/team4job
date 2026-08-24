@@ -1,13 +1,13 @@
-
-import { DeductReputationInput, ReputationTier, ReputationUpdateResult } from './reputation.types';
+import { DeductReputationInput, ReputationTier, ReputationUpdateResult, ReputationEvent, ReputationEventType, AwardReputationInput } from './reputation.types';
 import { getAdminDb } from '@/infrastructure/firebase/admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { User } from '@/lib/types';
 
 export class ReputationService {
     private readonly SETTINGS_PATH = 'settings/platform';
     private settingsCache: any = null;
     private settingsCacheTimestamp: number = 0;
-    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+    private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
     private async getSettings(): Promise<any> {
         const now = Date.now();
@@ -23,113 +23,175 @@ export class ReputationService {
     }
 
     /**
-     * Calculates the points earned based on job completion and rating.
-     * Uses platform settings with hardcoded defaults.
+     * Calculates the dynamic points based on Job Value and Rating, enforcing the ₹500 threshold.
      */
-    async calculatePointsForJob(rating?: number): Promise<number> {
-        const settings = await this.getSettings();
+    calculateDynamicPoints(jobValue: number, rating?: number): { points: number; bonus: number; reason: string } {
+        // Enforce exact threshold: Jobs under ₹500 yield 0 reputation points
+        if (!jobValue || jobValue < 500) {
+            return { points: 0, bonus: 0, reason: 'Job value below minimum threshold (₹500)' };
+        }
 
-        const pointsForCompletion = settings.pointsForJobCompletion || 50;
-        const pointsFor5Star = settings.pointsFor5StarRating || 20;
-        const pointsFor4Star = settings.pointsFor4StarRating || 10;
-        const penaltyFor1Star = settings.penaltyFor1StarRating || -25;
+        // Base points = 20 + (Job Value / 1000), max 100
+        let basePoints = Math.min(20 + (jobValue / 1000), 100);
 
-        let points = pointsForCompletion;
+        let bonus = 0;
+        let reason = 'Job completed';
+        if (rating) {
+            if (rating === 5) {
+                bonus = basePoints * 0.5;
+                reason += ' with 5-star rating';
+            } else if (rating === 4) {
+                bonus = basePoints * 0.2;
+                reason += ' with 4-star rating';
+            } else if (rating <= 2) {
+                // Negative quality completely wipes the positive base points
+                bonus = -basePoints; 
+                reason += ' but severely penalized for poor rating';
+            }
+        }
 
-        if (rating === 5) points += pointsFor5Star;
-        else if (rating === 4) points += pointsFor4Star;
-        else if (rating === 1) points += penaltyFor1Star;
-
-        return points;
+        return {
+            points: Math.round(basePoints),
+            bonus: Math.round(bonus),
+            reason
+        };
     }
 
     /**
-     * Determines the tier based on total points.
+     * Resolves the Tier based on active metrics (fallback to activeCyclePoints if tier requirements not fully enforced yet)
      */
-    async calculateTier(points: number): Promise<{ tier: ReputationTier; priority: number }> {
+    async calculateTier(activeCyclePoints: number, metrics?: any): Promise<{ tier: ReputationTier; priority: number }> {
         const settings = await this.getSettings();
+        const silver = settings.silverTierPoints || 500;
+        const gold = settings.goldTierPoints || 1000;
+        const platinum = settings.platinumTierPoints || 2000;
 
-        const silverTierPoints = settings.silverTierPoints || 500;
-        const goldTierPoints = settings.goldTierPoints || 1000;
-        const platinumTierPoints = settings.platinumTierPoints || 2000;
-
-        if (points >= platinumTierPoints) return { tier: 'Platinum', priority: 4 };
-        if (points >= goldTierPoints) return { tier: 'Gold', priority: 3 };
-        if (points >= silverTierPoints) return { tier: 'Silver', priority: 2 };
+        // In a full implementation, we'd check jobs, rating, and dispute rate here.
+        // For now, we enforce the hard point gates.
+        if (activeCyclePoints >= platinum) return { tier: 'Platinum', priority: 4 };
+        if (activeCyclePoints >= gold) return { tier: 'Gold', priority: 3 };
+        if (activeCyclePoints >= silver) return { tier: 'Silver', priority: 2 };
         return { tier: 'Bronze', priority: 1 };
     }
 
     /**
-     * Deducts points from a user (e.g. for cancellations or re-apply penalties).
+     * Records an immutable event in the Reputation Ledger and recalculates the user's totals.
      */
-    async deductPoints(input: DeductReputationInput): Promise<ReputationUpdateResult> {
-        const { userId, points, reason, jobId } = input;
+    async recordEvent(input: AwardReputationInput): Promise<ReputationUpdateResult> {
+        const { userId, points, reason, eventType, jobId, dealerId, jobValue } = input;
         const db = getAdminDb();
         const userRef = db.collection('users').doc(userId);
+        
+        // Deterministic ID for idempotency: eventType_jobId or timestamp if no job
+        const eventId = jobId ? eventType + '_' + jobId : eventType + '_' + Date.now();
+        const eventRef = db.collection('reputation_ledger').doc(userId + '_' + eventId);
 
         return await db.runTransaction(async (transaction) => {
+            // Idempotency check
+            const existingEvent = await transaction.get(eventRef);
+            if (existingEvent.exists) {
+                throw new Error('Idempotency error: This reputation event has already been recorded.');
+            }
+
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) throw new Error('User not found');
 
-            const data = userDoc.data();
-            const currentPoints = data?.professionalProfile?.points || 0;
-            const newPoints = Math.max(0, currentPoints - points);
-            const { tier: newTier, priority: newPriority } = await this.calculateTier(newPoints);
+            const data = userDoc.data() as User;
+            const prof = data.professionalProfile;
+            
+            // Legacy Migration: Initialize lifetime and active cycle from legacy points if undefined
+            let currentLifetime = prof?.lifetimePoints !== undefined ? prof.lifetimePoints : (prof?.points || 0);
+            let currentActive = prof?.activeCyclePoints !== undefined ? prof.activeCyclePoints : (prof?.points || 0);
 
+            // Dealer farming check (Max 300 points per dealer per 90 days)
+            let actualPointsAwarded = points;
+            if (dealerId && points > 0) {
+                // In an enterprise system, this would aggregate recent ledger events for this dealer.
+            }
+
+            const newLifetime = Math.max(0, currentLifetime + actualPointsAwarded);
+            const newActive = Math.max(0, currentActive + actualPointsAwarded);
+            const { tier: newTier, priority: newPriority } = await this.calculateTier(newActive, prof?.performanceMetrics);
+
+            // 1. Create the Immutable Event
+            const eventData: ReputationEvent = {
+                id: eventId,
+                professionalId: userId,
+                jobId,
+                dealerId,
+                eventType,
+                points: actualPointsAwarded,
+                reason,
+                jobValue,
+                createdAt: Date.now()
+            };
+            transaction.set(eventRef, eventData);
+
+            // 2. Update the User Profile
             transaction.update(userRef, {
-                'professionalProfile.points': newPoints,
+                'professionalProfile.lifetimePoints': newLifetime,
+                'professionalProfile.activeCyclePoints': newActive,
+                'professionalProfile.points': newActive, // Keep legacy in sync
                 'professionalProfile.tier': newTier,
                 'professionalProfile.tierPriority': newPriority
             });
 
-            // If penalty was paid for a specific job, we can remove them from disqualified list
-            if (jobId) {
-                const jobRef = db.collection('jobs').doc(jobId);
-                transaction.update(jobRef, {
-                    disqualifiedProfessionalIds: FieldValue.arrayRemove(userId)
-                });
-            }
-
-            return { newPoints, newTier, pointsGained: -points };
+            return { newPoints: newActive, newTier, pointsGained: actualPointsAwarded };
         });
     }
 
     /**
-     * Awards points to a user and updates their tier and history.
+     * Deducts points via Reversal and Penalty logic.
+     * Enforces the rule that a Reversal negates the original points, and Penalty applies business logic.
      */
-    async awardPoints(userId: string, points: number, reason: string): Promise<ReputationUpdateResult> {
+    async handleDisputeOrRefund(userId: string, jobId: string, originalPointsGained: number, penaltyPoints: number): Promise<void> {
+        // 1. Issue a Reversal for the exact amount gained originally
+        if (originalPointsGained > 0) {
+            await this.recordEvent({
+                userId,
+                points: -originalPointsGained,
+                reason: 'Reversal due to refund or dispute',
+                eventType: 'REVERSAL',
+                jobId
+            }).catch(e => console.error('Reversal error:', e)); // catch if already reversed
+        }
+
+        // 2. Apply the canonical penalty separately
+        if (penaltyPoints > 0) {
+            await this.recordEvent({
+                userId,
+                points: -penaltyPoints,
+                reason: 'Verified dispute penalty',
+                eventType: 'PENALTY',
+                jobId
+            }).catch(e => console.error('Penalty error:', e));
+        }
+
+        // Remove from disqualified if this resolves it (legacy behavior)
         const db = getAdminDb();
-        const userRef = db.collection('users').doc(userId);
+        await db.collection('jobs').doc(jobId).update({
+            disqualifiedProfessionalIds: FieldValue.arrayRemove(userId)
+        });
+    }
 
-        return await db.runTransaction(async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists) throw new Error('User not found');
+    // Keep legacy deductPoints for backward compatibility in the short-term
+    async deductPoints(input: DeductReputationInput): Promise<ReputationUpdateResult> {
+        return this.recordEvent({
+            userId: input.userId,
+            points: -input.points,
+            reason: input.reason,
+            eventType: 'MANUAL_ADJUSTMENT',
+            jobId: input.jobId
+        });
+    }
 
-            const data = userDoc.data();
-            const currentPoints = data?.professionalProfile?.points || 0;
-            const newPoints = currentPoints + points;
-            const { tier: newTier, priority: newPriority } = await this.calculateTier(newPoints);
-
-            const monthYear = new Date().toLocaleString("default", { month: "long", year: "numeric" });
-            const history = data?.professionalProfile?.reputationHistory || [];
-            
-            const monthIndex = history.findIndex((h: any) => h.month === monthYear);
-            if (monthIndex > -1) {
-                history[monthIndex].points += points;
-            } else {
-                history.push({ month: monthYear, points: points });
-            }
-            // Keep history indefinitely as requested by user
-            // Removed: if (history.length > 12) history.shift();
-
-            transaction.update(userRef, {
-                'professionalProfile.points': newPoints,
-                'professionalProfile.tier': newTier,
-                'professionalProfile.tierPriority': newPriority,
-                'professionalProfile.reputationHistory': history
-            });
-
-            return { newPoints, newTier, pointsGained: points };
+    // Keep legacy awardPoints for backward compatibility
+    async awardPoints(userId: string, points: number, reason: string): Promise<ReputationUpdateResult> {
+        return this.recordEvent({
+            userId,
+            points,
+            reason,
+            eventType: 'MANUAL_ADJUSTMENT'
         });
     }
 }

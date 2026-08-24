@@ -1,27 +1,26 @@
 'use server';
 
 import { getAdminDb } from '@/infrastructure/firebase/admin';
-import { userService } from '@/domains/users/user.service';
 import { Transaction } from '@/lib/types';
+import { requireAuth } from '@/lib/auth-server';
 
 /**
  * Server Action to fetch transaction history
  */
-export async function getTransactionHistoryAction(userId: string) {
+export async function getTransactionHistoryAction(targetUserId: string) {
     try {
-        const user = await userService.getProfile(userId);
-        const isAdmin = user.roles?.includes('Admin') || user.roles?.includes('Support Team');
+        const { uid, isStaff } = await requireAuth(targetUserId);
 
         const db = getAdminDb();
         let transactions: Transaction[] = [];
 
-        if (isAdmin) {
+        if (isStaff) {
             const snapshot = await db.collection('transactions').get();
             transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
         } else {
             const [payerSnap, payeeSnap] = await Promise.all([
-                db.collection('transactions').where('payerId', '==', userId).get(),
-                db.collection('transactions').where('payeeId', '==', userId).get()
+                db.collection('transactions').where('payerId', '==', targetUserId).get(),
+                db.collection('transactions').where('payeeId', '==', targetUserId).get()
             ]);
 
             const txMap = new Map<string, Transaction>();

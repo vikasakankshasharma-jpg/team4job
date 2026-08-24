@@ -10,6 +10,8 @@ import { Role } from '@/lib/types';
  */
 export async function placeBidAction(jobId: string, userId: string, role: Role, data: any) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         await bidService.placeBid(userId, role, {
             ...data,
             jobId
@@ -26,6 +28,8 @@ export async function placeBidAction(jobId: string, userId: string, role: Role, 
  */
 export async function listMyBidsAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         // Implementation logic moved from api/bids/my-bids
         // For simplicity, we'll implement it here or in jobService
         const bids = await jobService.getBidsByProfessional(userId);
@@ -40,6 +44,8 @@ export async function listMyBidsAction(userId: string) {
  */
 export async function getBidsForJobAction(jobId: string, userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const bids = await jobService.getBidsForJob(jobId, userId);
         return { success: true, bids: JSON.parse(JSON.stringify(bids)) };
     } catch (error: any) {

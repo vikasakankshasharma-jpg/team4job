@@ -32,16 +32,20 @@ export async function POST(req: NextRequest) {
         if (eventType === 'PAYMENT_SUCCESS_WEBHOOK') {
             const orderId = body.data.order.order_id;
             await paymentService.verifyPayment(orderId);
-
             // Note: verifyPayment fetches the latest state from Cashfree API for extra safety
-
         }
 
-        // Handle Payout Updates (Optional but recommended for Phase 8)
+        // Handle Payment Failure
+        if (eventType === 'PAYMENT_FAILED_WEBHOOK') {
+            const orderId = body.data.order.order_id;
+            const errorMsg = body.data.payment?.error_details?.error_description || 'Payment Failed';
+            await paymentService.markPaymentFailed(orderId, errorMsg);
+        }
+
+        // Handle Payout Updates (Standard Payouts fallback)
         if (eventType === 'TRANSFER_SUCCESS') {
             const transferId = body.data.transfer_id;
             await paymentService.recordPayoutSuccess(transferId);
-
         }
 
         return NextResponse.json({ status: 'OK' });

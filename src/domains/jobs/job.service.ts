@@ -36,15 +36,38 @@ export class JobService {
         }
 
         try {
+            // Enforce Server-Side Identity (Trust NO client parameters for requester/dealer IDs)
+            const resolvedRequesterType = data.requesterType === 'DEALER' ? 'DEALER' : 'CUSTOMER';
+            const resolvedDealerId = resolvedRequesterType === 'DEALER' ? userId : undefined;
+            const ownerId = resolvedDealerId || userId;
+
+            // Generate Deterministic serviceLocationId
+            const authUser = await userRepository.fetchById(userId);
+            const phoneStr = (resolvedRequesterType === 'DEALER' && data.endCustomerContact?.phone) 
+                             ? data.endCustomerContact.phone 
+                             : (authUser?.mobile || 'unknown');
+            const normalizedPhone = phoneStr.replace(/\D/g, '').slice(-10) || 'nophone';
+            const normalizedPincode = (data.address.cityPincode || '').replace(/\s/g, '').toLowerCase() || 'nopincode';
+            
+            const crypto = require('crypto');
+            const serviceLocationId = crypto.createHash('sha256')
+                .update(`${ownerId}-${normalizedPincode}-${normalizedPhone}`)
+                .digest('hex');
+
             // Prepare job document
             const job: Partial<Job> = {
                 ...data,
-                clientId: userId,
+                clientId: userId, // Legacy compatibility
+                requesterId: userId, // Always the authenticated user
+                requesterType: resolvedRequesterType,
+                dealerId: resolvedDealerId, // Cannot spoof another dealer
+                endCustomerId: resolvedRequesterType === 'DEALER' ? data.endCustomerId : userId,
+                endCustomerContact: resolvedRequesterType === 'DEALER' ? data.endCustomerContact : undefined,
+                serviceLocationId,
                 status: 'open',
                 bids: [],
                 comments: [],
                 bidderIds: [],
-                statusHistory: [],
             };
 
             const jobId = await jobRepository.create(job);
@@ -102,6 +125,17 @@ export class JobService {
     }
 
     /**
+     * List all B2B jobs for a specific dealer
+     */
+    async listDealerJobs(dealerId: string, limit = 50): Promise<Job[]> {
+        try {
+            return await jobRepository.fetchDealerJobs(dealerId, limit);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
      * Get bids placed by a specific Professional across all jobs
      */
     async getBidsByProfessional(userId: string): Promise<any[]> {
@@ -136,7 +170,30 @@ export class JobService {
      */
     async listOpenJobs(filters?: JobFilters, limit = 50, lastPostedAt?: Date): Promise<Job[]> {
         try {
-            return await jobRepository.fetchOpen(filters, limit, lastPostedAt);
+            const jobs = await jobRepository.fetchOpen(filters, limit, lastPostedAt);
+            
+            // Sanitize open jobs (Pre-award privacy)
+            return jobs.map(job => {
+                const safeJob = { ...job } as any;
+                if (safeJob.address) {
+                    safeJob.address = {
+                        cityPincode: safeJob.address.cityPincode,
+                        state: safeJob.address.state,
+                        country: safeJob.address.country,
+                        streetAddress: '[Hidden until awarded]',
+                        flatNumber: '[Hidden]',
+                        landmark: '[Hidden]'
+                    };
+                }
+                safeJob.fullAddress = '[Hidden until awarded]';
+                if (safeJob.endCustomerContact) {
+                    safeJob.endCustomerContact = { name: 'Customer' };
+                }
+                delete safeJob.dealerMargin;
+                delete safeJob.b2bPrice;
+                delete safeJob.b2bCost;
+                return safeJob;
+            });
         } catch (error) {
             throw error;
         }
@@ -176,6 +233,50 @@ export class JobService {
             throw new Error('You do not have permission to view this job');
         }
 
+        // --- Privacy & Data Isolation (Phase 3 Prep) ---
+        // Hide exact address and customer info if not owner, not awarded, and not admin
+        if (!isOwner && !isAwardee && !isAdmin) {
+            const safeJob = { ...job } as any;
+            
+            // Protect exact address pre-award (off-platform bypass protection)
+            if (safeJob.address) {
+                safeJob.address = {
+                    cityPincode: safeJob.address.cityPincode,
+                    state: safeJob.address.state,
+                    country: safeJob.address.country,
+                    // Redact exact details
+                    streetAddress: '[Hidden until awarded]',
+                    flatNumber: '[Hidden]',
+                    landmark: '[Hidden]'
+                };
+            }
+            safeJob.fullAddress = '[Hidden until awarded]';
+            safeJob.location = safeJob.address?.cityPincode || 'Location hidden';
+            
+            // Protect customer info
+            if (safeJob.endCustomerContact) {
+                safeJob.endCustomerContact = {
+                    name: 'Customer', // Redact exact name
+                };
+            }
+
+            // Protect Dealer B2B Financials - NEVER send these to installers
+            delete safeJob.dealerMargin;
+            delete safeJob.b2bPrice;
+            delete safeJob.b2bCost;
+
+            return safeJob;
+        }
+
+        // Even if awarded, do NOT leak dealer margins to the installer
+        if (isAwardee && !isOwner && !isAdmin) {
+            const safeJob = { ...job } as any;
+            delete safeJob.dealerMargin;
+            delete safeJob.b2bPrice;
+            delete safeJob.b2bCost;
+            return safeJob;
+        }
+
         return job;
     }
 
@@ -194,56 +295,66 @@ export class JobService {
         const awardedId = job.awardedProfessionalId || (typeof job.awardedProfessional === 'string' ? job.awardedProfessional : job.awardedProfessional?.id);
         const isAwarded = awardedId === userId;
 
-        if (!isOwner && !isAwarded) {
-            throw new Error('Unauthorized update attempt');
+        if (!isOwner) {
+            throw new Error('Only the client can update the job details directly');
+        }
+
+        // PREVENT PRIVILEGE ESCALATION: Only allow specific safe fields
+        const safeUpdates: Partial<Job> = {};
+        const allowedFields = ['title', 'description', 'location', 'images', 'budget', 'category', 'subCategory', 'jobStartDate', 'urgency', 'isPriced', 'tags'];
+        
+        for (const field of allowedFields) {
+            if (field in updates) {
+                (safeUpdates as any)[field] = (updates as any)[field];
+            }
+        }
+        
+        // Prevent changing budget if already awarded
+        if (job.awardedProfessionalId && 'budget' in safeUpdates) {
+            delete safeUpdates.budget;
         }
 
         // --- Chat Moderation (Revenue Protection) ---
         if (updates.privateMessages && updates.privateMessages.length > 0) {
-            const lastMsg = updates.privateMessages[updates.privateMessages.length - 1];
-            if (lastMsg && lastMsg.content) {
-                const { moderateMessageFlow } = await import('@/ai/flows/moderate-message');
-                const moderation = await moderateMessageFlow({
-                    message: lastMsg.content,
-                    userId: userId,
-                    limitType: 'ai_chat'
-                });
-
-                if (moderation.isFlagged) {
-                    throw new Error(moderation.reason || "Message blocked by safety filters.");
-                }
-            }
+            // Note: private messages are deprecated, they go to timeline/communications now
+            // We just ignore this for now, or you can route it properly.
         }
 
-        await jobRepository.update(jobId, updates);
+        if (Object.keys(safeUpdates).length > 0) {
+            await jobRepository.update(jobId, safeUpdates);
+        }
     }
 
     /**
-     * Award a job to an Professional
+     * Award a job to an Professional (Concurrency safe)
      */
     async awardJob(jobId: string, userId: string, professionalId: string, acceptanceDeadline: Date): Promise<void> {
-        const job = await jobRepository.fetchById(jobId);
-        if (!job) throw new Error('Job not found');
+        const db = getAdminDb();
+        const jobRef = db.collection('jobs').doc(jobId);
 
-        const ownerId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
-        if (ownerId !== userId) throw new Error('Unauthorized: Only job owner can award job');
+        await db.runTransaction(async (t) => {
+            const doc = await t.get(jobRef);
+            if (!doc.exists) throw new Error('Job not found');
 
-        if (job.status !== 'open' && job.status !== 'Open for Bidding') {
-            throw new Error(`Job is not available for awarding (Status: ${job.status})`);
-        }
+            const job = doc.data() as Job;
+            const ownerId = job.clientId || (typeof job.client === 'string' ? job.client : job.client?.id);
+            if (ownerId !== userId) throw new Error('Unauthorized: Only job owner can award job');
 
-        if (!professionalId) {
-            throw new Error('Professional ID is required to award job');
-        }
+            if (job.status !== 'open' && job.status !== 'Open for Bidding') {
+                throw new Error(`Job is not available for awarding (Status: ${job.status})`);
+            }
 
-        const updates: Partial<Job> = {
-            status: 'bid_accepted',
-            awardedProfessionalId: professionalId,
-            awardedProfessional: getAdminDb().collection('users').doc(professionalId) as any,
-            acceptanceDeadline: acceptanceDeadline,
-        };
+            if (!professionalId) {
+                throw new Error('Professional ID is required to award job');
+            }
 
-        await jobRepository.update(jobId, updates);
+            t.update(jobRef, {
+                status: 'bid_accepted',
+                awardedProfessionalId: professionalId,
+                awardedProfessional: db.collection('users').doc(professionalId) as any,
+                acceptanceDeadline: acceptanceDeadline,
+            });
+        });
 
         // Increment Professional stats (Awarded/Won)
         userRepository.incrementStats(professionalId, { jobsWon: 1 }).catch(e => { /* Failed to increment jobsWon */ });
@@ -312,7 +423,7 @@ export class JobService {
         }
 
         // Find the bid
-        const bid = job.bids.find(b => b.id === bidId);
+        const bid = (job.bids || []).find(b => b.id === bidId);
         if (!bid) {
             throw new Error('Bid not found');
         }
@@ -549,7 +660,7 @@ export class JobService {
             const endTime = new Date();
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
-            const acceptedBid = job.bids.find(b => {
+            const acceptedBid = (job.bids || []).find(b => {
                 const bprofessionalId = typeof b.professional === 'string' ? b.professional : (b.professional as any)?.id || b.professionalId;
                 return bprofessionalId === userId;
             });
@@ -599,7 +710,7 @@ export class JobService {
             const endTime = new Date();
             const durationHours = !isNaN(startTime.getTime()) ? (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60) : 0;
 
-            const winningBid = job.bids.find(b => {
+            const winningBid = (job.bids || []).find(b => {
                 const bprofessionalId = typeof b.professional === 'string' ? b.professional : (b.professional as any)?.id || b.professionalId;
                 return bprofessionalId === job.awardedProfessionalId;
             });

@@ -59,6 +59,8 @@ const clientNavItems: NavItem[] = [
     { href: "/dashboard/professionals", icon: Search, labelKey: "findProfessionals", tourId: "find-professionals", premium: true },
     { href: "/wizard", icon: PlusCircle, labelKey: "postJob", tourId: "post-job" },
     { href: "/dashboard/posted-jobs", icon: Briefcase, labelKey: "myJobs", tourId: "posted-jobs" },
+    { href: "/dashboard/dealer-post-job", icon: PlusCircle, labelKey: "postDealerJob", tourId: "post-dealer-job" },
+    { href: "/dashboard/dealer-jobs", icon: Briefcase, labelKey: "myDealerJobs", tourId: "my-dealer-jobs" },
     { href: "/dashboard/analytics", icon: TrendingUp, labelKey: "analytics", tourId: "analytics" },
     { href: "/dashboard/my-professionals", icon: Heart, labelKey: "myProfessionals", tourId: "my-professionals" },
     { href: "/dashboard/billing", icon: CreditCard, labelKey: "billing" },

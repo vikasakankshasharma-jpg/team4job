@@ -40,6 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SmartSearch } from '@/components/ui/smart-search';
 import Fuse from 'fuse.js';
 import { useTranslations } from 'next-intl';
+import { useServiceHistory } from '@/lib/hooks/use-service-history';
 
 const tierIcons: Record<string, React.ReactNode> = {
   Bronze: <Medal className="h-5 w-5 text-yellow-700" />,
@@ -196,8 +197,17 @@ export default function MyProfessionalsClient({ initialProfessionals }: { initia
   const [selectedProfessional, setSelectedProfessional] = useState<User | null>(null);
   const router = useRouter();
 
-  // Phase 11: New state
-  const [metricsMap, setMetricsMap] = useState<Map<string, ProfessionalRelationshipMetrics>>(new Map());
+  const { data: serviceHistory = [] } = useServiceHistory(user?.id);
+
+  // Phase 11: Map React Query history to metricsMap
+  const metricsMap = useMemo(() => {
+    const map = new Map<string, ProfessionalRelationshipMetrics>();
+    serviceHistory.forEach((item: any) => {
+      map.set(item.professional.id, item.metrics);
+    });
+    return map;
+  }, [serviceHistory]);
+
   const [inviteDialogProfessional, setInviteDialogProfessional] = useState<User | null>(null);
   const [tagDialogProfessional, setTagDialogProfessional] = useState<User | null>(null);
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -252,19 +262,6 @@ export default function MyProfessionalsClient({ initialProfessionals }: { initia
       });
     }
   }, [initialProfessionals, user, fetchRelatedProfessionals]);
-
-  // Phase 11: Fetch metrics for all Professionals
-  useEffect(() => {
-    const loadMetrics = async () => {
-      if (!db || !user || Professionals.length === 0) return;
-
-      const professionalIds = Professionals.map(i => i.id);
-      const metrics = await calculateBatchProfessionalMetrics(db, user.id, professionalIds);
-      setMetricsMap(metrics);
-    };
-
-    loadMetrics();
-  }, [db, user, Professionals]);
 
   const handleUpdate = async (professionalId: string, action: 'favorite' | 'unfavorite' | 'block' | 'unblock') => {
     if (!user || !db) return;
@@ -330,12 +327,22 @@ export default function MyProfessionalsClient({ initialProfessionals }: { initia
   }, [filteredByTag, search]);
 
   const { hired, favorites, blocked } = useMemo(() => {
+    // hired comes directly from serviceHistory hook
+    const hiredPros = serviceHistory.map((item: any) => item.professional as User);
+    
+    // Apply search filter to hired pros
+    const filteredHired = search ? new Fuse(hiredPros, {
+      keys: ['name', 'professionalProfile.skills'],
+      threshold: 0.3,
+      ignoreLocation: true,
+    }).search(search).map(r => r.item) : hiredPros;
+
     return {
-      hired: filteredProfessionals.filter(i => Professionals.some(inst => inst.id === i.id)),
+      hired: filteredHired,
       favorites: filteredProfessionals.filter(i => user?.favoriteProfessionalIds?.includes(i.id)),
       blocked: filteredProfessionals.filter(i => user?.blockedProfessionalIds?.includes(i.id)),
     };
-  }, [filteredProfessionals, user, Professionals]);
+  }, [filteredProfessionals, user, serviceHistory, search]);
 
   if (loading || !user) {
     return (

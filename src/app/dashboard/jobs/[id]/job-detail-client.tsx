@@ -150,6 +150,8 @@ import { LiveTrackingSection } from "@/components/job/live-tracking-section";
 import { ReleasePaymentDialog } from "@/components/job/release-payment-dialog";
 import { DisputeDialog } from "@/components/job/dispute-dialog";
 import { JobTimeline } from "@/components/job/job-timeline";
+import { ServiceHistoryPanel } from "@/components/dashboard/service-history-panel";
+import { SmartMatchingPanel } from "@/components/job/smart-matching-panel";
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -1007,6 +1009,21 @@ export default function JobDetailClient({ isMapLoaded, initialJob, initialBids }
                                 </CardContent>
                             </Card>
                         </div>
+                        
+                        <div className="relative group mt-8">
+                            <ServiceHistoryPanel jobId={job.id} />
+                        </div>
+
+                        {/* Smart Matching Recommendations (Only for Client/Dealer on Open/Bidding Jobs) */}
+                        {isClient && (job.status?.toLowerCase() === 'open' || job.status?.toLowerCase() === 'bids') && (
+                            <SmartMatchingPanel 
+                                jobId={job.id} 
+                                onInvite={(profId) => {
+                                    // Placeholder for future Invite action or redirect
+                                    window.open(`/dashboard/users/${profId}`, '_blank');
+                                }} 
+                            />
+                        )}
                     </motion.div>
                 </div>
 

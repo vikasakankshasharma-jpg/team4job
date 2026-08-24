@@ -92,13 +92,23 @@ export class PaymentService {
                     orderToken: `mock_token_${Date.now()}`
                 };
             } else {
-                order = await cashfreeClient.createOrder({
+                const orderPayload: any = {
                     orderId,
                     orderAmount: totalPaidByClient,
                     customerName: user.name || 'User',
                     customerEmail: user.email || 'user@example.com',
                     customerPhone: user.mobile || '0000000000',
-                });
+                };
+                
+                // Add Vendor Split if Professional is known
+                if (job?.awardedProfessionalId) {
+                    orderPayload.orderSplits = [{
+                        vendor_id: job.awardedProfessionalId,
+                        amount: data.amount - commission + (data.travelTip || 0),
+                    }];
+                }
+
+                order = await cashfreeClient.createOrder(orderPayload);
             }
 
             // Update transaction with order token
@@ -126,20 +136,38 @@ export class PaymentService {
 
             // Find transaction
             const transactionResult = await paymentRepository.findByOrderId(orderId);
-
-                        if (!transactionResult) {
+            if (!transactionResult) {
                 throw new Error('Transaction not found');
             }
 
-            // IDEMPOTENCY CHECK: Prevent double-processing (and double-incrementing) on webhook redelivery
-            if (transactionResult.data.status === 'funded' || transactionResult.data.status === 'released') {
+            const db = getAdminDb();
+            const txRef = db.collection('transactions').doc(transactionResult.id);
+            
+            let isFirstTimeFunding = false;
+
+            // IDEMPOTENCY CHECK & UPDATE IN ATOMIC TRANSACTION
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(txRef);
+                if (!doc.exists) throw new Error('Transaction doc vanished');
+                
+                const data = doc.data() as any;
+                if (data.status === 'funded' || data.status === 'released') {
+                    // Already processed, exit gracefully
+                    isFirstTimeFunding = false;
+                    return;
+                }
+                
+                t.update(txRef, {
+                    status: 'funded',
+                    fundedAt: Timestamp.now() as any,
+                });
+                isFirstTimeFunding = true;
+            });
+
+            if (!isFirstTimeFunding) {
+                // If this is a redelivered webhook and we already funded, silently exit
                 return;
             }
-
-            await paymentRepository.update(transactionResult.id, {
-                status: 'funded',
-                fundedAt: Timestamp.now() as any,
-            });
 
                         if (transactionResult.data.transactionType === 'SUBSCRIPTION') {
                 // Subscription Logic
@@ -187,6 +215,39 @@ export class PaymentService {
     }
 
     /**
+     * Mark payment as failed (called from webhook)
+     */
+    async markPaymentFailed(orderId: string, reason?: string): Promise<void> {
+        try {
+            const transactionResult = await paymentRepository.findByOrderId(orderId);
+            if (!transactionResult) return; // Silent exit if not found
+            
+            const db = getAdminDb();
+            const txRef = db.collection('transactions').doc(transactionResult.id);
+            
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(txRef);
+                if (!doc.exists) return;
+                
+                const data = doc.data() as any;
+                // If it's already funded/released, we CANNOT mark it failed. That would be an inconsistent state.
+                if (data.status === 'funded' || data.status === 'released' || data.status === 'failed') {
+                    return;
+                }
+                
+                t.update(txRef, {
+                    status: 'failed',
+                    failedAt: Timestamp.now() as any,
+                    description: reason ? `Failed: ${reason}` : data.description
+                });
+            });
+            
+        } catch (error) {
+            console.error('[PaymentService] Failed to mark payment as failed', error);
+        }
+    }
+
+    /**
      * Release funds to Professional
      */
     async releaseFunds(jobId: string, professionalId: string): Promise<void> {
@@ -211,7 +272,8 @@ export class PaymentService {
             await db.runTransaction(async (t) => {
                 const doc = await t.get(txRef);
                 if (!doc.exists) throw new Error('Transaction document not found');
-                if (doc.data()?.status !== 'funded') {
+                const currentStatus = doc.data()?.status;
+                if (currentStatus !== 'funded' && currentStatus !== 'payout_initiated') {
                     throw new Error('Transaction is no longer in funded status (possibly already released)');
                 }
                 t.update(txRef, {
@@ -221,18 +283,38 @@ export class PaymentService {
                 });
             });
 
-            // Phase 2: External API call
+            // Phase 2: External API call (Easy Split Settlement)
             if (!this.isEmulatorMode()) {
                 try {
-                    await cashfreeClient.createPayout({
-                        beneficiaryId: professionalId,
-                        amount: transactionDoc.payoutToProfessional,
-                        transferId,
-                    });
-                } catch (payoutError) {
-                    // Rollback if payout fails synchronously
-                    await txRef.update({ status: 'funded', payoutTransferId: null, payeeId: null });
-                    throw payoutError;
+                    if (!transactionDoc.paymentGatewayOrderId) {
+                        throw new Error("Cannot settle order without paymentGatewayOrderId");
+                    }
+                    await cashfreeClient.settleOrder(transactionDoc.paymentGatewayOrderId);
+                } catch (payoutError: any) {
+                    const errorMsg = payoutError.response?.data?.message || payoutError.message || '';
+                    if (errorMsg.toLowerCase().includes('already settled') || errorMsg.toLowerCase().includes('settlement already initiated')) {
+                        console.log(`[PaymentService] Checking external settlement status for ${transactionDoc.paymentGatewayOrderId}...`);
+                        try {
+                            const settlements = await cashfreeClient.getSettlements(transactionDoc.paymentGatewayOrderId!);
+                            if (settlements && settlements.length > 0) {
+                                console.log(`[PaymentService] Confirmed external settlement. Proceeding to release.`);
+                            } else {
+                                await txRef.update({ status: 'reconciliation_required' });
+                                throw new Error(`Status uncertain: Settlement error matched, but no settlement found. Marked for reconciliation.`);
+                            }
+                        } catch (fetchError) {
+                            await txRef.update({ status: 'reconciliation_required' });
+                            throw new Error(`Status uncertain: Could not verify settlement status. Marked for reconciliation.`);
+                        }
+                    } else {
+                        // Mark for reconciliation if it's a network timeout (5xx or code like ENOTFOUND)
+                        // For safe UX, we will just leave it in payout_initiated and throw.
+                        const isNetworkError = !payoutError.response || payoutError.response.status >= 500;
+                        if (isNetworkError) {
+                            await txRef.update({ status: 'reconciliation_required' });
+                        }
+                        throw payoutError;
+                    }
                 }
             }
 
@@ -240,6 +322,21 @@ export class PaymentService {
             await txRef.update({
                 status: 'released',
                 releasedAt: Timestamp.now()
+            });
+
+            // Record to Timeline
+            const { timelineService } = await import('@/domains/jobs/timeline.service');
+            await timelineService.recordEvent({
+                jobId: jobId,
+                eventType: 'PAYMENT_RELEASED',
+                actorId: professionalId,
+                actorRole: 'SYSTEM',
+                visibility: ['CUSTOMER', 'PROFESSIONAL', 'ADMIN'],
+                metadata: {
+                    transactionId: transactionDoc.id,
+                    amount: transactionDoc.payoutToProfessional
+                },
+                idempotencyKey: `payment_released_${transactionDoc.id}`
             });
 
             // Data Aggregation: Transition Projected to Total Earnings
@@ -290,21 +387,72 @@ export class PaymentService {
                 throw new Error('No refundable transaction found');
             }
 
-            if (transaction.status === 'initiated') {
-                await paymentRepository.update(transaction.id, { status: 'cancelled' });
-                return;
-            }
+            const db = getAdminDb();
+            const txRef = db.collection('transactions').doc(transaction.id);
 
-            // Process refund
-            const refundId = `refund_${jobId}_${Date.now()}`;
-            await cashfreeClient.processRefund({
-                orderId: transaction.paymentGatewayOrderId!,
-                refundAmount: transaction.totalPaidByClient,
-                refundId,
+            let shouldCallGateway = false;
+
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(txRef);
+                if (!doc.exists) throw new Error('Transaction vanished');
+                
+                const data = doc.data() as any;
+                
+                if (data.status === 'refunded' || data.status === 'cancelled') {
+                    // Already processed
+                    return;
+                }
+
+                if (data.status === 'initiated') {
+                    t.update(txRef, { status: 'cancelled' });
+                    return;
+                }
+
+                if (data.status === 'funded' || data.status === 'refund_initiated') {
+                    // Lock for refund, or allow retry if stuck in refund_initiated
+                    t.update(txRef, { status: 'refund_initiated' });
+                    shouldCallGateway = true;
+                }
             });
 
-            // Update transaction
-            await paymentRepository.update(transaction.id, {
+            if (!shouldCallGateway) return;
+
+            // Process refund externally
+            // DETERMINISTIC REFUND ID to prevent duplicate refunds on network timeouts
+            const refundId = `refund_${transaction.id}`;
+            try {
+                await cashfreeClient.processRefund({
+                    orderId: transaction.paymentGatewayOrderId!,
+                    refundAmount: transaction.totalPaidByClient,
+                    refundId,
+                });
+            } catch (err: any) {
+                const errorMsg = err.response?.data?.message || err.message || '';
+                if (errorMsg.toLowerCase().includes('refund already') || errorMsg.toLowerCase().includes('already processed')) {
+                    console.log(`[PaymentService] Checking external refund status for ${refundId}...`);
+                    try {
+                        const refundData = await cashfreeClient.getRefund(transaction.paymentGatewayOrderId!, refundId);
+                        if (refundData && (refundData.refund_status === 'SUCCESS' || refundData.refund_status === 'PENDING')) {
+                            console.log(`[PaymentService] Confirmed external refund. Proceeding to finalize.`);
+                        } else {
+                            await txRef.update({ status: 'reconciliation_required' });
+                            throw new Error(`Status uncertain: Refund error matched, but status is ${refundData?.refund_status}. Marked for reconciliation.`);
+                        }
+                    } catch (fetchError) {
+                        await txRef.update({ status: 'reconciliation_required' });
+                        throw new Error(`Status uncertain: Could not verify refund status. Marked for reconciliation.`);
+                    }
+                } else {
+                    const isNetworkError = !err.response || err.response.status >= 500;
+                    if (isNetworkError) {
+                        await txRef.update({ status: 'reconciliation_required' });
+                    }
+                    throw err;
+                }
+            }
+
+            // Finalize refund state
+            await txRef.update({
                 status: 'refunded',
                 refundedAt: Timestamp.now() as any,
                 refundTransferId: refundId,
@@ -374,9 +522,23 @@ export class PaymentService {
                 return;
             }
 
-            await paymentRepository.update(transactionRecord.id, {
-                status: 'released',
-                releasedAt: transactionRecord.data.releasedAt || Timestamp.now() as any
+            const db = getAdminDb();
+            const txRef = db.collection('transactions').doc(transactionRecord.id);
+
+            await db.runTransaction(async (t) => {
+                const doc = await t.get(txRef);
+                if (!doc.exists) return;
+
+                const data = doc.data() as any;
+                if (data.status === 'released') {
+                    // Idempotent exit
+                    return;
+                }
+
+                t.update(txRef, {
+                    status: 'released',
+                    releasedAt: data.releasedAt || Timestamp.now() as any
+                });
             });
         } catch (error) {
             console.error('[PaymentService] Failed to record payout success', error);

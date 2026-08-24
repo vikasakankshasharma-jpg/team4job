@@ -14,6 +14,8 @@ export async function createTicketAction(input: CreateTicketInput) {
 
 export async function getUserTicketsAction(userId: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
         const tickets = await supportRepository.findByUserId(userId);
         return { success: true, tickets };
     } catch (e: any) {
@@ -32,6 +34,8 @@ export async function getAllTicketsAction(status?: SupportTicket['status']) {
 
 export async function replyToTicketAction(ticketId: string, authorId: string, authorName: string, authorRole: 'user' | 'admin', message: string) {
     try {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(authorId);
         await supportRepository.addReply(ticketId, {
             authorId,
             authorName,

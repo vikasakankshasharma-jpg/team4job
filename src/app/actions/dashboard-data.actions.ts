@@ -8,11 +8,15 @@ import { jobService } from "@/domains/jobs/job.service";
 import { userRepository } from "@/domains/users/user.repository";
 
 export async function fetchClientStats(userId: string): Promise<ClientStats> {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
     // jobService.getStatsForClient now returns ClientStats directly
     return await jobService.getStatsForClient(userId);
 }
 
 export async function fetchProfessionalStats(userId: string): Promise<ProfessionalStats> {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
     const stats = await jobService.getStatsForProfessional(userId);
 
     // Calculate earnings from transactions if needed (kept separate or integrated?)
@@ -58,6 +62,8 @@ export async function fetchProfessionalStats(userId: string): Promise<Profession
 }
 
 export async function fetchTransactions(userId: string, limitCount = 50): Promise<Transaction[]> {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
     const db = getAdminDb();
     const transactionsSnapshot = await db.collection('transactions')
         .where('payeeId', '==', userId)
@@ -83,6 +89,8 @@ export async function fetchTransactions(userId: string, limitCount = 50): Promis
 }
 
 export async function fetchActivities(userId: string): Promise<any[]> {
+    const { requireAuth } = await import('@/lib/auth-server');
+    await requireAuth(userId);
     const db = getAdminDb();
     const activitiesSnapshot = await db.collection('activities')
         .where('userId', '==', userId)

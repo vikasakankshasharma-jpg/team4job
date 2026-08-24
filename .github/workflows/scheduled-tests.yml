@@ -2,25 +2,18 @@ name: Scheduled Tests
 
 on:
   schedule:
-    # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
 
-permissions:
-  issues: write
-  contents: read
-
-
 env:
   NODE_VERSION: '20.x'
+  FIREBASE_TOOLS_VERSION: '11.28.0'
 
 jobs:
-  # Comprehensive daily test run
-  daily-full-test:
+  run-slow-tests:
     name: Daily Full Test Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    
+    timeout-minutes: 90
     
     steps:
       - name: Checkout code
@@ -32,34 +25,61 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Setup Java 21 for Firebase Emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm install -g firebase-tools@${{ env.FIREBASE_TOOLS_VERSION }}
+          npx firebase experiments:enable webframeworks
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: |
+          npx playwright install --with-deps chromium webkit || \
+          (echo "Retrying Playwright install..." && sleep 10 && npx playwright install --with-deps chromium webkit) || \
+          (echo "Retrying Playwright install again..." && sleep 20 && npx playwright install --with-deps chromium webkit)
 
       - name: Setup environment variables
-        run: |
-          echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}" >> $GITHUB_ENV
-          echo "FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}" >> $GITHUB_ENV
-          echo "CASHFREE_PAYMENTS_CLIENT_ID=${{ secrets.CASHFREE_PAYMENTS_CLIENT_ID }}" >> $GITHUB_ENV
-          echo "CASHFREE_SECRET_KEY=${{ secrets.CASHFREE_SECRET_KEY }}" >> $GITHUB_ENV
-          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" >> $GITHUB_ENV
-
-      - name: Build Application
-        run: npm run build
         env:
-          NODE_ENV: production
-          SKIP_ENV_VALIDATION: true
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
           NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          CASHFREE_PAYMENTS_CLIENT_ID: ${{ secrets.CASHFREE_PAYMENTS_CLIENT_ID }}
+          CASHFREE_PAYMENTS_CLIENT_SECRET: ${{ secrets.CASHFREE_PAYMENTS_CLIENT_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_GENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          echo "DO_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID" >> $GITHUB_ENV
+          echo "DO_FIREBASE_CLIENT_EMAIL=$FIREBASE_CLIENT_EMAIL" >> $GITHUB_ENV
+          echo "DO_FIREBASE_PRIVATE_KEY=$FIREBASE_PRIVATE_KEY" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY" >> $GITHUB_ENV
+          echo "CASHFREE_PAYMENTS_CLIENT_ID=$CASHFREE_PAYMENTS_CLIENT_ID" >> $GITHUB_ENV
+          echo "CASHFREE_PAYMENTS_CLIENT_SECRET=$CASHFREE_PAYMENTS_CLIENT_SECRET" >> $GITHUB_ENV
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> $GITHUB_ENV
+          echo "GOOGLE_GENAI_API_KEY=$GOOGLE_GENAI_API_KEY" >> $GITHUB_ENV
+          echo "GOOGLE_API_KEY=$GOOGLE_API_KEY" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_IS_CI=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_USE_EMULATOR=true" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_E2E=true" >> $GITHUB_ENV
+          echo "ALLOW_E2E_SEED=true" >> $GITHUB_ENV
+          echo "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099" >> $GITHUB_ENV
+          echo "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080" >> $GITHUB_ENV
+          echo "FIREBASE_STORAGE_EMULATOR_HOST=127.0.0.1:9199" >> $GITHUB_ENV
+
+      - name: Start Firebase Emulators in background
+        run: |
+          export JAVA_TOOL_OPTIONS="-Xmx2048m"
+          npx firebase emulators:start --only auth,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} &
+          echo "EMULATOR_PID=$!" >> $GITHUB_ENV
+        env:
+          CI: true
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -67,31 +87,102 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          SKIP_ENV_VALIDATION: true
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_E2E: true
 
-      - name: Run all tests
-        run: npm run test:e2e
+      - name: Start Next.js production server in background
+        run: NODE_OPTIONS=--max-old-space-size=1536 npm run start &
         env:
           CI: true
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          DO_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          DO_FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          DO_FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          NEXT_PUBLIC_USE_EMULATOR: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
+          ALLOW_E2E_SEED: true
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
 
-      - name: Upload test results
+      - name: Wait for Firebase Emulator and Next.js to be ready
+        run: |
+          echo "Waiting for Firebase Emulators on ports 9099 and 8080..."
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:9099 > /dev/null 2>&1 && curl -s http://127.0.0.1:8080 > /dev/null 2>&1; then
+              echo "Firebase Emulators are ready after ${i} attempts!"
+              break
+            fi
+            echo "Attempt $i/60 - emulator not ready yet, waiting 5s..."
+            sleep 5
+          done
+          echo "Waiting for Next.js on port 3000..."
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+              echo "Next.js is fully running and serving /login!"
+              break
+            fi
+            echo "Attempt $i/60 - Next.js not ready yet, waiting 5s..."
+            sleep 5
+          done
+          
+          echo "Seeding test users via dedicated CLI script..."
+          if ! NODE_OPTIONS=--max-old-space-size=512 npx tsx scripts/ci-seed.ts; then
+             echo "ERROR: CLI standalone seeding script failed. Check logs above. Aborting."
+             exit 1
+          fi
+          
+          echo "Confirming server health after CLI seeding..."
+          if ! curl -sf http://127.0.0.1:3000/login > /dev/null 2>&1; then
+            echo "ERROR: Next.js server crashed during or immediately after seeding. Possible OOM. Aborting."
+            exit 1
+          fi
+          echo "Server health check passed. Starting tests."
+
+      - name: Daily Full Test Suite
+        run: |
+          npx playwright test tests/e2e --workers=1 --reporter=list,html
+        env:
+          CI: true
+          BASE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_IS_CI: true
+          NEXT_PUBLIC_USE_FIREBASE_EMULATOR: true
+          NEXT_PUBLIC_USE_EMULATOR: true
+          NEXT_PUBLIC_E2E: true
+          ALLOW_E2E_SEED: true
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_STORAGE_EMULATOR_HOST: 127.0.0.1:9199
+
+      - name: Upload Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: daily-test-results
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 30
-
-      - name: Send notification on failure
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: '🚨 Daily Test Suite Failed',
-              body: `The scheduled daily test run has failed. Please check the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for details.`,
-              labels: ['test-failure', 'automated']
-            })
+          name: slow-e2e-report
+          path: playwright-report/
+          retention-days: 7
